@@ -1,0 +1,28 @@
+compiling:
+	g++ -I /path/to/eigen/ my_program.cpp -o my_program
+	mpic++ -I /path/to/eigen/ my_program.cpp -o my_program
+
+   - TO AVOID CONFLICTS WITH MESASDK CALL DIRECTLY g++ on /usr/bin/. e.g:
+	/usr/bin/g++ -O3 -I eigen model_MS_test.cpp models.cpp noise_models.cpp function_rot.cpp lin_interpol.cpp build_lorentzian.cpp -o test.out
+
+create a library:
+
+	Create a .o file:
+
+		g++ -I /path/to/eigen/ -c my_library.cpp
+
+	add this file to a library, if necessary:
+
+		ar rvs my_libraries.a my_library.o
+
+	use library:
+		g++ my_program.cpp my_libraries.a
+
+Run with mpi:
+	mpirun -np [number of process] [my_program]
+
+
+
+Current compilation line that works for the program:
+	/bin/g++ -O3 -I eigen MALA.cpp random_JB.cpp matrices.cpp models.cpp interpol.cpp build_lorentzian.cpp noise_models.cpp function_rot.cpp model_def.cpp likelihoods.cpp priors_calc.cpp config.cpp outputs.cpp -o test.out
+
