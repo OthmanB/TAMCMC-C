@@ -278,11 +278,12 @@ int check_retrocompatibility(VectorXi plength, std::string modelname){
         //std::cout << "Status set to 2 (Classic model)" << std::endl;
         status=2;
     }
-    if (modelname =="model_MS_local_basic"){
+    /*if (modelname =="model_MS_local_basic"){
     	std::cout << "   >> The model 'model_MS_local_basic' is not handled by getmodel yet" << std::endl;
     	std::cout << "      Currently working on its support... please wait that it gets released" << std::endl;
     	exit(EXIT_FAILURE);
     }
+    */
 	if(status >1){
 		std::cout << "   >> Compatibility/Consistency test with earlier version passed..." << std::endl;
 	}
