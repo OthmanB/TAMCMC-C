@@ -18,3 +18,5 @@
 ### Purpose of a2_nl.py ###
     To be used only for models that handle a2 coefficient using a polynomial function. This program translates the a2 polynomial coeficients extracted using data_extract_IDL.zip into a2(nu_nl) with a proper handling of the error propagation. It makes a jpg plot of the this.
 
+### Purpose of nusini_nucosi_disociator.py ###
+    To be used with models that fit sqrt(a1).sini and sqrt(a1).cosi: It will make those two correlated quantities separated : inc , a1
