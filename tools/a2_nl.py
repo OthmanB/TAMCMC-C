@@ -84,6 +84,28 @@ def read_inc(d, i0_inc, i0_a1cosi, i0_a1sini):
 		inc=np.arctan(a1sini**2/a1cosi**2)*180./np.pi # Despite the variable name, what we have here is sqrt(a1.cosi) and sqrt(a1.sini)
 	return inc
 
+def write_a2_stats(fileout, l, nu, a2, append=False):
+	header="# Table of a2 coefficient in function of nu(n,l)\n# Col(0):l, Col(1):nu, Col(2)-Col(7):a2 (for P(a2)=[2.25,16,50,84,97.75])\n" #a2 ~ 
+	if append == False:
+		f=open(fileout, 'w')
+		f.write(header)
+	else:
+		f=open(fileout, "a")	
+	string="{}  {}  "
+	for i in range(len(a2[0,:])):
+		string=string + "{}  "
+	string=string+"\n"
+	for i in range(len(l)):
+		f.write(string.format(l[i], nu[i], a2[i,0], a2[i,1], a2[i,2], a2[i,3], a2[i,4]))
+	f.close()
+
+def write_a2_samples(fileout,l, nu, a2_samples):
+	header="# a2 Samples\n#l={}\n#nu={}\n".format(l,nu)
+	f=open(fileout, 'w')
+	f.write(header)
+	for i in range(len(a2_samples)):
+		f.write("{}\n".format(a2_samples[i]))
+	f.close()
 
 def get_files_list(rootdir):
 	'''
@@ -158,10 +180,10 @@ def compute_confidence_intervals(l1_samples, l2_samples, l3_samples, Nf_el):
 		l1_stats[en,:]=r
 	for en in range(Nf_el[2]):
 		r=make_stats(l2_samples[en,:], confidence=conf_intervals) # Get the confidence intervals by making a cdf
-		l1_stats[en,:]=r
+		l2_stats[en,:]=r
 	for en in range(Nf_el[3]):
 		r=make_stats(l3_samples[en,:], confidence=conf_intervals) # Get the confidence intervals by making a cdf
-		l1_stats[en,:]=r
+		l3_stats[en,:]=r
 
 	return l1_stats, l2_stats, l3_stats
 
@@ -184,7 +206,7 @@ def make_error_from_stats(stats):
 	err[1,:]=stats[:, 3] - stats[:, 2]
 	return err
 
-def dostar(rootdir, fileout='Results.png'):
+def dostar(rootdir, fileout='Results'):
 
 	#rootdir='/Users/obenomar/tmp/TRASH/a2-fits/products/1111/kplr003427720_kasoc-psd_slc_v1_1111/'
 	#rootdir='/Users/obenomar/tmp/TRASH/a2-fits/products/1111/kplr008379927_kasoc-psd_slc_v2_1111/'
@@ -267,9 +289,30 @@ def dostar(rootdir, fileout='Results.png'):
 	f_ax4.set_xlabel('a3 (nHz)')
 	f_ax4.set_ylabel('PDF')
 	f_ax4.hist(a3_samples, bins=50)
-	plt.savefig(fileout)
+	plt.savefig(fileout+'.png')
 	#plt.show()
 
+	print("7. Writing data on a2...")
+	for l in range(1,3):
+		if l == 1:
+			a2=a2_l1_stats
+			a2_s=a2_l1_samples
+			nu=nu_l1_stats[:,2] # Median values only
+			append=False
+		if l == 2:
+			a2=a2_l2_stats
+			a2_s=a2_l2_samples			
+			nu=nu_l2_stats[:,2] # Median values only
+			append=True
+		if l == 3:
+			a2=a2_l3_stats
+			a2_s=a2_l3_samples
+			nu=nu_l3_stats[:,2] # Median values only
+			append=True
+		for i in range(Nf_el[l]):
+			#write_a2_stats(rootdir+"a2stats_n"+str(l)+"_"+str(i)+".txt", np.repeat(l, len(nu)), nu, a2)
+			write_a2_stats(rootdir+"a2stats_n"+str(i)+".txt", np.repeat(l, len(nu)), nu, a2, append=append)
+			write_a2_samples(rootdir+"Files/a2samples_n"+str(l)+"_"+str(i)+".txt", l, nu[i], a2_s[i,:])
 
 def doallstars(rootdir):
 
