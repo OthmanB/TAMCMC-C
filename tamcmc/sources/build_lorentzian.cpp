@@ -9,6 +9,7 @@
 #include "build_lorentzian.h"
 # include <iostream>
 # include <iomanip>
+#include "../../external/integrate/ylm.h"
 
 using Eigen::VectorXd;
 
@@ -166,11 +167,11 @@ VectorXd build_l_mode_a1etaGlma3(const VectorXd& x_l, const double H_l, const do
     const long Nxl=x_l.size();
     const long double Dnl=0.75;
     VectorXd profile(Nxl), tmp(Nxl), tmp2(Nxl), result(Nxl), asymetry(Nxl);
-    double Qlm, clm, Glm;
+    double Qlm, clm, G, CF_term, AR_term;
 
     result.setZero();
     for(int m=-l; m<=l; m++){
-        Glm=Glm(l, m, thetas[0], thetas[1]); // WARNING WARNING WARNING: HERE WE APPLY GLM ONLY TO l>0 BUT MAY BE NOT CORRECT. NOTE: l=0,m=0 might only be shifted
+        //G=Glm(l, m, thetas[0], thetas[1]); // WARNING WARNING WARNING: HERE WE APPLY GLM ONLY TO l>0 BUT MAY BE NOT CORRECT. NOTE: l=0,m=0 might only be shifted
         if(l != 0){
             Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta
             if(l == 1){
@@ -182,8 +183,10 @@ VectorXd build_l_mode_a1etaGlma3(const VectorXd& x_l, const double H_l, const do
             if(l == 3){
                 clm=0; // a3 NOT YET IMPLEMENTED FOR l=3
             }
-            CF_term=eta0*Dnl*f_s*f_s*Qlm;
-            AR_term=epsilon_nl*Glm;
+            CF_term=eta0*Dnl*pow(f_s*1e-6,2)*Qlm; //(4./3.)*pi*Dnl*pow(a1*1e-6,2.)/(rho*G);
+            AR_term=epsilon_nl*Glm(l, m, thetas[0], thetas[1]);
+
+            //std::cout << "(" << l << "," << m << ") : " << "d_CF=" << CF_term*fc_l  << "            d_AR=" << AR_term*fc_l  << "         m.a1=" << m*f_s << std::endl;
             profile=(x_l - tmp.setConstant(fc_l*(1. + CF_term + AR_term) + m*f_s + clm*a3)).array().square();
             profile=4*profile/pow(gamma_l,2);
         } else{
@@ -198,7 +201,10 @@ VectorXd build_l_mode_a1etaGlma3(const VectorXd& x_l, const double H_l, const do
             result=result+ H_l*V(m+l)*asymetry.cwiseProduct(((tmp.setConstant(1) + profile)).cwiseInverse());
         }
     }
-
+    /*std::cout << "------" << std::endl;
+    std::cout << "XXXXXX" << std::endl;
+    std::cout << "------" << std::endl;
+    */
 return result;
 }
 
@@ -717,11 +723,11 @@ VectorXd optimum_lorentzian_calc_a1etaa3(const VectorXd& x, const VectorXd& y, c
 return y_out;
 }
 
-VectorXd optimum_lorentzian_calc_a1etaGlma3(const VectorXd& x, const VectorXd& y, const double H_l, const double fc_l, const double f_s, const double eta0, const VectorXd& thetas, const double epsilon_nl, const double a3, const double asym, const double gamma_l, const int l, const VectorXd& V, const double step, const double c){
+VectorXd optimum_lorentzian_calc_a1etaGlma3(const VectorXd& x, const VectorXd& y, const double H_l, const double fc_l, const double f_s, const double eta0, const double epsilon_nl, const VectorXd& thetas, const double a3, const double asym, const double gamma_l, const int l, const VectorXd& V, const double step, const double c){
 /*
     function that calculates the lorentzian on a optimized range of frequency. It returns a Vector of same size as the original vector x
     that contains the lorentzian model.
-    BEWARE: USES build_l_mode_a1etaa3() ==> Asphericity is a linear term in nu
+    BEWARE: USES build_l_mode_a1etaGlma3() ==> Asphericity is a linear term in nu
 */
     //const double c=20.;
     double pmin, pmax;
@@ -791,7 +797,9 @@ VectorXd optimum_lorentzian_calc_a1etaGlma3(const VectorXd& x, const VectorXd& y
         std::cout << " - H_l=" << H_l << std::endl;
         std::cout << " - gamma_l=" << gamma_l << std::endl;
         std::cout << " - f_s=" << f_s << std::endl;
-        std::cout << " - eta=" << eta << std::endl;
+        std::cout << " - eta0=" << eta0 << std::endl;
+        std::cout << " - epsilon_nl=" << epsilon_nl << std::endl;
+        std::cout << " - theta_min / theta_max =" << thetas[0]  << "   " << thetas[1] << std::endl;
         std::cout << " - a3=" << a3 << std::endl;
         std::cout << " - asym=" << asym << std::endl;
         std::cout << " --------" << std::endl;

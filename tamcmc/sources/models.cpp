@@ -8,8 +8,7 @@
 #include "../../external/ARMM/bump_DP.h"
 #include "interpol.h"
 #include "linfit.h"
-#include "Qlm.h"
-#include "Ylm.h"
+//#include "Qlm.h"
 //#include <cmath>
 
 using Eigen::VectorXd;
@@ -1601,7 +1600,8 @@ VectorXd model_MS_Global_a1a2a3_HarveyLike(const VectorXd& params, const VectorX
 }
 
 
-VectorXd model_MS_Global_a1etaGlma3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
+VectorXd model_MS_Global_a1etaGlma3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams) // Added on 31 Mar 2021
+    {
     /* Model of the power spectrum of a Main sequence solar-like star
      * Make use of Gizon 2002, AN 323, 251 for describing the perturbation from Active Region on a2
      * param is a vector of parameters
@@ -1643,16 +1643,18 @@ VectorXd model_MS_Global_a1etaGlma3_HarveyLike(const VectorXd& params, const Vec
     VectorXd ratios_l0(1), ratios_l1(3), ratios_l2(5), ratios_l3(7);
     VectorXd model_l0(x.size()), model_l1(x.size()), model_l2(x.size()), model_l3(x.size()), model_noise(x.size()), model_final(x.size());
 
-    VectorXd fl0_all(Nmax), Wl0_all(Nmax), noise_params(Nnoise), a2_terms(3); //Hl0_all[Nmax],
-    double fl0, fl1, fl2, fl3, Vl1, Vl2, Vl3, Hl0, Hl1, Hl2, Hl3, Wl0, Wl1, Wl2, Wl3, a1, eta0, epsilon_nl, Glm,a3, asym;
+    VectorXd fl0_all(Nmax), Wl0_all(Nmax), noise_params(Nnoise), epsilon_terms(3), thetas(2); //Hl0_all[Nmax],
+    double fl0, fl1, fl2, fl3, Vl1, Vl2, Vl3, Hl0, Hl1, Hl2, Hl3, Wl0, Wl1, Wl2, Wl3, a1, eta0, epsilon_nl, a3, asym;
+    double rho;
 
     int Nharvey;
     long cpt;
 
-    const int Nrows=1000, Ncols=9; // Number of parameters for each mode
+    const int Nrows=1000, Ncols=12; // Number of parameters for each mode
     MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
     int Line=0; // will be used to trim the mode_params table where suited
 
+    //outparams=true;
     /*
        -------------------------------------------------------
        ------- Gathering information about the modes ---------
@@ -1689,7 +1691,8 @@ VectorXd model_MS_Global_a1etaGlma3_HarveyLike(const VectorXd& params, const Vec
     Wl0_all=params.segment(Nmax + lmax + Nf + Nsplit, Nmax);
 
     epsilon_terms=params.segment(Nmax + lmax + Nf + 6,3); // This is the intensity of active region (in the Sun it is around 10^-3). epsilon terms are after the a3 and asym terms  //three terms: one constant term + one linear in nu + one quadratic in nu
-    thetas=params.segment(Nmax + lmax + Nf + 9,2) // Extension of the active regions.
+    //thetas=params.segment(Nmax + lmax + Nf + 9,2); // Extension of the active regions.
+    thetas << params[Nmax + lmax + Nf + 9], params[Nmax + lmax + Nf + 9] + params[Nmax + lmax + Nf + 10] ; // {theta_min, theta_min + Dtheta} Extension of the active regions.
     a3=params[Nmax + lmax + Nf + 2];
     asym=params[Nmax+lmax + Nf + 5];
     
@@ -1703,8 +1706,8 @@ VectorXd model_MS_Global_a1etaGlma3_HarveyLike(const VectorXd& params, const Vec
     */
 
     // --- Large separation and centrifugal force ---
-    xtmp=linspace(0, fl0_all.size(), fl0_all.size());
-    rfit=linfit(xtmp, fl0_all); // rfit[0] = Dnu 
+    xfit=linspace(0, fl0_all.size()-1, fl0_all.size());
+    rfit=linfit(xfit, fl0_all); // rfit[0] = Dnu 
     rho=pow(rfit[0]/Dnu_sun,2.) * rho_sun;
     eta0=(4./3.)*pi/(rho*G); //pow(Snlm_in.inputs[0]*1e-6,2.)
     //eta=eta0*a1*a1*Qlm(l, m);
@@ -1712,14 +1715,17 @@ VectorXd model_MS_Global_a1etaGlma3_HarveyLike(const VectorXd& params, const Vec
        --------- Computing the models for the modes  ---------
        -------------------------------------------------------
     */
-
+/*
+    std::cout << "a1      =" << a1 << std::endl;
+    std::cout << "xfit    =" << xfit.transpose() << std::endl;
+    std::cout << "fl0_all =" << fl0_all.transpose() << std::endl;
     std::cout << "Dnu =" << rfit[0] << std::endl;
     std::cout << "rho =" << rho << std::endl;
-    std::cout << "thetas =" << thetas << std::endl;
-    std::cout << "epsilon_terms =" << epsilon_terms << std::endl;
+    std::cout << "thetas =" << thetas.transpose() << std::endl;
+    std::cout << "epsilon_terms =" << epsilon_terms.transpose() << std::endl;
     std::cout << "eta0 = " << eta0 << std::endl;
-    exit(EXIT_SUCCESS);
-
+    //exit(EXIT_SUCCESS);
+*/
     cpt=0;
     for(long n=0; n<Nmax; n++){
         
@@ -1736,9 +1742,9 @@ VectorXd model_MS_Global_a1etaGlma3_HarveyLike(const VectorXd& params, const Vec
         std::cout << "fl0 = " << fl0 << std::endl;
         std::cout << "Wl0 = " << Wl0 << std::endl;
         */
-        model_final=optimum_lorentzian_calc_a1etaGlma3(x, model_final, Hl0, fl0, 0, 0, 0, 0, asym, Wl0, 0, thetas, ratios_l0, step, trunc_c);
+        model_final=optimum_lorentzian_calc_a1etaGlma3(x, model_final, Hl0, fl0, 0, 0, 0, thetas, 0, asym, Wl0, 0, ratios_l0, step, trunc_c);
         if (outparams){
-            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, asym, inclination;// mode_vec;
+            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, 0, 0, a3, asym, inclination;// mode_vec;
             Line=Line+1;
         }   
         if(lmax >=1){
@@ -1760,7 +1766,7 @@ VectorXd model_MS_Global_a1etaGlma3_HarveyLike(const VectorXd& params, const Vec
             */
             model_final=optimum_lorentzian_calc_a1etaGlma3(x, model_final, Hl1, fl1, a1, eta0, epsilon_nl, thetas, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
            if (outparams){
-                mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1, a2, a3, asym, inclination;// mode_vec;
+                mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1, eta0*1e-6, epsilon_nl, thetas[0], thetas[1], a3, asym, inclination;// mode_vec;
                 Line=Line+1;
             } 
         }
@@ -1783,7 +1789,7 @@ VectorXd model_MS_Global_a1etaGlma3_HarveyLike(const VectorXd& params, const Vec
             */
             model_final=optimum_lorentzian_calc_a1etaGlma3(x, model_final, Hl2, fl2, a1, eta0, epsilon_nl, thetas, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
             if (outparams){
-                mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1, a2, a3, asym, inclination;// mode_vec;
+                mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1, eta0*1e-6, epsilon_nl, thetas[0], thetas[1], a3, asym, inclination;// mode_vec;
                 Line=Line+1;
             }      
         }
@@ -1805,7 +1811,7 @@ VectorXd model_MS_Global_a1etaGlma3_HarveyLike(const VectorXd& params, const Vec
             */
             model_final=optimum_lorentzian_calc_a1etaGlma3(x, model_final, Hl3, fl3, a1, eta0, epsilon_nl, thetas, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
             if (outparams){
-                mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1, a2, a3, asym, inclination;// mode_vec;
+                mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1, eta0*1e-6, epsilon_nl, thetas[0], thetas[1], a3, asym, inclination;// mode_vec;
                 Line=Line+1;
             } 
         }       
@@ -1826,12 +1832,12 @@ VectorXd model_MS_Global_a1etaGlma3_HarveyLike(const VectorXd& params, const Vec
        -------------------------------------------------------
     */
     model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
-    
+
   if(outparams){
         int c=0;
         std::string file_out="params.model";
         std::string modelname = __func__;
-        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1 / a2 / a3 / asymetry / inclination";
+        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1 / eta0(10^6) / epsilon_nl / theta_min theta_max / a3 / asymetry / inclination";
         VectorXd spec_params(3);
         spec_params << x.minCoeff() , x.maxCoeff(), step;
         MatrixXd noise(Nharvey+1, 3);

@@ -49,10 +49,12 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 
 	double fl1, fl2,fl3;
 	double Dnu, d02, a1, a2, a3, alfa, b, fmax, Q11, max_b, el, em;
-	VectorXd tmp, fit, a2_terms;
+	VectorXd tmp, fit, a2_terms, epsilon_terms, thetas;
 	Deriv_out frstder, scdder;
 
 	a3=params[Nmax+lmax+Nf+2];
+
+	//std::cout << "[0] f=" << f << std::endl;
 
 	// ----- Add a positivity condition on visibilities ------
 	for(int i=Nmax; i<=Nmax+lmax; i++){
@@ -61,7 +63,7 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 			goto end;
 		}
 	}
-
+	//std::cout << "[1] f=" << f << std::endl;
 	// Specific cases
 	switch (model_index){
 		case 0: // *.a1etaa3 family of models
@@ -153,6 +155,19 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 			std::cout << "in priors_calc.cpp: case 7 needs checks. Exiting" << std::endl;
 			exit(EXIT_SUCCESS);
 			break;
+		case 8: // model_MS_Global_a1etaGlma3_HarveyLike
+			a1=pow(params[Nmax + lmax + Nf+3],2)+ pow(params[Nmax + lmax + Nf+4],2);
+			//epsilon_terms=params.segment(Nmax + lmax + Nf + 6,3);
+			//thetas=params.segment(Nmax+lmax+Nf+6+3,2);
+			//std::cout << "[In priors] epsilon_terms = " << epsilon_terms.transpose() << std::endl;
+			//std::cout << "[In priors] thetas = " << thetas.transpose() << std::endl;
+			/*if (thetas[0]>thetas[1]){ // Impose theta_min <= theta_max
+					std::cout << " theta condition issue: delta=" << thetas[1]-thetas[0] << std::endl;
+					f=-INFINITY;
+					goto end;				
+			}
+			*/
+			break;
 		default:
 			a1=params[Nmax+lmax+Nf]; // By default it is the slot reserved for a1 (Classic models)
 			switch(impose_normHnlm){ 
@@ -181,11 +196,15 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 			}
 			break;
 	}
+	//std::cout << "[2] f=" << f << std::endl;
+
     // Prior on a3/a1 ratio. a3 << a1 is enforced here by putting a3ova1_limit
 	if(std::abs(a3/a1) >= a3ova1_limit){
 		f=-INFINITY;
 		goto end;
 	}
+	//std::cout << "[3] f=" << f << std::endl;
+
 /*
 	std::cout << "a3 =" << a3 << std::endl;
 	std::cout << "a1 ="	<< a1 << std::endl;
@@ -219,9 +238,11 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 		f=-INFINITY;
 		goto end;
 	}
+	//std::cout << "[4]  f=" << f << std::endl;
 
 	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
 	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
+	//std::cout << "[5] f=" << f << std::endl;
 
 	// Determine the large separation
 	//frstder=Frstder_adaptive_reggrid(params.segment(Nmax+lmax, Nfl0)); // First derivative of fl0 gives Dnu
@@ -229,6 +250,8 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 	tmp=linspace(0, params.segment(Nmax+lmax, Nfl0).size()-1, params.segment(Nmax+lmax, Nfl0).size());
 	fit=linfit(tmp, params.segment(Nmax+lmax, Nfl0)); // fit[0] is the slope ==> Dnu and fit[1] is the ordinate at origin ==> fit[1]/fit[0] = epsilon
 	Dnu=fit[0];
+
+	//std::cout << "[6] f=" << f << std::endl;
 
 	// Apply a prior on the d02
 	//std::cout << "--- d02 --" << std::endl;
@@ -238,6 +261,8 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 			f=f+logP_gaussian_uniform( 0, Dnu/3., 0.015*Dnu, d02); // This is mainly for F stars
 		}
 	}
+	//std::cout << "[7] f=" << f << std::endl;
+
 	// Set the smootheness condition handled by derivatives_handler.cpp
 	switch(smooth_switch){
 			case 1: // Case with smoothness

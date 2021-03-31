@@ -75,6 +75,7 @@ set(HEADERS  #_COMMON
     external/ARMM/solver_mm.h
     external/ARMM/bump_DP.h
     external/ARMM/linfit.h
+    external/integrate/ylm.h
    )
 
 #Bring the core program sources into the project
@@ -108,6 +109,7 @@ set(SOURCES_MAIN  #_COMMON
     external/ARMM/solver_mm.cpp
     external/ARMM/bump_DP.cpp
     external/ARMM/linfit.cpp
+    external/integrate/ylm.cpp
     )
  
 #Define the sources for the bin2txt program
@@ -147,6 +149,7 @@ set(SOURCES_TOOLS_GETMODEL
 	tamcmc/sources/linspace.cpp
 	external/ARMM/solver_mm.cpp
 	external/ARMM/bump_DP.cpp
+	external/integrate/ylm.cpp
 	)
 
 #Define the sources for the testsolver_mm program
@@ -196,24 +199,25 @@ include_directories(tamcmc/headers)
 #Dependencies that are not portable (BOOST)
 #set(Boost_USE_MULTITHREADED=OFF)
 find_package(Boost COMPONENTS system filesystem iostreams REQUIRED)
+#find_package(Boost REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 
 add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES_MAIN} ${DIAG_SRC})
-target_link_libraries(${CMAKE_PROJECT_NAME}  ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY})
+target_link_libraries(${CMAKE_PROJECT_NAME}  ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} Boost::boost)
 #target_link_libraries(${CMAKE_PROJECT_NAME} sharedlib)
 
 add_executable(bin2txt ${HEADERS} ${SOURCES_TOOLS_BIN2TXT} ${DIAG_SRC})
 target_link_libraries(bin2txt ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY})
 
 add_executable(getstats ${HEADERS} ${SOURCES_TOOLS_GETSTATS})
-target_link_libraries(getstats ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY})
+target_link_libraries(getstats ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} Boost::boost)
 
 add_executable(getmodel ${HEADERS} ${SOURCES_TOOLS_GETMODEL})
-target_link_libraries(getmodel ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY})
+target_link_libraries(getmodel ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} Boost::boost)
 
 add_executable(testsolver_mm ${HEADERS} ${SOURCES_TOOLS_TESTSOLVER})
-target_link_libraries(testsolver_mm ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY})
+target_link_libraries(testsolver_mm ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} Boost::boost)
 
 
 

@@ -5,9 +5,9 @@
 		- properly linking optimised_xxx_a1a2a3* to a1a2* a1la2* and a1nla2* models (was mistakenly linked to a1etaa3)
 	* Improvments: model_MS_Global_a1etaGlma3_HarveyLike() that use Gizon 2002 AN prescription for describing Activity effect on modes
 		- Adding build_l_mode_a1etaGlma3(), optimum_lorentzian_calc_a1etaGlma3() and model_MS_Global_a1etaGlma3_HarveyLike()  [100%]
-		- Adapting model_def and model list 
-		- Adapting prior_calc.cpp for the new model 
-		- testing
+		- Adapting model_def and model list  [100%]
+		- Adapting prior_calc.cpp for the new model [100%] 
+		- testing [100%]: Note that I let epsilon to take negative values. I suspect this is important to allow a2_AR<0
 		
 ### v1.61-dev Improvments ###
 	* Improvments:

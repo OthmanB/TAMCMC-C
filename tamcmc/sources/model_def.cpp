@@ -272,13 +272,16 @@ VectorXd Model_def::call_model(Data *data_struc, int m, bool outparams){
 				  return model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3(params.row(m), plength, (*data_struc).x, outparams);
 			break;
 		case 18:
-			return model_MS_Global_a1n_a2a3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams); // Added on 18 Jan 2020: Handles the a2 coefficient with n free
+			return model_MS_Global_a1n_a2a3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams); // Added on 18 Jan 2021: Handles the a2 coefficient with n free
 			break;
 		case 19:
-			return model_MS_Global_a1nl_a2a3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams); // Added on 18 Jan 2020: Handles the a2 coefficient with n free
+			return model_MS_Global_a1nl_a2a3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams); // Added on 18 Jan 2021: Handles the a2 coefficient with n free
 			break;
 		case 20:
-			return model_MS_Global_a1a2a3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams); // Added on 18 Jan 2020: Handles the a2 coefficient with n free
+			return model_MS_Global_a1a2a3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams); // Added on 18 Jan 2021: Handles the a2 coefficient with n free
+			break;
+		case 21:
+			return model_MS_Global_a1etaGlma3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams); // Added on 31 Mar 2021: describes asphericity using a2_CF + a2_AR (see Gizon 2002, AN)
 			break;
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
@@ -305,7 +308,7 @@ VectorXd Model_def::call_model(Data *data_struc, int m, bool outparams){
 		  std::cout << "    - model_MS_Global_a1n_a2a3_HarveyLike" << std::endl;
 		  std::cout << "    - model_MS_Global_a1nl_a2a3_HarveyLike" << std::endl;
 		  std::cout << "    - model_MS_Global_a1a2a3_HarveyLike" << std::endl;
-
+		  std::cout << "    - model_MS_Global_a1etaGlma3_HarveyLike" << std::endl;
           std::cout << "    - 'model_MS_local_basic'" << std::endl;
 		  std::cout << " The program will exit now" << std::endl;
 		  exit(EXIT_FAILURE);

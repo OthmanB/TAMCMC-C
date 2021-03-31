@@ -432,6 +432,13 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
         		a2_switch=4;
         		extra_priors[5]=7; // used in priors_calc.cpp 
             }
+        	if(all_in.model_fullname == "model_MS_Global_a1etaGlma3_HarveyLike"){
+        		//Previously corresponding to average_a1nl     bool    0    0
+        		do_a11_eq_a12=1;            		
+        		do_avg_a1n=1;
+        		a2_switch=5;
+        		extra_priors[5]=8; // used in priors_calc.cpp 
+            }
 
             if(all_in.model_fullname == "model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1" || all_in.model_fullname == "model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2"){
             	do_a11_eq_a12=1;
@@ -651,6 +658,9 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
  			case 4:
     			io_calls.initialise_param(&Snlm_in, 6 + Nf_el[0], Nmax_prior_params, -1, -1); // Add Nmax a2 coefficients in the a1nl_a2a3 models
    				break;
+    		case 5:
+    			io_calls.initialise_param(&Snlm_in, 6 + 3 + 2, Nmax_prior_params, -1, -1); // Add 3 epsilon_nl coefficients (a2_AR) and 2 theta parameters for the a1etaGlma3 models
+    			break;
    			default:
    				std::cout << "  Issues on the a2_switch configuration inside io_ms_global" << std::endl;
    				std::cout << "  a2_switch =" << a2_switch << " Has no preset rules" << std::endl;
@@ -740,7 +750,6 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
    				exit(EXIT_SUCCESS);
     		} 
     }
- 	std::cout << "Here" << std::endl;
    	
 	for(int i=0; i<inputs_MS_global.common_names.size(); i++){
 		// --- Common parameters than can be run during setup ---
@@ -928,6 +937,58 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 				exit(EXIT_SUCCESS);
 			}		
 		}
+//  Dealing with models using epsilon_nl see Gizon 2002, AN
+		if(inputs_MS_global.common_names[i] == "epsilon_0" && a2_switch == 5){ // a2_switch=5 is for model_MS_Global_a1etaGlma3_HarveyLike
+			a2_param_count=a2_param_count+1;
+			p0=6; 
+			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+				io_calls.fill_param(&Snlm_in, "epsilon_0", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			} else{
+				std::cout << "    Fix_Auto requested for epsilon_0 ... This is not allowed. Please use an explicit prior " << std::endl;
+				exit(EXIT_SUCCESS);
+			}
+		}
+		if(inputs_MS_global.common_names[i] == "epsilon_1"  && a2_switch == 5){ // a2_switch=5 is for model_MS_Global_a1etaGlma3_HarveyLike
+			a2_param_count=a2_param_count+1;
+			p0=6+1; 
+			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+				io_calls.fill_param(&Snlm_in, "epsilon_1", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			} else{
+				std::cout << "    Fix_Auto requested for epsilon_1 ... This is not allowed. Please use an explicit prior " << std::endl;
+				exit(EXIT_SUCCESS);
+			}
+		}
+		if(inputs_MS_global.common_names[i] == "epsilon_2"  && a2_switch == 5){ // a2_switch=5 is for model_MS_Global_a1etaGlma3_HarveyLike
+			a2_param_count=a2_param_count+1;
+			p0=6+2; 
+			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+				io_calls.fill_param(&Snlm_in, "espilon_2", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			} else{
+				std::cout << "    Fix_Auto requested for epsilon_2 ... This is not allowed. Please use an explicit prior " << std::endl;
+				exit(EXIT_SUCCESS);
+			}		
+		}
+		if(inputs_MS_global.common_names[i] == "theta_min"  && a2_switch == 5){ //theta_min: Min angle for the Active Region. a2_switch=5 is for model_MS_Global_a1etaGlma3_HarveyLike
+			a2_param_count=a2_param_count+1;
+			p0=6+3; 
+			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+				io_calls.fill_param(&Snlm_in, "theta_min", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			} else{
+				std::cout << "    Fix_Auto requested for epsilon_2 ... This is not allowed. Please use an explicit prior " << std::endl;
+				exit(EXIT_SUCCESS);
+			}		
+		}
+		if(inputs_MS_global.common_names[i] == "Dtheta"  && a2_switch == 5){ //theta_max=theta_min + Dtheta: Max angle for the Active Region. a2_switch=5 is for model_MS_Global_a1etaGlma3_HarveyLike
+			a2_param_count=a2_param_count+1;
+			p0=6+4; 
+			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+				io_calls.fill_param(&Snlm_in, "Dtheta", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			} else{
+				std::cout << "    Fix_Auto requested for epsilon_2 ... This is not allowed. Please use an explicit prior " << std::endl;
+				exit(EXIT_SUCCESS);
+			}		
+		}
+// ---
 		if(inputs_MS_global.common_names[i] == "splitting_a3" || inputs_MS_global.common_names[i] == "Splitting_a3"){
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 				fatalerror_msg_io_MS_Global("splitting_a3", "Fix_Auto", "", "" );
@@ -1033,6 +1094,10 @@ if (a2_switch == 1 && a2_param_count !=3){
 	std::cout << " Invalid number of constraints for a2: Please set a2_0, a2_1 and a2_2" <<std::endl;
 	exit(EXIT_SUCCESS); 
 }
+if (a2_switch == 5 && a2_param_count !=5){
+	std::cout << " Invalid number of constraints for epsilon: Please set epsilon_0, epsilon_1, epsilon_2 and theta_min, Dtheta for the considered model" <<std::endl;
+	exit(EXIT_SUCCESS); 
+}
 if(bool_a1cosi != bool_a1sini){ // Case when one of the projected splitting quantities is missing ==> Problem
 	std::cout << "Warning: Both 'sqrt(splitting_a1).sini' and 'sqrt(splitting_a1).cosi' keywords must appear" << std::endl;
 	std::cout << "         It is forbidden to use only one of them" << std::endl;
@@ -1043,7 +1108,8 @@ if(bool_a1cosi != bool_a1sini){ // Case when one of the projected splitting quan
 if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Splitting_a1 are supposed to be used (CLASSIC and CLASSIC_vX models)
 	if( (all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike") || (all_in.model_fullname == "model_MS_Global_a1etaa3_Harvey1985") ||
 		(all_in.model_fullname == "model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1") || (all_in.model_fullname=="model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2")  ||
-		(all_in.model_fullname == "model_MS_Global_a1n_a2a3_HarveyLike") || (all_in.model_fullname == " model_MS_Global_a1nl_a2a3_HarveyLike")  || (all_in.model_fullname == "model_MS_Global_a1a2a3_HarveyLike")){
+		(all_in.model_fullname == "model_MS_Global_a1n_a2a3_HarveyLike") || (all_in.model_fullname == " model_MS_Global_a1nl_a2a3_HarveyLike")  || (all_in.model_fullname == "model_MS_Global_a1a2a3_HarveyLike") ||
+		(all_in.model_fullname == "model_MS_Global_a1etaGlma3_HarveyLike") ){
 		std::cout << "Warning: Splitting_a1 and Inclination keywords detected while requested model is model_MS_Global_a1etaa3_HarveyLike... ADAPTING THE VARIABLE FOR ALLOWING THE FIT TO WORK" << std::endl;
 		
 		std::cout << "         Replacing variables splitting_a1 and inclination by sqrt(splitting_a1).cos(i) and sqrt(splitting_a1).sin(i)..." << std::endl;
@@ -1256,7 +1322,7 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 		std::cout << " -----------------------------------------------------------" << std::endl;
 	}
 	
-	if (a2_switch >=2){
+	if (a2_switch >=2 && a2_switch != 5){ // a2_switch = 5 is a model that use eta and Glm to get a2_CF and a2_AR and is already set
 		std::cout << " io_ms_global.cpp : a2_switch >=2 not yet properly configured yet" << std::endl;
 		std::cout << " The program will exit now" << std::endl;
 		exit(EXIT_SUCCESS);
