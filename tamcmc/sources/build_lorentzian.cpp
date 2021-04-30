@@ -29,6 +29,7 @@ VectorXd build_l_mode_a1l_etaa3(const VectorXd& x_l, const double H_l, const dou
     for(int m=-l; m<=l; m++){
         if(l != 0){
             Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta
+            //clm=5*pow(m,3) - (3*l*(l+1)-1)*m /((l-1)*(2*l-1)); // this is for a3... Note that l-1 = 0 for l=1 and thus cannot be used as clm = Infinity. Actually a3=0 by def for l=1
             if(l == 1){
                 clm=0; // a3=0 for l=1 BY DEFINITION
                 f_s=f_s1;
@@ -38,7 +39,7 @@ VectorXd build_l_mode_a1l_etaa3(const VectorXd& x_l, const double H_l, const dou
                 f_s=f_s2;
             }
             if(l == 3){
-                clm=0; // a3 NOT YET IMPLEMENTED FOR l=3
+                clm=(pow(m,3)-7*m)/2; // a3 implemented on 30/04/2020
                 f_s=(f_s1 + f_s2)/2.; // APPROXIMATION
             }
             profile=(x_l - tmp.setConstant(fc_l*(1. + eta*Qlm) + m*f_s + clm*a3)).array().square();
