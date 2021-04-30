@@ -1,5 +1,8 @@
 # Version history #
 
+### v1.63-dev Improvment ###
+	* Improvment:
+		- Implementation of clm for l=3 modes. allows to account for a3(n,l=3). Previously approximated by cln=0
 ### v1.62-dev Bug Fix and Improvments ###
 	* Bug Fix:
 		- properly linking optimised_xxx_a1a2a3* to a1a2* a1la2* and a1nla2* models (was mistakenly linked to a1etaa3)
