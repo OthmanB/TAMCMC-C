@@ -29,7 +29,8 @@ VectorXd build_l_mode_a1l_etaa3(const VectorXd& x_l, const double H_l, const dou
     for(int m=-l; m<=l; m++){
         if(l != 0){
             Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta ... be carefull as dnl=2/3 is not accounted for here (see papini-gizon 2020) ... Be carefull as Dnl=2/3 is not accounted for here (see Papini-Gizon 2020)
-            //clm=5*pow(m,3) - (3*l*(l+1)-1)*m /((l-1)*(2*l-1)); // this is for a3... Note that l-1 = 0 for l=1 and thus cannot be used as clm = Infinity. Actually a3=0 by def for l=1
+            Qlm=Qlm*2./3.; // Adding Dnl=2/3, see Papini&Gizon. Beware: Old version of IDL postMCMC tool is not compatible anymore (as Dnl was added there)
+	    //clm=5*pow(m,3) - (3*l*(l+1)-1)*m /((l-1)*(2*l-1)); // this is for a3... Note that l-1 = 0 for l=1 and thus cannot be used as clm = Infinity. Actually a3=0 by def for l=1
             if(l == 1){
                 clm=0; // a3=0 for l=1 BY DEFINITION
                 f_s=f_s1;
@@ -126,6 +127,7 @@ VectorXd build_l_mode_a1etaa3(const VectorXd& x_l, const double H_l, const doubl
 	for(int m=-l; m<=l; m++){
 		if(l != 0){
 			Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta ... be carefull as dnl=2/3 is not accounted for here (see papini-gizon 2020)
+			Qlm=Qlm*2./3.; // Adding Dnl=2/3, see Papini&Gizon. Beware: Old version of IDL postMCMC tool is not compatible anymore (as Dnl was added there)
 			if(l == 1){
 				clm=m; // a3 for l=1
 			}
@@ -175,7 +177,8 @@ VectorXd build_l_mode_a1etaGlma3(const VectorXd& x_l, const double H_l, const do
         //G=Glm(l, m, thetas[0], thetas[1]); // WARNING WARNING WARNING: HERE WE APPLY GLM ONLY TO l>0 BUT MAY BE NOT CORRECT. NOTE: l=0,m=0 might only be shifted
         if(l != 0){
             Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta ... be carefull as dnl=2/3 is not accounted for here (see papini-gizon 2020)
-            if(l == 1){
+            Qlm=Qlm*2./3.; // Adding Dnl=2/3, see Papini&Gizon. Beware: Old version of IDL postMCMC tool is not compatible anymore (as Dnl was added there)
+	    if(l == 1){
                 clm=m; // a3 for l=1
             }
             if(l == 2){
@@ -225,7 +228,8 @@ VectorXd build_l_mode_a1a2a3(const VectorXd& x_l, const double H_l, const double
     for(int m=-l; m<=l; m++){
         if(l != 0){
             //Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta ... be carefull as dnl=2/3 is not accounted for here (see papini-gizon 2020)
-            if(l == 1){
+            //Qlm=Qlm*2./3.; // Adding Dnl=2/3, see Papini&Gizon. Beware: Old version of IDL postMCMC tool is not compatible anymore (as Dnl was added there)
+	    if(l == 1){
                 clm=m; // a3 for l=1
                 a2_terms=(3*m*m - 2)*a2;  // From Takashi note and Pnl decomposition: c2(n,l) = [3m*m - l(l+1)] / (2l-1)
             }
@@ -273,7 +277,8 @@ VectorXd build_l_mode_a1l_etaa3_v2(const VectorXd& x_l, const VectorXd& H_lm, co
     for(int m=-l; m<=l; m++){
         if(l != 0){
             Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta ... be carefull as dnl=2/3 is not accounted for here (see papini-gizon 2020)
-            if(l == 1){
+            Qlm=Qlm*2./3.; // Adding Dnl=2/3, see Papini&Gizon. Beware: Old version of IDL postMCMC tool is not compatible anymore (as Dnl was added there)
+	    if(l == 1){
                 clm=0; // a3=0 for l=1 BY DEFINITION
                 f_s=f_s1;
             }
@@ -332,6 +337,7 @@ VectorXd build_l_mode_a1etaa3_v2(const VectorXd& x_l, const VectorXd& H_lm, cons
 	for(int m=-l; m<=l; m++){
 		if(l != 0){
 			Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta ... be carefull as dnl=2/3 is not accounted for here (see papini-gizon 2020)
+			Qlm=Qlm*2./3.; // Adding Dnl=2/3, see Papini&Gizon. Beware: Old version of IDL postMCMC tool is not compatible anymore (as Dnl was added there)
 			if(l == 1){
 				clm=m; // a3 for l=1
 			}
