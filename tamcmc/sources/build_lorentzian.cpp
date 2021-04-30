@@ -28,7 +28,7 @@ VectorXd build_l_mode_a1l_etaa3(const VectorXd& x_l, const double H_l, const dou
     result.setZero();
     for(int m=-l; m<=l; m++){
         if(l != 0){
-            Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta
+            Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta ... be carefull as dnl=2/3 is not accounted for here (see papini-gizon 2020) ... Be carefull as Dnl=2/3 is not accounted for here (see Papini-Gizon 2020)
             //clm=5*pow(m,3) - (3*l*(l+1)-1)*m /((l-1)*(2*l-1)); // this is for a3... Note that l-1 = 0 for l=1 and thus cannot be used as clm = Infinity. Actually a3=0 by def for l=1
             if(l == 1){
                 clm=0; // a3=0 for l=1 BY DEFINITION
@@ -39,7 +39,7 @@ VectorXd build_l_mode_a1l_etaa3(const VectorXd& x_l, const double H_l, const dou
                 f_s=f_s2;
             }
             if(l == 3){
-                clm=(pow(m,3)-7*m)/2; // a3 implemented on 30/04/2020
+                clm=(pow(m,3)-7*m)/2; // a3 implemented on 30/04/2021
                 f_s=(f_s1 + f_s2)/2.; // APPROXIMATION
             }
             profile=(x_l - tmp.setConstant(fc_l*(1. + eta*Qlm) + m*f_s + clm*a3)).array().square();
@@ -75,7 +75,7 @@ VectorXd build_l_mode_a1l_a2a3(const VectorXd& x_l, const double H_l, const doub
     result.setZero();
     for(int m=-l; m<=l; m++){
         if(l != 0){
-            //Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta
+            //Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta ... be carefull as dnl=2/3 is not accounted for here (see papini-gizon 2020)
             if(l == 1){
                 clm=0; // a3=0 for l=1 BY DEFINITION
                 f_s=f_s1;
@@ -87,7 +87,7 @@ VectorXd build_l_mode_a1l_a2a3(const VectorXd& x_l, const double H_l, const doub
                 a2_terms=(m*m -2)*a2;
             }
             if(l == 3){
-                clm=0; // a3 NOT YET IMPLEMENTED FOR l=3
+                clm=(pow(m,3)-7*m)/2; // a3 implemented on 30/04/2021
                 f_s=(f_s1 + f_s2)/2.; // APPROXIMATION
                 a2_terms=(3*m*m - 12)*a2/5;
             }
@@ -125,7 +125,7 @@ VectorXd build_l_mode_a1etaa3(const VectorXd& x_l, const double H_l, const doubl
 	result.setZero();
 	for(int m=-l; m<=l; m++){
 		if(l != 0){
-			Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta
+			Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta ... be carefull as dnl=2/3 is not accounted for here (see papini-gizon 2020)
 			if(l == 1){
 				clm=m; // a3 for l=1
 			}
@@ -133,7 +133,7 @@ VectorXd build_l_mode_a1etaa3(const VectorXd& x_l, const double H_l, const doubl
 				clm=(5*pow(m,3) - 17*m)/3.; // a3 for l=2
 			}
 			if(l == 3){
-				clm=0; // a3 NOT YET IMPLEMENTED FOR l=3
+				clm=(pow(m,3)-7*m)/2; // a3 implemented on 30/04/2021
 			}
 			profile=(x_l - tmp.setConstant(fc_l*(1. + eta*Qlm) + m*f_s + clm*a3)).array().square();
 			profile=4*profile/pow(gamma_l,2);
@@ -174,7 +174,7 @@ VectorXd build_l_mode_a1etaGlma3(const VectorXd& x_l, const double H_l, const do
     for(int m=-l; m<=l; m++){
         //G=Glm(l, m, thetas[0], thetas[1]); // WARNING WARNING WARNING: HERE WE APPLY GLM ONLY TO l>0 BUT MAY BE NOT CORRECT. NOTE: l=0,m=0 might only be shifted
         if(l != 0){
-            Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta
+            Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta ... be carefull as dnl=2/3 is not accounted for here (see papini-gizon 2020)
             if(l == 1){
                 clm=m; // a3 for l=1
             }
@@ -182,7 +182,7 @@ VectorXd build_l_mode_a1etaGlma3(const VectorXd& x_l, const double H_l, const do
                 clm=(5*pow(m,3) - 17*m)/3.; // a3 for l=2
             }
             if(l == 3){
-                clm=0; // a3 NOT YET IMPLEMENTED FOR l=3
+                clm=(pow(m,3)-7*m)/2; // a3 implemented on 30/04/2021
             }
             CF_term=eta0*Dnl*pow(f_s*1e-6,2)*Qlm; //(4./3.)*pi*Dnl*pow(a1*1e-6,2.)/(rho*G);
             AR_term=epsilon_nl*Glm(l, m, thetas[0], thetas[1]);
@@ -224,7 +224,7 @@ VectorXd build_l_mode_a1a2a3(const VectorXd& x_l, const double H_l, const double
     result.setZero();
     for(int m=-l; m<=l; m++){
         if(l != 0){
-            //Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta
+            //Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta ... be carefull as dnl=2/3 is not accounted for here (see papini-gizon 2020)
             if(l == 1){
                 clm=m; // a3 for l=1
                 a2_terms=(3*m*m - 2)*a2;  // From Takashi note and Pnl decomposition: c2(n,l) = [3m*m - l(l+1)] / (2l-1)
@@ -234,7 +234,7 @@ VectorXd build_l_mode_a1a2a3(const VectorXd& x_l, const double H_l, const double
                 a2_terms=(m*m -2)*a2;
             }
             if(l == 3){
-                clm=0; // a3 NOT YET IMPLEMENTED FOR l=3
+                clm=(pow(m,3)-7*m)/2; // a3 implemented on 30/04/2021
                 a2_terms=(3*m*m - 12)*a2/5;
             }
             profile=(x_l - tmp.setConstant(fc_l + m*f_s + a2_terms + clm*a3)).array().square();
@@ -272,7 +272,7 @@ VectorXd build_l_mode_a1l_etaa3_v2(const VectorXd& x_l, const VectorXd& H_lm, co
     result.setZero();
     for(int m=-l; m<=l; m++){
         if(l != 0){
-            Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta
+            Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta ... be carefull as dnl=2/3 is not accounted for here (see papini-gizon 2020)
             if(l == 1){
                 clm=0; // a3=0 for l=1 BY DEFINITION
                 f_s=f_s1;
@@ -282,7 +282,7 @@ VectorXd build_l_mode_a1l_etaa3_v2(const VectorXd& x_l, const VectorXd& H_lm, co
                 f_s=f_s2;
             }
             if(l == 3){
-                clm=0; // a3 NOT YET IMPLEMENTED FOR l=3
+                clm=(pow(m,3)-7*m)/2; // a3 implemented on 30/04/2021
                 f_s=(f_s1 + f_s2)/2.; // APPROXIMATION
             }
             profile=(x_l - tmp.setConstant(fc_l*(1. + eta*Qlm) + m*f_s + clm*a3)).array().square();
@@ -331,7 +331,7 @@ VectorXd build_l_mode_a1etaa3_v2(const VectorXd& x_l, const VectorXd& H_lm, cons
 	result.setZero();
 	for(int m=-l; m<=l; m++){
 		if(l != 0){
-			Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta
+			Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta ... be carefull as dnl=2/3 is not accounted for here (see papini-gizon 2020)
 			if(l == 1){
 				clm=m; // a3 for l=1
 			}
@@ -339,7 +339,7 @@ VectorXd build_l_mode_a1etaa3_v2(const VectorXd& x_l, const VectorXd& H_lm, cons
 				clm=(5*pow(m,3) - 17*m)/3.; // a3 for l=2
 			}
 			if(l == 3){
-				clm=0; // a3 NOT YET IMPLEMENTED FOR l=3
+				clm=(pow(m,3)-7*m)/2; // a3 implemented on 30/04/2021
 			}
 			profile=(x_l - tmp.setConstant(fc_l*(1. + eta*Qlm) + m*f_s + clm*a3)).array().square();
 			profile=4*profile/pow(gamma_l,2);
@@ -377,7 +377,7 @@ VectorXd build_l_mode_asym_act(const VectorXd& x_l, const double H_l, const doub
 	result.setZero();
 	for(int m=-l; m<=l; m++){
 		if(l != 0){
-			Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta
+			Qlm=(l*(l+1) - 3*pow(m,2))/((2*l - 1)*(2*l + 3)); // accounting for eta ... be carefull as dnl=2/3 is not accounted for here (see papini-gizon 2020)
 			if(l == 1){
 				clm=m; // a3 for l=1
 			}
@@ -385,7 +385,7 @@ VectorXd build_l_mode_asym_act(const VectorXd& x_l, const double H_l, const doub
 				clm=(5*pow(m,3) - 17*m)/3.; // a3 for l=2
 			}
 			if(l == 3){
-				clm=0; // a3 NOT YET IMPLEMENTED FOR l=3
+				clm=(pow(m,3)-7*m)/2; // a3 implemented on 30/04/2021
 			}
 		
 			profile=(x_l - tmp.setConstant(fc_l + Qlm*(eta*fc_l*pow(f_s,2) + b*pow(fc_l*1e-3,alpha)) + m*f_s + clm*a3) ).array().square();
