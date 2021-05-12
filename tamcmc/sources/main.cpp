@@ -106,14 +106,18 @@ int main(int argc, char* argv[]){
 		if (config_master.last_id_ind > config_master.table_ids.size()){
 			config_master.last_id_ind=config_master.table_ids.size()-1;
 		}
- 
+		if (config_master.first_id_ind < 0){
+	 		std::cout << "   config_master.first_id_ind= " << config_master.first_id_ind << std::endl;	
+	 		std::cout << "   You mistakenly started indexes at 0. Please use 1 as first index for the table of model files" << std::endl;
+	 		std::cout << "   Example: ./cpptamcmc execute 1 1 1" << std::endl;
+	 		exit(EXIT_FAILURE);
+		}
         // ---- Begin to process all the requested objects ----
         for(int i=config_master.first_id_ind; i<=config_master.last_id_ind; i++){ // For each star
-  
         	modelfile=config_master.cfg_models_dir +  config_master.table_ids[i].at(0) + ".model";
         	franges=get_slices_range(modelfile, 0); // retrieve slice information from the model file and do not verbose (verbose=0)
         	config_master.Nslices=franges.rows(); 
-			if(startslice<0){
+ 			if(startslice<0){
 				config_master.first_slice_ind=0;			
         	} else{
         		config_master.first_slice_ind=startslice;

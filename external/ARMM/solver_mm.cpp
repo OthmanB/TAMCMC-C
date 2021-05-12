@@ -544,12 +544,11 @@ Data_eigensols solve_mm_asymptotic_O2p(const long double Dnu_p, const long doubl
 	np_min=int(floor(fmin/Dnu_p - epsilon - el/2 - delta0l));
 	np_max=int(ceil(fmax/Dnu_p - epsilon - el/2 - delta0l));
 
-	np_min=int(floor(np_min - alpha*std::pow(np_min - nmax, 2) /2.));
-	np_max=int(ceil(np_max + alpha*std::pow(np_max - nmax, 2) /2.)); // CHECK THIS DUE TO - -
+	np_min=int(floor(np_min - alpha_p*std::pow(np_min - nmax, 2) /2.));
+	np_max=int(ceil(np_max + alpha_p*std::pow(np_max - nmax, 2) /2.)); // CHECK THIS DUE TO - -
 
 	ng_min=int(floor(1e6/(fmax*DPl) - alpha));
 	ng_max=int(ceil(1e6/(fmin*DPl) - alpha));
-
 
 	if (np_min <= 0)
 	{
@@ -607,100 +606,72 @@ Data_eigensols solve_mm_asymptotic_O2p(const long double Dnu_p, const long doubl
 	//std::cout << "fmin=" << fmin << std::endl;
 	//std::cout << "fmax=" << fmax << std::endl;
 	s0m=0;
-//#pragma omp parallel for default(shared) private(np, ng, nu_p, nu_g, sols_iter, test, Dnu_p_local, DPl_local)
-	for (np=np_min; np<np_max; np++)
+#pragma omp parallel for default(shared) private(np, np_min, ng, nu_p, nu_g, sols_iter, test, Dnu_p_local, DPl_local)
+	for (np=0; np<nu_p_all.size(); np++)
 	{
-		for (ng=ng_min; ng<ng_max;ng++)
+		for (ng=0; ng<nu_g_all.size();ng++)
 		{
 			//nu_p=asympt_nu_p(Dnu_p, np, epsilon, el, delta0l, alpha_p, nmax);
 			//nu_g=asympt_nu_g(DPl, ng, alpha);
-			nu_p=nu_p_all[np-np_min];
-			nu_g=nu_g_all[ng-ng_min];
+			nu_p=nu_p_all[np];
+			nu_g=nu_g_all[ng];
 			
 			// This is the local Dnu_p which differs from the average Dnu_p because of the curvature. The solver needs basically d(nu_p)/dnp , which is Dnu if O2 terms are 0.
 			if (sigma_p == 0){
-				Dnu_p_local=Dnu_p*(1. + alpha_p*(np - nmax));
+				Dnu_p_local=Dnu_p*(1. + alpha_p*(np + np_min - nmax));
 			} else{ // Due to the randomisation from sigma_p, we need to evaluate the local Dnu by the means of the first derivative
-				Dnu_p_local=deriv_p.deriv[np-np_min];
+				Dnu_p_local=deriv_p.deriv[np];
 			} 
 			//if (sigma_g == 0){
 				DPl_local=DPl; // The solver needs here d(nu_g)/dng. Here we assume no core glitches so that it is the same as DPl. 	
 			//} else{ // Due to the randomisation from sigma_g, we need to evaluate the local DPl by the means of the first derivative
 			//	DPl_local=deriv_g.deriv[ng-ng_min];
 			//}
-			try
-			{
-				success=true;
-				sols_iter=solver_mm(nu_p, nu_g, Dnu_p_local, DPl_local, q, nu_p - 3.*Dnu_p/4, nu_p + 3.*Dnu_p/4, resol, returns_axis, verbose, fact);
-			}
-			catch (...){
-				success=false;
-				attempts=0;
-				try{
-					while (success ==false && attempts < Nmax_attempts){
-						try{
-							fact=fact/2;
-							sols_iter=solver_mm(nu_p, nu_g, Dnu_p_local, DPl_local, q, nu_p - 1.75*Dnu_p, nu_p + 1.75*Dnu_p, resol, returns_axis, verbose, fact);
-							success=true;
-						}
-						catch(...){
-							std::cout << " Problem with the fine grid when searching for a solution... attempting to reduce factor to " << fact << "..." << std::endl;
-						}
-					}
-				}
-				catch(...){
-						std::cout << "ValueError in solver_mm... Debug information:"<< std::endl;
-						std::cout << " We excedeed the number of attempts to refine the grid by reducing factor" << std::endl;
-						std::cout << " np_min = " << np_min << std::endl;
-						std::cout << " np_max = " << np_max << std::endl;
-						std::cout << " ng_min = " << ng_min << std::endl;
-						std::cout << " ng_max = " << ng_max << std::endl;
-						std::cout << " ---------- " << std::endl;			
-						std::cout << " Dnu_p = " << Dnu_p << std::endl;
-						std::cout << " np = " << np << std::endl;
-						std::cout << " epsilon= " << epsilon << std::endl;
-						std::cout << " delta0l= " << delta0l << std::endl;
-						std::cout << " alpha_p= " << alpha_p << std::endl;
-						std::cout << " nmax= " << nmax << std::endl;
-						std::cout << " ---------- " << std::endl;
-						std::cout << "   nu_p: " << nu_p << std::endl;
-						std::cout << "   nu_g: " << nu_g << std::endl;
-						std::cout << "   Dnu_p: " << Dnu_p << std::endl;
-						std::cout << "   DPl: " << DPl << std::endl;
-						std::cout << "   q: " << q << std::endl;
-						std::cout << "   numin=nu_p - Dnu_p: " << nu_p - Dnu_p << std::endl;
-						std::cout << "   numax=nu_p + Dnu_p: " << nu_p + Dnu_p << std::endl;
-						std::cout << "   resol: " << resol << std::endl;
-						std::cout << "   factor: " << fact << std::endl;
-						exit(EXIT_FAILURE);
-				}
-			}
-	/*		if (verbose == true)
+			sols_iter=solver_mm(nu_p, nu_g, Dnu_p_local, DPl_local, q, nu_p - 3.*Dnu_p/4, nu_p + 3.*Dnu_p/4, resol, returns_axis, verbose, fact);
+			if (verbose == true)
 			{
 				std::cout << "=========================================="  << std::endl;
 				std::cout << "nu_p: " << nu_p << std::endl;
 				std::cout << "nu_g: " << nu_g << std::endl;
 				std::cout << "solutions nu_m: " << sols_iter.nu_m << std::endl;
 			}
-	*/
 			for (int s=0;s<sols_iter.nu_m.size();s++)
 			{
 				// Cleaning doubles: Assuming exact matches or within a tolerance range
-				test=where_dbl(nu_m_all, sols_iter.nu_m[s], tol);
-				if (test[0] == -1)
-				{
-					/*std::cout << " adding a solution" << std::endl;
-					std::cout << "    nu_m_all.size()= " << nu_m_all.size() << std::endl;
-					std::cout << "    nu_p_all.size()= " << nu_p_all.size() << std::endl;
-					std::cout << "    nu_g_all.size()= " << nu_g_all.size() << std::endl;
-					std::cout << "    s0m               =" << s0m << std::endl;
-					std::cout << "    s                =" << s << std::endl;
-					std::cout << "    sols_iter.nu_m[s]=" << sols_iter.nu_m[s] << std::endl;
-					std::cout << "    nu_p             =" << nu_p << std::endl;
-					std::cout << "    nu_g             =" << nu_g << std::endl;
+				if ((sols_iter.nu_m[s] >= fmin) && (sols_iter.nu_m[s] <= fmax)){
+					test=where_dbl(nu_m_all, sols_iter.nu_m[s], tol, 0, s0m);
+					if (test[0] == -1)
+					{
+/*						if (verbose == true){
+							std::cout << " ADDING a solution" << std::endl;
+							std::cout << "    nu_m_all.size()= " << nu_m_all.size() << std::endl;
+							std::cout << "    nu_p_all.size()= " << nu_p_all.size() << std::endl;
+							std::cout << "    nu_g_all.size()= " << nu_g_all.size() << std::endl;
+							std::cout << "    s0m               =" << s0m << std::endl;
+							std::cout << "    s                =" << s << std::endl;
+							std::cout << "    sols_iter.nu_m[s]=" << sols_iter.nu_m[s] << std::endl;
+							std::cout << "    nu_p             =" << nu_p << std::endl;
+							std::cout << "    nu_g             =" << nu_g << std::endl;
+							std::cout << " ------ " << std::endl;
+						}
+*/
+						nu_m_all[s0m]=sols_iter.nu_m[s];
+						s0m=s0m+1;
+					} /*else{
+						if (verbose == true){
+							std::cout << " DUPLICATE solution" << std::endl;
+							std::cout << "    nu_m_all.size()= " << nu_m_all.size() << std::endl;
+							std::cout << "    nu_p_all.size()= " << nu_p_all.size() << std::endl;
+							std::cout << "    nu_g_all.size()= " << nu_g_all.size() << std::endl;
+							std::cout << "    s0m               =" << s0m << std::endl;
+							std::cout << "    s                =" << s << std::endl;
+							std::cout << "    sols_iter.nu_m[s]=" << sols_iter.nu_m[s] << std::endl;
+							std::cout << "    nu_p             =" << nu_p << std::endl;
+							std::cout << "    nu_g             =" << nu_g << std::endl;
+							std::cout << " ------ " << std::endl;
+						}
+					}
 					*/
-					nu_m_all[s0m]=sols_iter.nu_m[s];
-					s0m=s0m+1;
 				}
 			}
 		}

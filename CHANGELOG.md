@@ -1,5 +1,10 @@
 # Version history #
 
+### v1.64-dev Improvment ###
+	* New model:
+		- Adding a model named 'model_RGB_asympt_a1etaa3_AppWidth_HarveyLike' that: (1) Handle a pure asymtptotic relation and (2) use random quantities as hyperparameters to evaluate the inaccuracy of that model and to still be able to fit the spectrum exactly despite those inaccuracy
+	* Safety:
+		- Ensure that the user is warned when the command line is typed with indexing starting at 0 (e.g. ./cpptamcmc execute 1 0 1) instead of 1 (./cpptamcmc execute 1 1 2)
 ### v1.63-dev Improvment ###
 	* Improvment:
 		- Implementation of clm for l=3 modes. allows to account for a3(n,l=3). Previously approximated by cln=0

@@ -78,7 +78,8 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
     for(int i=0; i<inputs_MS_global.common_names.size(); i++){
         if(inputs_MS_global.common_names[i] == "model_fullname" ){ // This defines if we assume S11=S22 or not (the executed model will be different)
         	all_in.model_fullname=inputs_MS_global.common_names_priors[i];
-            if(all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3"){
+            if(all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3" ||
+            		"model_RGB_asympt_a1etaa3_AppWidth_HarveyLike"){
             	do_a11_eq_a12=1;
             	do_avg_a1n=1;
             	do_width_Appourchaux=2;
@@ -235,16 +236,22 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		Nmixedmodes_params=Nmixedmodes_g_params;
 	}
 
-	int f_size=Nf_el[0] + Nmixedmodes_params + Nf_el[2] + Nf_el[3];
-	/*else{
-			std::cout << " Error in io_asymptotic.cpp: Unrecognized model name... cannot continue" << std::endl;
-			std::cout << " Currently supported model name for asymptotic models:" << std::endl;
-			std::cout << "     - model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2" << std::endl;
-			std::cout << "     - model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3" << std::endl;
-			std::cout << " The program will exit now" << std::endl;
-			exit(EXIT_FAILURE);
+	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike"){
+		// delta0l=params[Nmax + lmax + Nfl0];
+		//DPl=std::abs(params[Nmax + lmax + Nfl0 + 1])
+		//alpha_g=std::abs(params[Nmax + lmax + Nfl0 + 2])
+		// q_star=std::abs(params[Nmax + lmax + Nfl0 + 3]);
+		//sigma_H_l1=std::abs(params[Nmax + lmax + Nfl0 + 4]); // Evaluation of the inaccuracy in terms of Heights
+		//sigma_m_0_l1=std::abs(params[Nmax + lmax + Nfl0 + 5]); // Evaluation of the inaccuracy in terms of frequencies: Ordinate at origin ==> sigma_p
+		//sigma_m_1_l1=std::abs(params[Nmax + lmax + Nfl0 + 6]); // Evaluation of the inaccuracy in terms of frequencies: slope ==> zeta=1 ==> sigma_g
+    	//sigma_a1_0_l1=std::abs(params[Nmax + lmax + Nfl0 + 7]); // Evaluation of the inaccuracy in terms of splitting a1: Ordinate at origin ==> sigma_p
+   		//sigma_a1_1_l1=std::abs(params[Nmax + lmax + Nfl0 + 8]); // Evaluation of the inaccuracy in terms of splitting a1: slope
+    	//nmax=std::abs(params[Nmax + lmax + Nfl0 + 9]); // l=1 p modes: nmax ~ numax/Dnu + epsilon
+    	//alpha_p=std::abs(params[Nmax + lmax + Nfl0 + 10])
+		Nmixedmodes_params=11; 
 	}
-	*/
+
+	int f_size=Nf_el[0] + Nmixedmodes_params + Nf_el[2] + Nf_el[3];
 
 	//io_calls.initialise_param(&freq_in, f_relax.size(), Nmax_prior_params, -1, -1); 
 	io_calls.initialise_param(&freq_in, f_size, Nmax_prior_params, -1, -1); 
@@ -325,6 +332,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	}
 	std::cout << " ------------------" << std::endl;
 
+	// 
 	// -------------------------------------
 
 	// ----- Switch between the models that handle averaging over n,l or both -----
@@ -354,7 +362,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	extra_priors.resize(5); 
 	extra_priors[0]=1; // By default, we apply a smoothness condition
 	extra_priors[1]=2.; // By default, the smoothness coeficient is 2 microHz
-	extra_priors[2]=0.2; // By default a3/a1<=1
+	extra_priors[2]=0.2; // By default a3/a1<=0.2
 	extra_priors[3]=0; // Switch to control whether a prior imposes Sum(Hnlm)_{m=-l, m=+l}=1. Default: 0 (none). >0 values are model_dependent
 	extra_priors[4]=-1; // By default the model switch is not defined
 	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3"){
@@ -363,9 +371,14 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3"){ // Deal with Dnu priors the same way as "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3"
 		extra_priors[4]=1;
 	}
+	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike"){
+		extra_priors[4]=2;
+	}
+
 	// ------------------------------------------------
 
 	for(int i=0; i<inputs_MS_global.common_names.size(); i++){
+		std::cout << "i =" << i << std::endl;
 		// --- Common parameters than can be run during setup ---
 		if(inputs_MS_global.common_names[i] == "freq_smoothness" || inputs_MS_global.common_names[i] == "Freq_smoothness"){
 			if(inputs_MS_global.common_names_priors[i] != "bool"){
@@ -420,11 +433,12 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
                 tmpXd << -5.*inputs_MS_global.Dnu/100, 5.*inputs_MS_global.Dnu/100, -9999., -9999.;
                 std::cout << "Fix_Auto requested for delta01..., the prior will be with this syntax (negative delta01):" << std::endl;
                 std::cout << "          " << std::left << std::setw(15) << tmpstr << " [-5*Deltanu/100]  [+5*Deltanu/100]   0.00000      -9999    -9999" << std::endl;
-                std::cout << "          Initial guess: Dnu/100" << inputs_MS_global.Dnu/100 << std::endl;
+                std::cout << "          Initial guess: Dnu/100  = " << inputs_MS_global.Dnu/100 << std::endl;
                 io_calls.fill_param(&freq_in, "delta01", tmpstr, inputs_MS_global.Dnu/100 ,  tmpXd, p0, 0);
+			} else{
+				p0=Nf_el[0];
+				io_calls.fill_param(&freq_in, "delta01", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 			}
-			p0=Nf_el[0];
-			io_calls.fill_param(&freq_in, "delta01", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 		} 
 		if(inputs_MS_global.common_names[i] == "DP1"){
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
@@ -448,25 +462,117 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			io_calls.fill_param(&freq_in, "q", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 		}
 		if(inputs_MS_global.common_names[i] == "sigma_Hl1"){
+			//std::cout << "sigma_Hl1" << std::endl;
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 				fatalerror_msg_io_MS_Global("sigma_Hl1", "Fix_Auto", "", "" );
 			}
 			p0=Nf_el[0]+4;
 			io_calls.fill_param(&freq_in, "sigma_Hl1", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			//std::cout << "       DONE" << std::endl;
 		}
 		if(inputs_MS_global.common_names[i] == "sigma_fl1g"){
-			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
-				fatalerror_msg_io_MS_Global("sigma_fl1g", "Fix_Auto", "", "" );
+			//std::cout << "sigma_fl1g" << std::endl;
+			if (extra_priors[4] == 1){ // Deal with this parameters only for specific models as per defined by extra_priors[4] value
+				if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
+					fatalerror_msg_io_MS_Global("sigma_fl1g", "Fix_Auto", "", "" );
+				}
+				p0=Nf_el[0]+5;
+				io_calls.fill_param(&freq_in, "sigma_fl1g", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 			}
-			p0=Nf_el[0]+5;
-			io_calls.fill_param(&freq_in, "sigma_fl1g", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			//std::cout << "		DONE" << std::endl;
 		}
 		if(inputs_MS_global.common_names[i] == "sigma_fl1m"){
-			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
-				fatalerror_msg_io_MS_Global("sigma_fl1m", "Fix_Auto", "", "" );
+			//std::cout << "sigma_fl1m" << std::endl;
+			if (extra_priors[4] == 1){ // Deal with this parameters only for specific models as per defined by extra_priors[4] value			
+				if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
+					fatalerror_msg_io_MS_Global("sigma_fl1m", "Fix_Auto", "", "" );
+				}
+				p0=Nf_el[0]+6;
+				io_calls.fill_param(&freq_in, "sigma_fl1m", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 			}
-			p0=Nf_el[0]+6;
-			io_calls.fill_param(&freq_in, "sigma_fl1m", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			//std::cout << "		DONE" << std::endl;
+		}
+		if(inputs_MS_global.common_names[i] == "sigma_fl1m_0"){
+			//std::cout << "sigma_fl1m_0" << std::endl;
+			if (extra_priors[4] == 2){ // Deal with this parameters only for specific models as per defined by extra_priors[4] value
+				if(inputs_MS_global.common_names_priors[i] == "Fix_Auto" || inputs_MS_global.common_names_priors[i] == "Auto"){ // ONLY the manual mode is handled at the moment
+					fatalerror_msg_io_MS_Global("sigma_fl1m_0", "Fix_Auto", "", "" );
+				}
+				// Those models have two priors for fl1m sigma inaccuracy terms (linear function of zeta(nu), see model in models.cpp)
+				p0=Nf_el[0]+5;
+				io_calls.fill_param(&freq_in, "sigma_fl1m_0", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			}
+			//std::cout << "		DONE" << std::endl;
+		}
+		if(inputs_MS_global.common_names[i] == "sigma_fl1m_1"){
+			//std::cout << "sigma_fl1m_1" << std::endl;
+			if (extra_priors[4] == 2){ // Deal with this parameters only for specific models as per defined by extra_priors[4] value
+				if(inputs_MS_global.common_names_priors[i] == "Fix_Auto" || inputs_MS_global.common_names_priors[i] == "Auto"){ // ONLY the manual mode is handled at the moment
+					fatalerror_msg_io_MS_Global("sigma_fl1m_1", "Fix_Auto", "", "" );
+				}
+				// Those models have two priors for fl1m sigma inaccuracy terms (linear function of zeta(nu), see model in models.cpp)
+				p0=Nf_el[0]+6;
+				io_calls.fill_param(&freq_in, "sigma_fl1m_1", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			}
+			//std::cout << "		DONE" << std::endl;
+		}
+		if(inputs_MS_global.common_names[i] == "sigma_a1_0"){
+			//std::cout << "sigma_a1_0" << std::endl;
+			if (extra_priors[4] == 2){ // Deal with this parameters only for specific models as per defined by extra_priors[4] value
+				if(inputs_MS_global.common_names_priors[i] == "Fix_Auto" || inputs_MS_global.common_names_priors[i] == "Auto"){ // ONLY the manual mode is handled at the moment
+					fatalerror_msg_io_MS_Global("sigma_a1_0", "Fix_Auto", "", "" );
+				}
+				// Those models have two priors for fl1m sigma inaccuracy terms (linear function of zeta(nu), see model in models.cpp)
+				p0=Nf_el[0]+7;
+				io_calls.fill_param(&freq_in, "sigma_a1_0", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			}
+			//std::cout << "		DONE" << std::endl;
+		}
+		if(inputs_MS_global.common_names[i] == "sigma_a1_1"){
+			std::cout << "sigma_a1_1" << std::endl;
+			if (extra_priors[4] == 2){ // Deal with this parameters only for specific models as per defined by extra_priors[4] value
+				if(inputs_MS_global.common_names_priors[i] == "Fix_Auto" || inputs_MS_global.common_names_priors[i] == "Auto"){ // ONLY the manual mode is handled at the moment
+					fatalerror_msg_io_MS_Global("sigma_a1_1", "Fix_Auto", "", "" );
+				}
+				// Those models have two priors for fl1m sigma inaccuracy terms (linear function of zeta(nu), see model in models.cpp)
+				p0=Nf_el[0]+8;
+				io_calls.fill_param(&freq_in, "sigma_a1_1", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			}
+			//std::cout << "		DONE" << std::endl;
+		}
+		if(inputs_MS_global.common_names[i] == "nmax"){
+			std::cout << "nmax" << std::endl;
+			if (extra_priors[4] == 2){ // Deal with this parameters only for specific models as per defined by extra_priors[4] value
+				if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ // ONLY the AUTO mode is handled at the moment. The user only choose the initial guess
+					fatalerror_msg_io_MS_Global("nmax", "Fix_Auto", "", "" );
+				}
+				// We impose a Gaussian, centered on numax/Dnu + epsilon with stddev of 0.5
+				p0=Nf_el[0]+9;
+				tmpXd.resize(4);
+				tmpXd << numax/inputs_MS_global.Dnu + inputs_MS_global.C_l/inputs_MS_global.Dnu, 0.5, -9999., -9999.;
+				std::cout << " Applying a Gaussian prior N(mu, sig) with :"<< std::endl;
+				std::cout << "      mu = numax/inputs_MS_global.Dnu + inputs_MS_global.C_l/inputs_MS_global.Dnu = " << numax/inputs_MS_global.Dnu + inputs_MS_global.C_l/inputs_MS_global.Dnu << std::endl;
+				std::cout << "      sig= " << tmpXd[1] << std::endl;
+				io_calls.fill_param(&freq_in, "nmax", "Gaussian", numax/inputs_MS_global.Dnu + inputs_MS_global.C_l/inputs_MS_global.Dnu , tmpXd, p0, 0);	
+			}
+			//std::cout << "		DONE" << std::endl;
+		}
+		if(inputs_MS_global.common_names[i] == "alpha_p"){
+			std::cout << "alpha_p" << std::endl;
+			if (extra_priors[4] == 2){ // Deal with this parameters only for specific models as per defined by extra_priors[4] value
+				if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ // ONLY the Auto mode is handled at the moment. The user only choose the initial guess
+					fatalerror_msg_io_MS_Global("alpha_p", "Fix_Auto", "", "" );
+				}
+				// We impose a Jeffreys's prior with minimum threshold 0.01 and maxmimum threshold 0.2
+				p0=Nf_el[0]+10;
+				tmpXd.resize(4);
+				tmpXd << 0.01, 0.2, -9999., -9999.;
+				std::cout << " Applying a Jeffreys prior J(xmin, xmax) with :"<< std::endl;
+				std::cout << "      xmin = " << tmpXd[0] << std::endl;
+				std::cout << "      xmax= " << tmpXd[1] << std::endl;
+				io_calls.fill_param(&freq_in, "alpha_p", "Jeffreys", 0.0001, tmpXd, p0, 0);	
+			}
+			std::cout << "		DONE" << std::endl;
 		}
 		// --- Height or Amplitude ---
 		if(inputs_MS_global.common_names[i] == "height" || inputs_MS_global.common_names[i] == "Height" || 

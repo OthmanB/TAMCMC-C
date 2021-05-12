@@ -30,6 +30,7 @@ VectorXd model_MS_local_Hnlm(const VectorXd& params, const VectorXi& params_leng
 VectorXd model_Test_Gaussian(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams=false);
 VectorXd model_Harvey_Gaussian(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams=false);
 
+VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams=false); 
 VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams=false); 
 VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams=false); 
 VectorXd model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams=false);

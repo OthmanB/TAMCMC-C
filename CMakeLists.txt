@@ -217,7 +217,7 @@ add_executable(getmodel ${HEADERS} ${SOURCES_TOOLS_GETMODEL})
 target_link_libraries(getmodel ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY}) # Boost::boost)
 
 add_executable(testsolver_mm ${HEADERS} ${SOURCES_TOOLS_TESTSOLVER})
-target_link_libraries(testsolver_mm ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} #Boost::boost)
+target_link_libraries(testsolver_mm ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} Boost::boost)
 
 
 
