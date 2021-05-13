@@ -23,6 +23,11 @@
 #include "interpol.h"
 #include "noise_models.h" // get the harvey_1985 function
 #include "solver_mm.h"
+#ifdef _OPENMP
+   #include <omp.h>
+#else
+   #define omp_get_thread_num() 0
+#endif
 
 /*
 # the ksi function as defined in equation 14 of Mosser+2017 (https://arxiv.org/pdf/1509.06193.pdf)
@@ -96,6 +101,7 @@ VectorXd ksi_fct2(const VectorXd& nu, const VectorXd& nu_p, const VectorXd& nu_g
 
 	ksi_pg.setConstant(nu.size());
 	ksi_pg.setZero();
+#pragma omp parallel for default(shared) private(ksi_tmp)
 	for (int np=0; np<Lp;np++)
 	{
 		for (int ng=0; ng<Lg; ng++)
@@ -123,6 +129,7 @@ VectorXd ksi_fct2(const VectorXd& nu, const VectorXd& nu_p, const VectorXd& nu_g
 		nu4norm=linspace(fmin, fmax, Ndata);
 		ksi4norm.resize(nu4norm.size());
 		ksi4norm.setZero();
+#pragma omp parallel for default(shared) private(ksi_tmp)
 		for (int np=0; np<Lp; np++){
 			for (int ng=0; ng<Lg; ng++){
 				ksi_tmp=ksi_fct1(nu4norm, nu_p[np], nu_g[ng], Dnu_p[np], DPl[ng], q);
