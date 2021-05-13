@@ -79,7 +79,7 @@ p  3  118.62000  1      1       1
                  rot_core            Uniform            1.00000          0.000000          2.000000    
                 sigma_Hl1                Fix            0.00000
              sigma_fl1m_0           Jeffreys            0.10000          0.100000          1.000000
-             sigma_fl1m_1           Jeffreys            0.05000          0.050000          1.000000
+             sigma_fl1m_1       Jeffreys_abs            0.05000          0.050000          1.000000
                sigma_a1_0           Jeffreys            0.05000          0.100000          1.000000
-               sigma_a1_1           Jeffreys            0.01000          0.010000          1.000000
+               sigma_a1_1       Jeffreys_abs            0.01000          0.010000          1.000000
                   trunc_c                Fix            25.

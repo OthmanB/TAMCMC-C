@@ -3614,10 +3614,10 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike(const VectorXd& params, co
        for (int en=0; en<fl1_all.size(); en++)
         {
              r = distrib_fl1m(gen_m);
-             r=r * (sigma_m_0_l1 + sigma_m_1_l1*ksi_pg[en]);
+             r=r * std::abs(sigma_m_0_l1 + sigma_m_1_l1*ksi_pg[en]);
              while (r > sigma_limit){
                 r = distrib_fl1m(gen_m);
-                r=r * (sigma_m_0_l1 + sigma_m_1_l1*ksi_pg[en]);
+                r=r * std::abs(sigma_m_0_l1 + sigma_m_1_l1*ksi_pg[en]);
             }
             fl1_all[en]=fl1_all[en] + r;
         }
@@ -3660,7 +3660,7 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike(const VectorXd& params, co
              while ((1+r) < 0){ // Avoid negative heights
                 r = distrib_fl1m(gen_m);
              }
-             tmp=tmp*(1 + r); // Perturbation proportional to the actual value
+             Hl1_all[i]=Hl1_all[i]*(1 + r); // Perturbation proportional to the actual value
         }
     }
     Wl1_all=gamma_l_fct2(ksi_pg, fl1_all, fl0_all, Wl0_all, h1_h0_ratio, 1); // generate the mixed modes widths
@@ -3677,7 +3677,7 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike(const VectorXd& params, co
        for (int en=0; en<fl1_all.size(); en++)
         {
             r = distrib_fl1m(gen_m);
-            r=r * (sigma_a1_0_l1 + sigma_a1_1_l1*ksi_pg[en]);
+            r=r * std::abs(sigma_a1_0_l1 + sigma_a1_1_l1*ksi_pg[en]);
             a1_l1[en]=std::abs(a1_l1[en] + r);
         }
     } 
