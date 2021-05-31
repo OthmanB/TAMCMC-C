@@ -2,7 +2,7 @@
 @read_bin2txt_files
 ; A small program that plot the pdfs, after having converted binary files into text files (if requested)
 ; It returns the histograms and a summary of the statistical information (min_samples, med-2s, med-1s, med, med+1s, med+2s, max_samples, max_pdf)
-function histograms_bin2txt_params, dir_out, Nb_classes, root_filename, dir_bin2txt, modelname, parameters_length, index0=index0, keep_period=keep_period, delete_txt_outputs=delete_txt_outputs
+function histograms_bin2txt_params, dir_out, Nb_classes, root_filename, dir_bin2txt, modelname, parameters_length, index0=index0, keep_period=keep_period, delete_txt_outputs=delete_txt_outputs, skip_plot=skip_plot
 
 	tab_critere=[2.25,16,50,84,97.75] ; defini les mediane +/- 2sigma,mediane, mediane +/- 1sigma
 
@@ -44,6 +44,138 @@ function histograms_bin2txt_params, dir_out, Nb_classes, root_filename, dir_bin2
 		stop
 	endif
 	
+	struc=plot_pdf(files, N, Nb_classes, dir_out)
+
+	;hist_empty=build_histogram(randomu(seed, N),Nb_classes)
+	;hist_all=dblarr(n_elements(files), 2, n_elements(hist_empty[0,*])) ; all the pdfs for all variables
+	;Stat_Synthese_unsorted=dblarr(8, n_elements(files)) 
+	;for i=long(0), n_elements(files)-1 do begin
+	;	print, 'processing file: ' + files[i] + '...'
+	;	restore, files[i]
+	;	print, '   - build_histogram ...'
+	;	if n_elements(param) eq N then begin
+	;		hist=build_histogram(param,Nb_classes)
+	;		hist_all[i, *,*]=hist
+	;		distrib_stats=estimate_1_sigma_error( hist[0,*],hist[1,*],68.3,2,tab_critere)
+	;		Stat_synthese_unsorted[0:6,i]=distrib_stats[3:*] ; les deciles, quartiles,mediane,...
+	;		Stat_synthese_unsorted[7,i]=distrib_stats[0] ; le max
+	;	endif 
+	;	if n_elements(param) eq 1 then begin ; Case of a constant... we generate a pseudo histogram around the constant value
+	;		hist=build_histogram(replicate(param, N),Nb_classes)
+	;		hist_all[i, *,*]=hist
+	;		;distrib_stats=estimate_1_sigma_error( hist[0,*],hist[1,*],68.3,2,tab_critere)
+	;		Stat_synthese_unsorted[*,i]=param[0] ;distrib_stats[3:*] ; les deciles, quartiles,mediane,...
+	;		;Stat_synthese_unsorted[7,i]=param[0];distrib_stats[0] ; le max
+	;		;stop
+	;	endif
+	;	if n_elements(param) ne 1 AND n_elements(param) ne N then begin
+	;		print, 'Incorrect number of samples in file: ', files[i]
+	;		print, 'Cannot proceed as the histogram is of fixed size'
+	;		print, 'Debug required'
+	;		print, 'The program will stop now'
+	;		stop
+	;	endif
+	;
+	;	b=byte(files[i])
+	;	posslash=max(where((b eq 47) OR (b eq 92))) ; detect last '/' OR '\'
+	;	posdot=max(where(b eq 46)) ; detect last dot
+	;	file_core=strtrim(b[posslash+1:posdot-1],2)
+	;	if skip_plot eq 0 then begin
+	;		nimp,name=dir_out + file_core +'.eps',/paper,/eps ; Savita's code
+	;			nice_hist1D, hist, ps=1, file_out=file_out, xr=xr, $
+	;				title=title, xtitle=variable_name[0], col=col, show_stats=1, $
+	;				legendsize=legendsize, legend_precision=legend_precision
+	;		fimp
+	;	endif
+	;	;if n_elements(param) eq 1 then stop ; THIS IS A DEBUG STOP ONLY. REMOVE IF YOU DO NOT KNOW THE FUNCTION OF THIS STOP
+	;endfor
+
+;struc={stat_synthese_unsorted:dblarr(8, n_elements(files)), hists:dblarr(n_elements(files), 2, N/Nb_classes), Nb_classes:0., Nsamples:0.}
+;struc.stat_synthese_unsorted=stat_synthese_unsorted
+;struc.hists=hist_all
+;struc.Nb_classes=Nb_classes
+;struc.Nsamples=Nsamples
+
+return, struc
+end
+
+; This function can be used after histograms_bin2txt_params() in order to reprocess all 
+; of the data by isolating multiples solutions that may exist for one parameter.
+; dir_files_samples: The directory that contains the sav files created by histograms_bin2txt_params()
+; ind: The index pointing to the variable that requires filtering. e.g if you want to isolate a solution in DP~220-250 from another at DP~500-550
+;        You will need to know in advance in which file DP is stored, hence knowing its index
+; ranges: A 2D table that contain a list of low/high boundaries that defines the different zone that are whished to be isolated
+; dir_out: A root directory that will contain the ouputs. Note that one subdirectory per range will be created, with the following syntax:
+;          [index]_[range_min]-[range_max]
+;          The directory will also have a single file with the probability associated to the values within that range. For that it will perform the
+;		   ratio of all counted values within the range by the total number of samples for all ranges
+; Returns: a list of structures 
+function filter_multimodalities, dir_files_samples, ind, ranges, dir_out, Nb_classes
+	; Restoring the variable that will be used for filtering
+	restore, dir_files_samples  + format_filename(ind, 0) +'.sav'
+	var=param
+	Nsamples=n_elements(var) ; Total number of samples. Required to evaluate the probabilities for the models
+
+	sum_file='summary.sav'
+
+	files=file_search(dir_files_samples + "*.sav") ; list all .sav files that contain all of the samples
+	for r=0, n_elements(ranges[*,0])-1 do begin ; Get the indexes of the samples that need to be kept
+		pos_r=where(var ge ranges[r, 0] AND var le ranges[r,1])
+		subdir=strtrim(round(ind),2) + '_' + strtrim(string(ranges[r,0], format='(f6.2)'),2) + '-' + strtrim(string(ranges[r,1], format='(f10.2)'),2)
+		f=file_search(dir_files_samples+subdir)
+		if f[0] eq '' then spawn, 'mkdir ' + dir_files_samples+subdir
+		print, 'pos_r = ', n_elements(pos_r)
+		print, 'Nb_classes =', Nb_classes
+		if n_elements(pos_r) ge 2*Nb_classes then begin ; Proceed to saving and plotting only if we have enough data point
+			Proba=1.*n_elements(pos_r)/Nsamples
+			;stop
+			; Generate new sav files that are limited to a single solution
+			for i=0, n_elements(files)-1 do begin
+				restore, dir_files_samples  + format_filename(i, 0) +'.sav'
+				param=param[pos_r]
+				; Identifying the name of the file for the variable
+				b=byte(files[i])
+				posslash=max(where((b eq 47) OR (b eq 92))) ; detect last '/' OR '\'
+				posdot=max(where(b eq 46)) ; detect last dot
+				file_core=strtrim(b[posslash+1:posdot-1],2)
+				save, variable_name, param, index, filename=dir_out+subdir+'/'+file_core + '.sav'
+			endfor
+			; Perform all of the plots for a given solution
+			files_r=file_search(dir_out+subdir + '/*.sav')
+			files_r=files_r[where(files_r ne dir_out + subdir + '/' + sum_file)]
+			struc=plot_pdf(files_r, n_elements(pos_r), Nb_classes, dir_out+subdir + '/')
+			save, struc, Proba, filename=dir_out+subdir+'/' + sum_file
+			if r eq 0 then begin
+				all_stat_synthese=dblarr(n_elements(ranges[*,0]), n_elements(struc.stat_synthese_unsorted[*,0]), n_elements(struc.stat_synthese_unsorted[0,*]) )
+			endif
+			all_stat_synthese[r,*,*]=struc.stat_synthese_unsorted
+		endif else begin
+			if pos_r[0] ne -1 then begin
+				Proba=1.*n_elements(pos_r)/Nsamples
+			endif else begin
+				Proba=0
+			endelse
+			openw, 3, dir_out+subdir +'/error.txt'
+				printf,3, '# Warning: No enough valid value found in the specified range'
+				printf,3, '# range =' , strtrim(ranges[r,0], 2) + '   -   ' + strtrim(ranges[r,1],2)
+				printf,3, '# Probability for that range is ' + strtrim(proba,2)
+				printf,3, '# If you really wants plots and sav files, please consider reducing Nb_classes to a value below the number of data points'
+				printf,3, '# Nsamples after filtering =', strtrim(n_elements(pos_r),2)
+				printf,3, '# Current value for Nb_classes =', strtrim(Nb_classes,2)
+			close,3
+		endelse
+	endfor
+	return, all_stat_synthese
+end
+
+; Function that performs the plotting of the pdfs
+; files: The list of sav files that will be read and that contain all of the samples
+; N: The total maximum number of samples in each files
+; Nb_classes: The number of classes used when plotting the pdf
+; tab_critere: The talbe that controls the confidence intervals that will be calculated and shown in the figure
+; dir_out : The output directory for the plots in eps format.
+function plot_pdf, files, N, Nb_classes, dir_out
+	tab_critere=[2.25,16,50,84,97.75] ; defini les mediane +/- 2sigma,mediane, mediane +/- 1sigma
 	hist_empty=build_histogram(randomu(seed, N),Nb_classes)
 	hist_all=dblarr(n_elements(files), 2, n_elements(hist_empty[0,*])) ; all the pdfs for all variables
 	Stat_Synthese_unsorted=dblarr(8, n_elements(files)) 
@@ -86,16 +218,13 @@ function histograms_bin2txt_params, dir_out, Nb_classes, root_filename, dir_bin2
 		fimp
 		;if n_elements(param) eq 1 then stop ; THIS IS A DEBUG STOP ONLY. REMOVE IF YOU DO NOT KNOW THE FUNCTION OF THIS STOP
 	endfor
-
-struc={stat_synthese_unsorted:dblarr(8, n_elements(files)), hists:dblarr(n_elements(files), 2, N/Nb_classes), Nb_classes:0., Nsamples:0.}
-struc.stat_synthese_unsorted=stat_synthese_unsorted
-struc.hists=hist_all
-struc.Nb_classes=Nb_classes
-struc.Nsamples=Nsamples
-
+	struc={stat_synthese_unsorted:dblarr(8, n_elements(files)), hists:dblarr(n_elements(files), 2, N/Nb_classes), Nb_classes:0., Nsamples:0.}
+	struc.stat_synthese_unsorted=stat_synthese_unsorted
+	struc.hists=hist_all
+	struc.Nb_classes=Nb_classes
+	struc.Nsamples=N
 return, struc
 end
-
 
 ; Function that evaluates a1 and inc, if the model is not explicitly fitting them
 ; This is required to ensure that MS_Global_rotinc_correlations works as this program expect a1 (and possibly inc) to be variables

@@ -28,8 +28,15 @@ pro showbestfit
     ;modelname='model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3' ; MODEL FOR DEEPINVEST
     ;modelname='model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3'
 
+    dir_OS='/Users/obenomar/tmp/Warrick-binary-31-05-2021/TAMCMC-C-1.64/'
+    dir_outputs=dir_OS + 'data/outputs/'
+    dir_inputs=dir_OS + 'data/inputs/'
+    dir_out=dir_OS + 'data/products/'
+    phase_list=['A']
+    index0_list=[0]
+    modelname='model_RGB_asympt_a1etaa3_AppWidth_HarveyLike'
     ;dir_OS='/Volumes/home/' ; On the mac 
-    dir_OS='~/obnas-shared/dataonly/' ; On the virtual machine    
+    ;dir_OS='~/obnas-shared/dataonly/' ; On the virtual machine    
     ; ##### 1 #####
     ;modelname='model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3'
     ;dir_outputs=dir_OS + '2020/Mixed-modes/Dalma_processes/TAMCMC-C-1.56-Siddarth/test/outputs/Siddarth_Mail-Dec20-INCOMPLETED/'
@@ -55,13 +62,13 @@ pro showbestfit
     ;phase_list=['B0*','B0*','B0*','B0*','B0*','B0*','B0*','B0*','B0*','B0*','B0*','B0*','B0*','B0*']   ; check status.log in the outputs directory to a list of the status
     ;index0_list=[120000, 0, 0, 30000, 30000, 340000, 10000, 0, 350000, 375000, 300000, 350000, 15000,375000] 
 
-	; ##### 4 #####
-    modelname='model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3'
-    dir_outputs=dir_OS + '2020/Mixed-modes/Dalma_processes/TAMCMC-C-1.56-Siddarth-001867706_deepinvest/test/outputs/Siddarth_Mail-Dec20-INCOMPLETED/'
-    dir_inputs=dir_OS + '2020/Mixed-modes/Dalma_processes/TAMCMC-C-1.56-Siddarth-001867706_deepinvest/test/inputs/Siddarth_Mail-Dec20-INCOMPLETED/'
-    dir_out=dir_OS + '2020/Mixed-modes/Dalma_processes/TAMCMC-C-1.56-Siddarth-001867706_deepinvest/test/products/Siddarth_Mail-Dec20-INCOMPLETED/'
-    phase_list=['B0*','B1*']   ; check status.log in the outputs directory to a list of the status
-    index0_list=[250000, 55000] 
+	;; ##### 4 #####
+    ;modelname='model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3'
+    ;dir_outputs=dir_OS + '2020/Mixed-modes/Dalma_processes/TAMCMC-C-1.56-Siddarth-001867706_deepinvest/test/outputs/Siddarth_Mail-Dec20-INCOMPLETED/'
+    ;dir_inputs=dir_OS + '2020/Mixed-modes/Dalma_processes/TAMCMC-C-1.56-Siddarth-001867706_deepinvest/test/inputs/Siddarth_Mail-Dec20-INCOMPLETED/'
+    ;dir_out=dir_OS + '2020/Mixed-modes/Dalma_processes/TAMCMC-C-1.56-Siddarth-001867706_deepinvest/test/products/Siddarth_Mail-Dec20-INCOMPLETED/'
+    ;phase_list=['B0*','B1*']   ; check status.log in the outputs directory to a list of the status
+    ;index0_list=[250000, 55000] 
 
     ;phase='A*'
     ;phase='L*'
@@ -162,12 +169,29 @@ function PostMCMC_showbestfit, root_outputs, root_inputs, dir_out, modelname, st
 	if f[0] eq '' then spawn, 'mkdir ' + dir_IDL_out + ''
 
 	; ----- Convert binary files in text files, easier to read by IDL AND plot their pdf using nice1D_hist ----
+	skip_plot=0 ; To accelerate debuging, put this to 1
 	print, 'Convert binary files in text files and then into sav files, easier to read by IDL and plot their pdf...'
 	f=file_search(dir_IDL_out + 'Files/')
 	if f[0] eq '' then spawn, 'mkdir ' + dir_IDL_out + 'Files/'	
-	hists_info=histograms_bin2txt_params(dir_IDL_out+'Files/',  Nb_classes, root_filename, dir_bin2txt,  modelname,index0=index0, keep_period=keep_period)
+	hists_info=histograms_bin2txt_params(dir_IDL_out+'Files/',  Nb_classes, root_filename, dir_bin2txt,  modelname,index0=index0, keep_period=keep_period, skip_plot=skip_plot)
 	parameters_length=read_plength(dir_IDL_out +'Files/plength.txt')
 
+	; ---------------------------- MANUAL FILTERING ---------------------------------
+	; ------ WARNING TOUCH THIS ONLY IF YOU WANT TO ISOLATE SEPARATE SOLUTIONS ------
+	; --- IF YOU DON't UNDERSTAND WHAT THIS IS, COMMENT IT TO AVOID BAD SURPRISES ---
+	;index=15 ; DP for Warrick binary star, spectrum 00000004
+	;; We isolate 4 different solutions: DP~[150,200], [220, 280], [300, 350], [500, 550]
+	;ranges=dblarr(4, 2)
+	;ranges[0,*]=[150,200]
+	;ranges[1,*]=[220,280] ; This range is somewhat empty
+	;ranges[2,*]=[300,350]
+	;ranges[3,*]=[500,550]
+	;all_synthese=filter_multimodalities(dir_IDL_out+'Files/', index, ranges, dir_IDL_out+'Files/', Nb_classes)
+	;ind_plot=3 ; Define which solution this function will plot
+	;hists_info={stat_synthese_unsorted:reform(all_synthese[ind_plot, *,*])}
+	; -------------------------------------------------------------------------------
+	; -------------------------------------------------------------------------------
+	
 	; ---- Save the model and the median parameters----
 	print, 'Modeled spectrum and median values...'	
 	val_med=reform(hists_info.stat_synthese_unsorted[3, *])

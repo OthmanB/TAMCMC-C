@@ -12,7 +12,8 @@ mini=fmin & maxi=fmax
 if Dnu_moy ge 55 then begin
 	scoef=0.01*Dnu_moy/resol ; Defines the level of smooth on the shown power spectrum
 endif else begin
-	scoef=0.005*Dnu_moy/resol
+	if resol gt 1 then scoef=0.005*Dnu_moy/resol
+	if resol le 1 then scoef=0.05*Dnu_moy/resol
 endelse
 scoef2=scoef*2
 s_show=smooth(spec_show, scoef, /edge_truncate)
