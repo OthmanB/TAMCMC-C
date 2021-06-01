@@ -187,16 +187,22 @@ function PostMCMC_showbestfit, root_outputs, root_inputs, dir_out, modelname, st
 	;ranges[2,*]=[300,350]
 	;ranges[3,*]=[500,550]
 	;all_synthese=filter_multimodalities(dir_IDL_out+'Files/', index, ranges, dir_IDL_out+'Files/', Nb_classes)
-	;ind_plot=3 ; Define which solution this function will plot
+	;sig_pos=[19,20] ; positions where there is variance hyperparameters
+	;all_synthese[*,*,sig_pos[0]]=0 ; forces variance to 0 to avoid wrong plots
+	;all_synthese[*,*,sig_pos[1]]=0
+	;ind_plot=0 ; Define which solution this function will plot
 	;hists_info={stat_synthese_unsorted:reform(all_synthese[ind_plot, *,*])}
+	;;stop
 	; -------------------------------------------------------------------------------
 	; -------------------------------------------------------------------------------
 	
 	; ---- Save the model and the median parameters----
 	print, 'Modeled spectrum and median values...'	
 	val_med=reform(hists_info.stat_synthese_unsorted[3, *])
-	val_med_m1s=reform(hists_info.stat_synthese_unsorted[2, *]) ; median - 1sigma
-	val_med_p1s=reform(hists_info.stat_synthese_unsorted[4, *]) ; median + 1sigma	
+	val_med_m1s=val_med ; bypassing my attempt to show uncertainty because the solution I had implemented was not working well
+	val_med_p1s=val_med ; bypassing my attempt to show uncertainty because the solution I had implemented was not working well
+	;val_med_m1s=reform(hists_info.stat_synthese_unsorted[2, *]) ; median - 1sigma ; THIS DOES NOT WORK DUE TO CORRELATIONS IN THE HYPERSPACE
+	;val_med_p1s=reform(hists_info.stat_synthese_unsorted[4, *]) ; median + 1sigma ; THIS DOES NOT WORK DUE TO CORRELATIONS IN THE HYPERSPACE
 	; Write a configuration file suitable for the compute_model.cpp function
 	params_cfg= dir_IDL_out + 'best_models_params.txt'
 	file_out=dir_IDL_out + 'best_models_fit.ascii'
@@ -237,6 +243,7 @@ function PostMCMC_showbestfit, root_outputs, root_inputs, dir_out, modelname, st
 	fmin=min(model_bestfit[0,*])
 	fmax=max(model_bestfit[0,*])
 	if fit[0] ne 0 then begin ; Dealing with a global fit
+		;stop
 		MS_Global_fitplot, model_bestfit[0, *], model_bestfit[1, *], model_bestfit[0, *], model_bestfit[2:*, *], fit[1], file_psfit, fmin, fmax
 	endif else begin ; Dealing with a local fit
 		Local_fitplot, model_bestfit[0, *], model_bestfit[1, *], model_bestfit[0, *], model_bestfit[2:*, *], file_psfit, fmin, fmax, fmin_loc, fmax_loc

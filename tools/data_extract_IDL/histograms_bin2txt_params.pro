@@ -183,15 +183,17 @@ function plot_pdf, files, N, Nb_classes, dir_out
 		print, 'processing file: ' + files[i] + '...'
 		restore, files[i]
 		print, '   - build_histogram ...'
-		if n_elements(param) eq N then begin
+		cte_is_true=0 ; This is a required check to verify if the parameter is a constant in some cases
+		if n_elements(param) gt 1 then if stddev(param) eq 0 then cte_is_true=1
+		if n_elements(param) eq N AND cte_is_true eq 0 then begin
 			hist=build_histogram(param,Nb_classes)
 			hist_all[i, *,*]=hist
 			distrib_stats=estimate_1_sigma_error( hist[0,*],hist[1,*],68.3,2,tab_critere)
 			Stat_synthese_unsorted[0:6,i]=distrib_stats[3:*] ; les deciles, quartiles,mediane,...
 			Stat_synthese_unsorted[7,i]=distrib_stats[0] ; le max
 		endif 
-		if n_elements(param) eq 1 then begin ; Case of a constant... we generate a pseudo histogram around the constant value
-			hist=build_histogram(replicate(param, N),Nb_classes)
+		if n_elements(param) eq 1 or cte_is_true eq 1 then begin ; Case of a constant... we generate a pseudo histogram around the constant value
+			hist=build_histogram(replicate(param[0], N),Nb_classes)
 			hist_all[i, *,*]=hist
 			;distrib_stats=estimate_1_sigma_error( hist[0,*],hist[1,*],68.3,2,tab_critere)
 			Stat_synthese_unsorted[*,i]=param[0] ;distrib_stats[3:*] ; les deciles, quartiles,mediane,...
