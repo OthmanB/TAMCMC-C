@@ -28,7 +28,7 @@ VectorXd model_MS_Global_a1l_etaa3_HarveyLike(const VectorXd& params, const Vect
      */
     
     const double step=x[1]-x[0]; // used by the function that optimise the lorentzian calculation
-	const long double pi = 3.141592653589793238462643383279502884L;
+	const long double pi = M_PI; //3.141592653589793238462643383279502884L;
 
     const int Nmax=params_length[0]; // Number of Heights
     const int lmax=params_length[1]; // number of degree - 1
@@ -4931,9 +4931,8 @@ VectorXd model_Harvey_Gaussian(const VectorXd& params, const VectorXi& params_le
 	// ----------------------------------
 
 	// ---- Setting the Noise model -----
-	Nharvey=1;
-	noise_params=params.segment(3, 4); // pick the 3 elements, begining from the index 3
-	//model_final=harvey1985(noise_params.array().abs(), x, model_final, Nharvey);
+	Nharvey=2;
+	noise_params=params.segment(3, 7); // pick the 7 elements, begining from the index 3: [H1, tc1, p1, H2, tc2, p2, B0]
 	model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey);
 	// ----------------------------------
 

@@ -10,19 +10,16 @@ set(CMAKE_C_FLAGS "-I/usr/include/  -O2")
 
 #Bring the headers into the project
 #set(HEADERS  #_COMMON
-#	
 #   )
 
 #Bring the core program sources into the project
 set(SOURCES_MAIN  #_COMMON
-    activity.cpp
-    linspace.cpp
-    GaussLegendre1D.hpp
-    GaussLegendre2D.hpp
+    ylm_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/libIntegrate/src/libIntegrate/_2D/GaussianQuadratures/GaussLegendre.hpp
     )
 
 #Look for eigen and explicitly specify to use it. EIGEN3_INCLUDE_DIR Must be specified in the bashrc
-include_directories( "$ENV{EIGEN3_INCLUDE_DIR}" )
+#include_directories( "$ENV{EIGEN3_INCLUDE_DIR}" )
 
 #Dependencies that are not portable (BOOST)
 #find_package(Boost COMPONENTS system filesystem iostreams math REQUIRED)

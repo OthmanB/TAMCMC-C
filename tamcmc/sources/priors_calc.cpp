@@ -654,8 +654,16 @@ return f;
 long double priors_Harvey_Gaussian(const VectorXd& params, const VectorXi& params_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch){
 
 	long double f=0;
-
+	// Stello2009 scaling relation between Dnu and numax to remove spurious spiky fits
+	const long double beta0=0.263;
+	const long double beta1=0.77; 
+	const long double Dnu_expected=beta0*std::pow(params[8],beta1);  // param2[8] must be numax here
+	if (params[9] < Dnu_expected/1.5){
+		f=f -INFINITY;  // If the width of gaussian is smaller than 1.5 times the numax, reject the solution
+		goto end;
+	}
 	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
+	end:
 
 return f;
 } 

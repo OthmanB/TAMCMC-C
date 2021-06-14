@@ -9,7 +9,7 @@
 #include "build_lorentzian.h"
 # include <iostream>
 # include <iomanip>
-#include "../../external/integrate/ylm.h"
+#include "../../external/integrate/activity.h"
 
 using Eigen::VectorXd;
 
