@@ -20,3 +20,17 @@
 
 ### Purpose of nusini_nucosi_disociator.py ###
     To be used with models that fit sqrt(a1).sini and sqrt(a1).cosi: It will make those two correlated quantities separated : inc , a1
+
+### Purpose of do_npz2sav ###
+	This is to convert npz files created by the program LCconcat_kepler (https://github.com/OthmanB/LCconcat_kepler) into sav files that
+	will be compatible with the envelope_measure.pro program. Eventually a conversion of envelope_measure.pro into a python code would avoid
+	this conversion gameplay, but this is not yet the case
+
+### Purpose of envelope_measure.pro ###
+     This program allows you to get guesses for Amax and numax. It also performs some plots in order to see what the code found.
+     For further explanations on how to use it, read instruction_envelope.md
+
+### Purpose init_fit.py ###
+     This program can be run once we have guesses for Amax and numax using envelope_measure.pro
+     It allows you to create a .model and .data file that is suitable for a fit of Harvey profiles + Gaussian envelope with TAMCMC
+     

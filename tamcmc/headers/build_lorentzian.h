@@ -28,7 +28,7 @@ VectorXd optimum_lorentzian_calc_a1etaa3_v2(const VectorXd& x,  const VectorXd& 
 VectorXd optimum_lorentzian_calc_a1l_a2a3(const VectorXd& x, const VectorXd& y, const double H_l, const double fc_l, const double f_s1, const double f_s2, const double a2, const double a3, const double asym, const double gamma_l, const int l, const VectorXd& V, const double step, const double c);
 VectorXd optimum_lorentzian_calc_a1a2a3(const VectorXd& x, const VectorXd& y, const double H_l, const double fc_l, const double f_s, const double a2, const double a3, const double asym, const double gamma_l, const int l, const VectorXd& V, const double step, const double c);
 
-VectorXd build_l_mode_a1etaGlma3(const VectorXd& x_l, const double H_l, const double fc_l, const double f_s, 
+VectorXd build_l_mode_a1etaAlma3(const VectorXd& x_l, const double H_l, const double fc_l, const double f_s, 
     const double eta0, const double epsilon_nl, const VectorXd& thetas, const double a3, const double asym, const double gamma_l, const int l, const VectorXd& V);
-VectorXd optimum_lorentzian_calc_a1etaGlma3(const VectorXd& x, const VectorXd& y,  const double H_l,  const double fc_l,  const double f_s, 
+VectorXd optimum_lorentzian_calc_a1etaAlma3(const VectorXd& x, const VectorXd& y,  const double H_l,  const double fc_l,  const double f_s, 
 		const double eta0, const double epsilon_nl, const VectorXd& thetas, const double a3,  const double asym,  const double gamma_l, const int l,  const VectorXd& V,  const double step, const double c);

@@ -67,7 +67,7 @@ set(HEADERS  #_COMMON
     tamcmc/headers/stats_dictionary.h
     tamcmc/headers/config_presets.h
     tamcmc/headers/function_rot.h
-	tamcmc/headers/likelihoods.h
+    tamcmc/headers/likelihoods.h
     tamcmc/headers/noise_models.h
     tamcmc/headers/string_handler.h
     tamcmc/headers/io_models.h
@@ -75,8 +75,9 @@ set(HEADERS  #_COMMON
     external/ARMM/solver_mm.h
     external/ARMM/bump_DP.h
     external/ARMM/linfit.h
-    external/integrate/ylm.h
-   )
+    #external/integrate/ylm.h
+    external/integrate/activity.h
+    )
 
 #Bring the core program sources into the project
 set(SOURCES_MAIN  #_COMMON
@@ -109,7 +110,8 @@ set(SOURCES_MAIN  #_COMMON
     external/ARMM/solver_mm.cpp
     external/ARMM/bump_DP.cpp
     external/ARMM/linfit.cpp
-    external/integrate/ylm.cpp
+    #external/integrate/ylm.cpp
+    external/integrate/activity.cpp
     )
  
 #Define the sources for the bin2txt program
@@ -149,8 +151,9 @@ set(SOURCES_TOOLS_GETMODEL
 	tamcmc/sources/linspace.cpp
 	external/ARMM/solver_mm.cpp
 	external/ARMM/bump_DP.cpp
-	external/integrate/ylm.cpp
-	)
+	#external/integrate/ylm.cpp
+	external/integrate/activity.cpp
+        )
 
 #Define the sources for the testsolver_mm program
 set(SOURCES_TOOLS_TESTSOLVER

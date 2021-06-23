@@ -112,7 +112,7 @@ int main(int argc, char* argv[]){
 	 		std::cout << "   Example: ./cpptamcmc execute 1 1 1" << std::endl;
 	 		exit(EXIT_FAILURE);
 		}
-        // ---- Begin to process all the requested objects ----
+		// ---- Begin to process all the requested objects ----
         for(int i=config_master.first_id_ind; i<=config_master.last_id_ind; i++){ // For each star
         	modelfile=config_master.cfg_models_dir +  config_master.table_ids[i].at(0) + ".model";
         	franges=get_slices_range(modelfile, 0); // retrieve slice information from the model file and do not verbose (verbose=0)

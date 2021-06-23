@@ -1601,7 +1601,7 @@ VectorXd model_MS_Global_a1a2a3_HarveyLike(const VectorXd& params, const VectorX
 }
 
 
-VectorXd model_MS_Global_a1etaGlma3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams) // Added on 31 Mar 2021
+VectorXd model_MS_Global_a1etaAlma3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams) // Added on 31 Mar 2021
     {
     /* Model of the power spectrum of a Main sequence solar-like star
      * Make use of Gizon 2002, AN 323, 251 for describing the perturbation from Active Region on a2
@@ -1743,7 +1743,7 @@ VectorXd model_MS_Global_a1etaGlma3_HarveyLike(const VectorXd& params, const Vec
         std::cout << "fl0 = " << fl0 << std::endl;
         std::cout << "Wl0 = " << Wl0 << std::endl;
         */
-        model_final=optimum_lorentzian_calc_a1etaGlma3(x, model_final, Hl0, fl0, 0, 0, 0, thetas, 0, asym, Wl0, 0, ratios_l0, step, trunc_c);
+        model_final=optimum_lorentzian_calc_a1etaAlma3(x, model_final, Hl0, fl0, 0, 0, 0, thetas, 0, asym, Wl0, 0, ratios_l0, step, trunc_c);
         if (outparams){
             mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, 0, 0, a3, asym, inclination;// mode_vec;
             Line=Line+1;
@@ -1765,7 +1765,7 @@ VectorXd model_MS_Global_a1etaGlma3_HarveyLike(const VectorXd& params, const Vec
             std::cout << " a1 = " << a1 << std::endl;
             std::cout << " a2 = " << a2 << std::endl;
             */
-            model_final=optimum_lorentzian_calc_a1etaGlma3(x, model_final, Hl1, fl1, a1, eta0, epsilon_nl, thetas, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
+            model_final=optimum_lorentzian_calc_a1etaAlma3(x, model_final, Hl1, fl1, a1, eta0, epsilon_nl, thetas, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
            if (outparams){
                 mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1, eta0*1e-6, epsilon_nl, thetas[0], thetas[1], a3, asym, inclination;// mode_vec;
                 Line=Line+1;
@@ -1788,7 +1788,7 @@ VectorXd model_MS_Global_a1etaGlma3_HarveyLike(const VectorXd& params, const Vec
             std::cout << " a1 = " << a1 << std::endl;
             std::cout << " a2 = " << a2 << std::endl;
             */
-            model_final=optimum_lorentzian_calc_a1etaGlma3(x, model_final, Hl2, fl2, a1, eta0, epsilon_nl, thetas, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
+            model_final=optimum_lorentzian_calc_a1etaAlma3(x, model_final, Hl2, fl2, a1, eta0, epsilon_nl, thetas, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
             if (outparams){
                 mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1, eta0*1e-6, epsilon_nl, thetas[0], thetas[1], a3, asym, inclination;// mode_vec;
                 Line=Line+1;
@@ -1810,7 +1810,7 @@ VectorXd model_MS_Global_a1etaGlma3_HarveyLike(const VectorXd& params, const Vec
             std::cout << " a1 = " << a1 << std::endl;
             std::cout << " a2 = " << a2 << std::endl;
             */
-            model_final=optimum_lorentzian_calc_a1etaGlma3(x, model_final, Hl3, fl3, a1, eta0, epsilon_nl, thetas, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
+            model_final=optimum_lorentzian_calc_a1etaAlma3(x, model_final, Hl3, fl3, a1, eta0, epsilon_nl, thetas, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
             if (outparams){
                 mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1, eta0*1e-6, epsilon_nl, thetas[0], thetas[1], a3, asym, inclination;// mode_vec;
                 Line=Line+1;
@@ -4926,19 +4926,24 @@ VectorXd model_Harvey_Gaussian(const VectorXd& params, const VectorXi& params_le
     } 
 
 	// ------ Setting the Gaussian -------
-	model_final= -0.5 * (x - nu0.setConstant(params[2])).array().square() /pow(std::abs(params[1]),2);
-	model_final= std::abs(params[0])*model_final.array().exp();
+	model_final= -0.5 * (x - nu0.setConstant(params[8])).array().square() /pow(std::abs(params[9]),2);
+	model_final= std::abs(params[7])*model_final.array().exp();
 	// ----------------------------------
 
-	// ---- Setting the Noise model -----
-	Nharvey=2;
-	noise_params=params.segment(3, 7); // pick the 7 elements, begining from the index 3: [H1, tc1, p1, H2, tc2, p2, B0]
-	model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey);
-	// ----------------------------------
+    // ---- Setting the Noise model -----
+    Nharvey=2;
+    noise_params=params.segment(0, 6); // pick the first 7 elements, begining from the index 3: [H1, tc1, p1, H2, tc2, p2, B0]
+    model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey);
+    // ----------------------------------
 
-	//std::cout << noise_params << std::endl;
+    /*std::cout << "params : " << std::endl;
+    std::cout << "numax = " << params[8]  << std::endl;
+    std::cout << "sigma = " << params[9]  << std::endl;
+    std::cout << "Amax = " << params[7]  << std::endl;
+    
+ 	std::cout << noise_params << std::endl;
 	//exit(EXIT_SUCCESS);
-
+    */
 	return model_final;
 }
 

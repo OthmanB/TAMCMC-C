@@ -92,11 +92,16 @@ void Config::setup(const int slice_ind){
 	modeling.slice_ind=slice_ind;
     std::cout << " ---------- " << std::endl;
     read_inputs_files(); // Here we read the configuration files (e.g. the .MCMC file)
+    std::cout << "       - Converting prior names into integers..." << std::endl;
     modeling.inputs.priors_names_switch=convert_priors_names_to_switch(modeling.inputs.priors_names);
+    std::cout << "       - Converting model function names into integers..." << std::endl;
     modeling.model_fct_name_switch=convert_model_fct_name_to_switch(modeling.model_fct_name);
+    std::cout << "       - Converting  likelihood function names into integers..." << std::endl;
     modeling.likelihood_fct_name_switch=convert_likelihood_fct_name_to_switch(modeling.likelihood_fct_name);
+    std::cout << "       - Converting prior function names into integers..." << std::endl;
     modeling.prior_fct_name_switch=convert_prior_fct_name_to_switch(modeling.prior_fct_name);
 	
+	std::cout << "       - Handling data inputs..." << std::endl;
     // ----- Define which columns are containing the x values, the y values and ysig_ind ----
 	if(data.data.xrange[0] == -9999 && data.data.xrange[1] == -9999){ // Case where no range was given in the cfg file ==> Take all
 		imin=0;
@@ -487,7 +492,7 @@ int Config::convert_prior_fct_name_to_switch(const std::string prior_name){
 
 	passed=0;
 
-	for (i = 0; i< Npriors; i++){	
+	for (i = 0; i< Npriors; i++){
 		if (prior_name ==  modeling.priors_list_ctrl[i]){
 			switch_name= modeling.priors_case_list_ctrl[i];
 			passed=1;
@@ -1604,7 +1609,7 @@ void Config::read_inputs_files(){
 		read_inputs_prior_Simple_Matrix();
 		passed=1;
 	}
-	if(modeling.prior_fct_name == "prior_Harvey_Gaussian"){ // The structure of such a file is quite simple: Comments (#), Params names (!), Params Inputs, Priors names (!), Priors Inputs
+	if(modeling.prior_fct_name == "priors_Harvey_Gaussian"){ // The structure of such a file is quite simple: Comments (#), Params names (!), Params Inputs, Priors names (!), Priors Inputs
 		read_inputs_prior_Simple_Matrix();
 		passed=1;
 	}
@@ -1714,15 +1719,13 @@ void Config::read_inputs_prior_Simple_Matrix(){
     if (cfg_session.is_open()) {
 
 	char0="#"; 
-	// ------ Skip header lines ------
-	while(char0 == "#" && !cfg_session.eof()){ 
+	// ------ Skip header lines and the range information (because a simple fit does the full spectrum) ------
+	while((char0 == "#" || char0 == "*") && !cfg_session.eof()){ 
 		std::getline(cfg_session, line0);
 		line0=strtrim(line0);
 		char0=strtrim(line0.substr(0, 1)); 
 	}
-
 	while(!cfg_session.eof()){
-
 		// ---------- Dealing with the inputs names -----------
 		if(char0 == "!"){
 			modeling.inputs.inputs_names=strsplit(line0.substr(1), " \t");  // Remove the "!" and split what follows assuming spaces (" ") OR tabulations ("\t") for separator

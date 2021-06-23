@@ -155,7 +155,7 @@ VectorXd build_l_mode_a1etaa3(const VectorXd& x_l, const double H_l, const doubl
 return result;
 }
 
-VectorXd build_l_mode_a1etaGlma3(const VectorXd& x_l, const double H_l, const double fc_l, const double f_s, 
+VectorXd build_l_mode_a1etaAlma3(const VectorXd& x_l, const double H_l, const double fc_l, const double f_s, 
     const double eta0, const double epsilon_nl, const VectorXd& thetas, const double a3, const double asym, const double gamma_l, const int l, const VectorXd& V){
 /*
  * This model includes:
@@ -188,7 +188,7 @@ VectorXd build_l_mode_a1etaGlma3(const VectorXd& x_l, const double H_l, const do
                 clm=(pow(m,3)-7*m)/2; // a3 implemented on 30/04/2021
             }
             CF_term=eta0*Dnl*pow(f_s*1e-6,2)*Qlm; //(4./3.)*pi*Dnl*pow(a1*1e-6,2.)/(rho*G);
-            AR_term=epsilon_nl*Glm(l, m, thetas[0], thetas[1]);
+            AR_term=epsilon_nl*Alm(l, m, thetas[0], thetas[1], "gate");
 
             //std::cout << "(" << l << "," << m << ") : " << "d_CF=" << CF_term*fc_l  << "            d_AR=" << AR_term*fc_l  << "         m.a1=" << m*f_s << std::endl;
             profile=(x_l - tmp.setConstant(fc_l*(1. + CF_term + AR_term) + m*f_s + clm*a3)).array().square();
@@ -730,7 +730,7 @@ VectorXd optimum_lorentzian_calc_a1etaa3(const VectorXd& x, const VectorXd& y, c
 return y_out;
 }
 
-VectorXd optimum_lorentzian_calc_a1etaGlma3(const VectorXd& x, const VectorXd& y, const double H_l, const double fc_l, const double f_s, const double eta0, const double epsilon_nl, const VectorXd& thetas, const double a3, const double asym, const double gamma_l, const int l, const VectorXd& V, const double step, const double c){
+VectorXd optimum_lorentzian_calc_a1etaAlma3(const VectorXd& x, const VectorXd& y, const double H_l, const double fc_l, const double f_s, const double eta0, const double epsilon_nl, const VectorXd& thetas, const double a3, const double asym, const double gamma_l, const int l, const VectorXd& V, const double step, const double c){
 /*
     function that calculates the lorentzian on a optimized range of frequency. It returns a Vector of same size as the original vector x
     that contains the lorentzian model.
@@ -823,7 +823,7 @@ VectorXd optimum_lorentzian_calc_a1etaGlma3(const VectorXd& x, const VectorXd& y
 
     x_l=x.segment(imin, imax-imin);
  
-    m0=build_l_mode_a1etaGlma3(x_l, H_l, fc_l, f_s, eta0, epsilon_nl, thetas, a3, asym, gamma_l, l, V);
+    m0=build_l_mode_a1etaAlma3(x_l, H_l, fc_l, f_s, eta0, epsilon_nl, thetas, a3, asym, gamma_l, l, V);
     //mall.setZero();
     //mall.segment(imin, imax-imin)=m0;
     y_out.segment(imin, imax-imin)= y_out.segment(imin, imax-imin) + m0;
