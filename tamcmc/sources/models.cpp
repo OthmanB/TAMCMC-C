@@ -4915,16 +4915,21 @@ VectorXd model_Harvey_Gaussian(const VectorXd& params, const VectorXi& params_le
  * A model in which we fit a Gaussian + Harvey-Like profile.
  * Parameters are assumed to be in that order: Maximum Height, variance/width, central frequency, White noise
 */
-	VectorXd nu0(x.size()), model_final(x.size()), noise_params;
-	int Nharvey;
+    const double step=x[2]-x[1]; // used by the function that optimise the lorentzian calculation
+    const int Nrows=1, Ncols=3; // Number of parameters for each mode
+    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
 
-    if (outparams){
+	VectorXd nu0(x.size()), model_final(x.size()), noise_params;
+	int c=0;
+    int Nharvey;
+
+    /*if (outparams){
         std::cout << " ERROR: outparams is not implemented for  " << __func__ << std::endl;
         std::cout << "       If you want to get outputs in ascii format, you must review this function and implement outparams = true" << std::endl;
         std::cout << "       The program will exit now" << std::endl;
         exit(EXIT_FAILURE);
     } 
-
+    */
 	// ------ Setting the Gaussian -------
 	model_final= -0.5 * (x - nu0.setConstant(params[8])).array().square() /pow(std::abs(params[9]),2);
 	model_final= std::abs(params[7])*model_final.array().exp();
@@ -4932,18 +4937,29 @@ VectorXd model_Harvey_Gaussian(const VectorXd& params, const VectorXi& params_le
 
     // ---- Setting the Noise model -----
     Nharvey=2;
-    noise_params=params.segment(0, 6); // pick the first 7 elements, begining from the index 3: [H1, tc1, p1, H2, tc2, p2, B0]
+    noise_params=params.segment(0, 7); // pick the first 7 elements, begining from the index 3: [H1, tc1, p1, H2, tc2, p2, B0]
     model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey);
     // ----------------------------------
 
-    /*std::cout << "params : " << std::endl;
-    std::cout << "numax = " << params[8]  << std::endl;
-    std::cout << "sigma = " << params[9]  << std::endl;
-    std::cout << "Amax = " << params[7]  << std::endl;
-    
- 	std::cout << noise_params << std::endl;
-	//exit(EXIT_SUCCESS);
-    */
+    if(outparams){
+        //int c=0;
+        std::string file_out="params.model";
+        std::string modelname = __func__;
+        std::string name_params = "# Input Gaussian envelope parameters. Amax / numax / sigma";
+        VectorXd spec_params(3);
+        spec_params << x.minCoeff() , x.maxCoeff(), step;
+        MatrixXd noise(Nharvey+1, 3);
+        noise.setConstant(-2);
+        for(int i=0;  i<noise.cols(); i++){
+            for(int j=0;j<Nharvey; j++){
+                std::cout << "i,j : " << i << ", " << j << std::endl;
+                noise(i,j)=noise_params(c);
+                c=c+1;
+           }
+        }
+        std::cout << noise << std::endl;
+        write_star_params(spec_params, params, params_length, mode_params.block(0,0, 0, mode_params.cols()), noise, file_out, modelname, name_params);
+    }
 	return model_final;
 }
 
@@ -4952,15 +4968,13 @@ VectorXd model_Harvey1985_Gaussian(const VectorXd& params, const VectorXi& param
  * A model in which we fit a Gaussian + Harvey-Like profile.
  * Parameters are assumed to be in that order: Maximum Height, variance/width, central frequency, White noise
 */
+    const double step=x[2]-x[1]; // used by the function that optimise the lorentzian calculation
+    const int Nrows=1, Ncols=3; // Number of parameters for each mode
+    int c=0;
+    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
+
 	VectorXd nu0(x.size()), model_final(x.size()), noise_params;
 	int Nharvey;
-
-    if (outparams){
-        std::cout << " ERROR: outparams is not implemented for  " << __func__ << std::endl;
-        std::cout << "       If you want to get outputs in ascii format, you must review this function and implement outparams = true" << std::endl;
-        std::cout << "       The program will exit now" << std::endl;
-        exit(EXIT_FAILURE);
-    } 
 
 	// ------ Setting the Gaussian -------
 	model_final= -0.5 * (x - nu0.setConstant(params[2])).array().square() /pow(std::abs(params[1]),2);
@@ -4974,9 +4988,24 @@ VectorXd model_Harvey1985_Gaussian(const VectorXd& params, const VectorXi& param
 	//model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey);
 	// ----------------------------------
 
-	//std::cout << noise_params << std::endl;
-	//exit(EXIT_SUCCESS);
-
+    if(outparams){
+        std::string file_out="params.model";
+        std::string modelname = __func__;
+        std::string name_params = "# Input Gaussian envelope parameters. Amax / numax / sigma";
+        VectorXd spec_params(3);
+        spec_params << x.minCoeff() , x.maxCoeff(), step;
+        MatrixXd noise(Nharvey+1, 3);
+        noise.setConstant(-2);
+        for(int i=0;  i<noise.cols(); i++){
+            for(int j=0;j<Nharvey; j++){
+                noise(i,j)=noise_params(c);
+                c=c+1;
+           }
+        }
+        noise(Nharvey, 0) = noise_params(c); // White noise 
+        std::cout << "here" << std::endl;
+        write_star_params(spec_params, params, params_length, mode_params.block(0,0, 1, mode_params.cols()), noise, file_out, modelname, name_params);
+    }
 	return model_final;
 }
 
