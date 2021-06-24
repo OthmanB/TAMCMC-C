@@ -299,8 +299,8 @@ def do_model_file(init_param, relax_param, name_param, prior_param, name_prior, 
 	if err == False:
 		try:
 			f.write(header)
-			f.write("*")
-			f,write(" {:16.6f}  {16.6f}".format(fmin, fmax))
+			line="* {:16.6f}  {:16.6f}".format(fmin, fmax) +"\n"
+			f.write(line)
 			f.write("!")
 			for name in name_param:
 				line=" {:16s}".format(name)
@@ -310,7 +310,7 @@ def do_model_file(init_param, relax_param, name_param, prior_param, name_prior, 
 				line="{:16.6f}".format(param)
 				f.write(line)
 			f.write("\n")
-			f.write("! relax")
+			f.write("! relax\n")
 			for relax in relax_param:
 				line="   {:14d}".format(relax)
 				f.write(line)
@@ -330,8 +330,8 @@ def do_model_file(init_param, relax_param, name_param, prior_param, name_prior, 
 			print("Unknown error while writing on file: ", fileout)
 			err=True
 
-		print("FORCED STOP IN ORDER TO CHECK THAT fmin/fmax and the ! relax line are properly written on the output model file!")
-		exit()
+		#print("FORCED STOP IN ORDER TO CHECK THAT fmin/fmax and the ! relax line are properly written on the output model file!")
+		#exit()
 	return err
 
 
@@ -437,7 +437,8 @@ def do_from_starlist(starlist_file, outdir, rebin=1):
 	f.close()
 	txt=txt.split("\n")
 	dir_in=txt[1]
-	for t in txt[2:]:
+	data=txt[2:]
+	for t in data:
 		s=t.split()
 		kic=s[0]
 		numax_guess=float(s[1])
@@ -451,7 +452,22 @@ def do_from_starlist(starlist_file, outdir, rebin=1):
 			print("The program will exit now")
 			exit()
 		mode_initial_setup(spec_file, kic, numax_guess, err_numax_guess, Amax_guess, outdir, fmin=0, fmax=5000, rebin=rebin)
+	show_formated_kiclist(starlist_file,rebin)
 
+def show_formated_kiclist(starlist_file, rebin):
+	print("List of stars in a format suitable for the MCMC code (just copy/paste this list at the end of the config_presets.cfg")
+	f=open(starlist_file, 'r')
+	txt=f.read()
+	f.close()
+	txt=txt.split("\n")
+	dir_in=txt[1]
+	data=txt[2:]
+	print("   table_ids=",len(txt[2:]), ", 2; Number of lines and number of columns")
+	for i in range(len(data)):
+		t=data[i]
+		s=t.split()
+		kic=s[0]
+		print(kic+"_Gaussfit    ", rebin , ";")
 
 def fast_test():
 	spec_file='/Volumes/home/import/usbdisk2tb-3.5inch/Level0-Inputs/ts_rgb/concatenated/TF_10528917.sav'
