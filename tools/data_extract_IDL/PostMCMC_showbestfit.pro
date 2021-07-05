@@ -3,6 +3,7 @@
 @histograms_bin2txt_params.pro
 @estimate_1_sigma_error
 @MS_Global_fitplot
+@Gaussian_fitplot
 @Local_fitplot
 @Echelle_Diagram
 @fimp
@@ -29,13 +30,32 @@ pro showbestfit
     ;modelname='model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3' ; MODEL FOR DEEPINVEST
     ;modelname='model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3'
 
-    dir_OS='/Users/obenomar/tmp/Warrick-binary-31-05-2021/TAMCMC-C-1.64/'
-    dir_outputs=dir_OS + 'data/outputs/'
-    dir_inputs=dir_OS + 'data/inputs/'
-    dir_out=dir_OS + 'data/products/'
-    phase_list=['A']
-    index0_list=[0]
-    modelname='model_RGB_asympt_a1etaa3_AppWidth_HarveyLike'
+    dir_OS='/Users/obenomar/tmp/Simulator/'
+    dir_outputs=dir_OS + 'data/output_gaussfit/'
+    dir_inputs=dir_OS + 'data/input_gaussfit/'
+    dir_out=dir_OS + 'data/products_gaussfit/'
+    phase_list='L*'
+    index0_list=10000
+    modelname='model_Harvey_Gaussian'
+
+    dir_outputs=dir_OS + 'data/output_gaussfit_S1/'
+    dir_inputs=dir_OS + 'data/input_gaussfit_S1/'
+    dir_out=dir_OS + 'data/products_gaussfit_S1/'
+
+
+	dir_outputs=dir_OS + 'data/output_gaussfit_30-Jun-2021/'
+    dir_inputs=dir_OS + 'data/input_gaussfit_30-Jun-2021/'
+    dir_out=dir_OS + 'data/products_gaussfit_30-Jun-2021/'
+
+	dir_outputs=dir_OS + 'data/output_gaussfit_30-Jun-2021_fulldata/'
+    dir_inputs=dir_OS + 'data/input_gaussfit_30-Jun-2021_fulldata/'
+    dir_out=dir_OS + 'data/products_gaussfit_30-Jun-2021_fulldata/'
+
+	dir_outputs=dir_OS + 'data/output_gaussfit_01-Jul-2021/'
+    dir_inputs=dir_OS + 'data/input_gaussfit_01-Jul-2021/'
+    dir_out=dir_OS + 'data/products_gaussfit_01-Jul-2021/'
+
+    ;modelname='model_RGB_asympt_a1etaa3_AppWidth_HarveyLike'
     ;dir_OS='/Volumes/home/' ; On the mac 
     ;dir_OS='~/obnas-shared/dataonly/' ; On the virtual machine    
     ; ##### 1 #####
@@ -74,7 +94,7 @@ pro showbestfit
     ;phase='A*'
     ;phase='L*'
  
-    dir_filter='0*' ; Used to choose which directory should be processed
+    dir_filter='*' ; Used to choose which directory should be processed
     ;dir_filter='kplr010963065*'
 
     Nb_classes=100.;
@@ -91,18 +111,18 @@ pro showbestfit
     endfor
     print, "type '.cont' to proceed"
     stop
+    if n_elements(phase_list) eq 1 then phase_list=replicate(phase_list[0], Ndirs)
+  	if n_elements(index0_list) eq 1 then index0_list=replicate(index0_list[0], Ndirs)  
     for i=long(i0), Ndirs-1 do begin
     	phase=phase_list[i]
     	index0=index0_list[i]
- 
     	print, '    ------- Processing ' + dirs[i] + ' --------'    
     	b=byte(dirs[i])
     	pos=max(where(b eq 47 OR b eq 92)) ; detect slashes
         if pos[0] eq -1 then starID=dirs[i] else starID=strtrim(b[pos+1:*], 2)
-        ;stop
     	done=PostMCMC_showbestfit(dir_outputs, dir_inputs, dir_out, modelname, starID, phase, Nb_classes, index0, keep_period)
     	print, '    -------------------------------------------'
-	OK[i]=done
+		OK[i]=done
 	endfor
 	posNotOK=where(OK eq 0)
 	if n_elements(posNotOK) gt 1 then begin
@@ -233,44 +253,102 @@ function PostMCMC_showbestfit, root_outputs, root_inputs, dir_out, modelname, st
 	endif	
 	pos_fl0=total(parameters_length[0:1])
 	Nfl0=parameters_length[2]
-	if modelname ne 'model_MS_local_basic' then begin
-		fit=linfit(findgen(Nfl0), val_med[pos_fl0:pos_fl0+Nfl0-1])
-	endif else begin
-		fit=dblarr(2)
-		; We need to get an actual range that correspond to the actual frequencies that are fitted
-		range=guess_localfit_freqrange(params_cfg, parameters_length)
-		fmin_loc=range[0]
-		fmax_loc=range[1]
-	endelse
 	; read the file that was just created
 	Ncols=detect_Ncolumns(file_out, skip=0)
 	model_bestfit=read_Ncolumns(file_out, Ncols, 5d5, skip=0, ref_N=0)
 	fmin=min(model_bestfit[0,*])
-	fmax=max(model_bestfit[0,*])
-	if fit[0] ne 0 then begin ; Dealing with a global fit
-		;stop
-		MS_Global_fitplot, model_bestfit[0, *], model_bestfit[1, *], model_bestfit[0, *], model_bestfit[2, *], fit[1], file_psfit, fmin, fmax
-	endif else begin ; Dealing with a local fit
-		Local_fitplot, model_bestfit[0, *], model_bestfit[1, *], model_bestfit[0, *], model_bestfit[2, *], file_psfit, fmin, fmax, fmin_loc, fmax_loc
+	fmax=max(model_bestfit[0,*])	
+	if modelname ne 'model_Harvey_Gaussian'  then begin
+		if modelname ne 'model_MS_local_basic' then begin
+			fit=linfit(findgen(Nfl0), val_med[pos_fl0:pos_fl0+Nfl0-1])
+		endif else begin
+			fit=dblarr(2)
+			; We need to get an actual range that correspond to the actual frequencies that are fitted
+			range=guess_localfit_freqrange(params_cfg, parameters_length)
+			fmin_loc=range[0]
+			fmax_loc=range[1]
+		endelse
+		if fit[0] ne 0 then begin ; Dealing with a global fit
+			;stop
+			MS_Global_fitplot, model_bestfit[0, *], model_bestfit[1, *], model_bestfit[0, *], model_bestfit[2, *], fit[1], file_psfit, fmin, fmax
+		endif else begin ; Dealing with a local fit
+			Local_fitplot, model_bestfit[0, *], model_bestfit[1, *], model_bestfit[0, *], model_bestfit[2, *], file_psfit, fmin, fmax, fmin_loc, fmax_loc
+		endelse
+	endif else begin
+			Gaussian_fitplot, model_bestfit[0, *], model_bestfit[1, *], model_bestfit[0, *], model_bestfit[2, *], file_psfit, fmin, fmax
 	endelse
-
 	model_noise=do_residuals(dir_IDL_out, dir_getmodel, data_file, modelname, val_med, parameters_length)
+	if modelname eq 'model_Harvey_Gaussian' then begin
+		f=file_search(dir_IDL_out + '/NewGaussfit_Guess')
+		if f[0] eq '' then spawn, 'mkdir ' + dir_out+'/NewGaussfit_Guess'
+		file_out=dir_out+'/NewGaussfit_Guess/'+starID+'.guess.txt'
+		guess_numax_from_noisefit, model_noise[0,*], model_noise[1,*], model_noise[2,*], val_med, file_out, [10, max(model_noise[0,*])]
+	endif
+	if modelname ne 'model_Harvey_Gaussian' then begin
+		; ----- Echelle diagram --s-	
+		file_ps_echelle=dir_IDL_out + 'Echelle_Diagram.eps'  
+		nimp,name=file_ps_echelle,/paper,/eps
+			; The input here must be : freq, spectrum , noise model. NOTE: THE NOISE MODEL IS ALWAYS REMOVED INSIDE show_ech_diag_CPP
+			show_ech_diag_CPP, dir_IDL_out + '/best_fit_params_0.model', model_noise, ps=1, shifts=shifts, trunc_spec=trunc_spec
+		fimp
+		file_ps_echelle=dir_IDL_out + 'Echelle_Diagram_residuals.eps' 
+		nimp,name=file_ps_echelle,/paper,/eps
+			; The input here must be : freq, spectrum , noise model. NOTE: THE NOISE MODEL IS ALWAYS REMOVED INSIDE show_ech_diag_CPP
+			show_ech_diag_CPP, dir_IDL_out + '/best_fit_params_0.model', model_bestfit[0:2,*], ps=1, shifts=shifts, trunc_spec=trunc_spec
+		fimp
+		save, model_bestfit, model_noise, filename=dir_IDL_out + '/spectrum_models.sav'
+		;stop
+	endif
 
-	; ----- Echelle diagram ----	
-	file_ps_echelle=dir_IDL_out + 'Echelle_Diagram.eps'  
-	nimp,name=file_ps_echelle,/paper,/eps
-		; The input here must be : freq, spectrum , noise model. NOTE: THE NOISE MODEL IS ALWAYS REMOVED INSIDE show_ech_diag_CPP
-		show_ech_diag_CPP, dir_IDL_out + '/best_fit_params_0.model', model_noise, ps=1, shifts=shifts, trunc_spec=trunc_spec
-	fimp
-	file_ps_echelle=dir_IDL_out + 'Echelle_Diagram_residuals.eps' 
-	nimp,name=file_ps_echelle,/paper,/eps
-		; The input here must be : freq, spectrum , noise model. NOTE: THE NOISE MODEL IS ALWAYS REMOVED INSIDE show_ech_diag_CPP
-		show_ech_diag_CPP, dir_IDL_out + '/best_fit_params_0.model', model_bestfit[0:2,*], ps=1, shifts=shifts, trunc_spec=trunc_spec
-	fimp
-	save, model_bestfit, model_noise, filename=dir_IDL_out + '/spectrum_models.sav'
-	;stop
 	bypass:
 	return, done
+end
+
+; A function that take the best fit (with or without gaussian)
+; and evaluate the position of numax using the residuals
+; This allows you to have a new parameter vector for a subsequent
+; fit that would have good guesses for the noise and therefore
+; a more accurate guess for numax than what can be done with init_fit.py or init_fit.pro
+; This is therefore very usefull when a fit failed to detect the gaussian while it is evident
+; for a human that there is one.
+; This will however not work if there is 'polution' such as peaks due to binaries
+; because the guesses are made based on the max of the residual
+pro guess_numax_from_noisefit, freq, spec, model, params_fit, file_out, xrange
+	noise_params=params_fit
+	noise_params[7]=0
+
+	pos=where(freq ge xrange[0] AND freq le xrange[1])
+	y=spec[pos]
+	x=freq[pos]
+	scoef=0.75/(freq[2]-freq[1])  ; Smooth over 3 microHz
+	res=smooth(spec, scoef, /edge_truncate)/model
+	res=res[pos]
+	posmax=where(res eq max(res))
+	numax_guess=x[posmax]
+	Amax_guess=res[posmax]
+
+	xmin=0
+	xmax=max(x)
+	ymin=0
+	ymax=max(res)*1.2
+	nimp,name=file_out+'.eps',/paper,/eps
+	plot, x, res, /nodata, background=fsc_color('White'), color=fsc_color('Black'), thick=2, $
+			xr=[xmin,xmax], yr=[ymin,ymax], /xst, /yst
+	oplot,x, res, color=fsc_color('Dark Gray')
+	oplot,x, replicate(1, n_elements(x)), linestyle=2, thick=3, color=fsc_color('Black')
+	oplot,[numax_guess,numax_guess], [xmin, xmax], color=fsc_color('red'), thick=2, linestyle=2
+	fimp
+	guess_params=noise_params
+	guess_params[7]=Amax_guess
+	guess_params[8]=numax_guess
+	openw, 3, file_out
+		str='# This file contains a single line that gives results from guess_numax_from_noisefit(), function that provides new guesses for a Gaussian fit using a previous fit'
+		printf, 3, str
+		str=''
+		for i=long(0), n_elements(guess_params)-1 do str=str+ '   ' + strtrim(guess_params[i],2)
+		printf, 3, str
+	close,3
+	;stop
 end
 
 function do_residuals, dir_IDL_out, dir_getmodel, data_file, modelname, val_med, parameters_length
@@ -286,7 +364,11 @@ function do_residuals, dir_IDL_out, dir_getmodel, data_file, modelname, val_med,
 		val_med_noise=val_med
 		val_med_noise[0:parameters_length[0]-1]=0 ; put heights to 0
 		s=n_elements(parameters_length)
-		if s gt 10 then val_med_noise[total(parameters_length[0:s-1])-1:*]=0 ; Whatever is after the inclination must be put to 0... this to deal with models that may have modes after inclination
+		if modelname ne 'model_Harvey_Gaussian' then begin
+			if s gt 10 then val_med_noise[total(parameters_length[0:s-1])-1:*]=0 ; Whatever is after the inclination must be put to 0... this to deal with models that may have modes after inclination
+		endif else begin
+			val_med_noise[7]=0 ;Amplitude of the Gaussian set to 0
+		endelse
 		for i=long(0), n_elements(val_med_noise)-1 do str=str+ '   ' + strtrim(val_med_noise[i],2)
 		printf, 3, str
 	close, 3

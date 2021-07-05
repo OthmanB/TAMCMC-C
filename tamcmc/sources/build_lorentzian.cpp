@@ -162,11 +162,11 @@ VectorXd build_l_mode_a1etaAlma3(const VectorXd& x_l, const double H_l, const do
  *      - Asymetry of Lorentzian asym
  *      - splitting a1
  *      - an Asphericity term eta (Centrifugal effect) and due to Active region following Gizon 2002, AN, 323, 251.
- *             Additional assumption are made in order to have a model that contain both a pole and equatorial activity band
- *             using shift(Equator) = epsilon*alpha_nl(Equator) and shift(Pole) = epsilon*(1-alpha_nl). Mutual exclusions conditions
- *             might need to be used (see prior_application.cpp) in order to avoid degeneracies
+ *             Currently we use a hard-coded filter type "gate" which is rough but match the Gizon paper. "gauss" is also available and might be our final choice.
+ *             Once we could compare the method adapted from Gizon works on global fits
  *      - latitudinal effect a3
  */
+    const std::string filter_type="gate"; // The alternative is also "gauss" to have more smooth edges for the Activity effect
     const long Nxl=x_l.size();
     const long double Dnl=0.75;
     VectorXd profile(Nxl), tmp(Nxl), tmp2(Nxl), result(Nxl), asymetry(Nxl);
@@ -188,7 +188,7 @@ VectorXd build_l_mode_a1etaAlma3(const VectorXd& x_l, const double H_l, const do
                 clm=(pow(m,3)-7*m)/2; // a3 implemented on 30/04/2021
             }
             CF_term=eta0*Dnl*pow(f_s*1e-6,2)*Qlm; //(4./3.)*pi*Dnl*pow(a1*1e-6,2.)/(rho*G);
-            AR_term=epsilon_nl*Alm(l, m, thetas[0], thetas[1], "gate");
+            AR_term=epsilon_nl*Alm(l, m, thetas[0], thetas[1], filter_type);
 
             //std::cout << "(" << l << "," << m << ") : " << "d_CF=" << CF_term*fc_l  << "            d_AR=" << AR_term*fc_l  << "         m.a1=" << m*f_s << std::endl;
             profile=(x_l - tmp.setConstant(fc_l*(1. + CF_term + AR_term) + m*f_s + clm*a3)).array().square();

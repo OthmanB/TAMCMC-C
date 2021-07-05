@@ -658,8 +658,12 @@ long double priors_Harvey_Gaussian(const VectorXd& params, const VectorXi& param
 	const long double beta0=0.263;
 	const long double beta1=0.77; 
 	const long double Dnu_expected=beta0*std::pow(params[8],beta1);  // param2[8] must be numax here
-	if (params[9] < Dnu_expected/1.5){
+	//std::cout << f << std::endl;
+	//std::cout << "Dnu_expected =" << Dnu_expected << std::endl;
+	//std::cout << "params[9] =" << params[9] << std::endl;
+	if (params[9] < Dnu_expected/2){
 		f=f -INFINITY;  // If the width of gaussian is smaller than 1.5 times the numax, reject the solution
+		//std::cout << "f = " << f << std::endl;
 		goto end;
 	}
 	f=f + apply_generic_priors(params, priors_params, priors_names_switch);

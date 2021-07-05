@@ -230,6 +230,23 @@ def inital_param_S0(numax, Amp, freq, spec_reg, fmin, fmax):
 		err=True
 	return init_param, err
 
+def inital_param_S1(file_guess_s1):
+	'''
+		This function uses the results from PostMCMC_showbestfit.pro 
+		that are written in NewGaussfit_Guess when running a 'model_Harvey_Gaussian'
+		Because it relies on a fit, the results is way much more robust than the initial
+		guesses obtained by the S0 step and might solve issues encountered of 0 amplitudes
+		for fits at the upper edge of the frequency range in LC data
+	'''
+	err=False
+	f=open(file_guess_s1)
+	txt=f.read()
+	f.close()
+	s=txt.split('\n')
+	header=s[0]
+	params=np.asarray(s[1].split(), dtype=float)
+	return params, err
+
 def do_data_file(freq, spec_reg, fileout, rebin=1):
 	'''
 		Generate a .data file compatible with the MCMC code
@@ -334,8 +351,7 @@ def do_model_file(init_param, relax_param, name_param, prior_param, name_prior, 
 		#exit()
 	return err
 
-
-def mode_initial_setup(spec_file, KIC_number, numax_guess, numax_uncertainty_guess, Amax_guess, outdir, fmin=0, fmax=5000, rebin=1):
+def mode_initial_setup(spec_file, KIC_number, numax_guess, numax_uncertainty_guess, Amax_guess, outdir, fmin=0, fmax=5000, rebin=1, do_S1=" "):
 	'''
 		This function has for main role to guess what should be the initial
 		parameters for the fit of the noise background
@@ -356,8 +372,13 @@ def mode_initial_setup(spec_file, KIC_number, numax_guess, numax_uncertainty_gue
 	freq=np.reshape(freq, freq.size)
 	spec_reg=np.reshape(spec_reg, spec_reg.size)
 
-	init_param,err=inital_param_S0(numax_guess,Amax_guess,freq, spec_reg, fmin, fmax)
-
+	if do_S1==" ":
+		init_param,err=inital_param_S0(numax_guess,Amax_guess,freq, spec_reg, fmin, fmax)		
+	else:
+		init_param,err=inital_param_S1(do_S1)
+		numax_uncertainty_guess=init_param[8]*0.15 
+		numax_guess=init_param[8]
+		Amax_guess=init_param[7]
 	if err == False:
 		# --- Plots ---
 		H1=init_param[0]/(1. + (init_param[1]*freq*1e-3)**init_param[2])
@@ -410,28 +431,42 @@ def mode_initial_setup(spec_file, KIC_number, numax_guess, numax_uncertainty_gue
 			psigma=[90.,250.,30.,100.]
 		if init_param[8] > 2700:
 			psigma=[150.,300.,30.,110.]
+		
+		if init_param[4] < 40:
+			tc2_up=56
+		else:
+			tc2_up=2*init_param[4]
 
 		#std_at_numax=np.std(spec_reg[np.where(np.bitwise_and(freq > init_param[8] - init_param[9], freq <= init_param[8] + init_param[9]))])
 		prior_param=np.zeros((len(init_param),4)) - 9999
 		name_param=["H1",                        "tc1"       , "p1"         , "H2"             , "tc2"    , "p2"     ,     "B0"               , "Amax"         ,   "numax"                                 , "Gauss_sigma"   ]
 		prior_name=["Jeffreys",                 "Uniform"    , "Fix"        , "Jeffreys"       , "Uniform", "Uniform",  "Uniform"             , "Jeffreys"      ,  "Uniform"                                , "GUG"     ]
 		relax_param=[  1      ,                     1        ,   0          ,    1             ,    1     ,     1    ,      1                 ,      1          ,       1                                   ,    1      ]
-		prior_param[:,0]=[np.std(spec_reg)/5   ,  5        , init_param[2]  ,   B0             ,   0      ,    0.5   ,      0                 ,      B0         , numax_guess-numax_uncertainty_guess       , psigma[0] ]
-		prior_param[:,1]=[np.max(spec_reg)*100 ,2e3/np.min(resol), -9999    , np.max(spec_reg)    ,   56  ,     5    , 10*np.mean(init_param[6]) , np.max(spec_reg) , numax_guess + numax_uncertainty_guess*0.5 , psigma[1] ]
-		prior_param[:,2]=[-9999            , -9999         , -9999        , -9999            ,  -9999   ,  -9999   ,  -9999                 , -9999           , -9999                                     , psigma[2] ]
-		prior_param[:,3]=[-9999            , -9999         , -9999        , -9999            ,  -9999   ,  -9999   ,  -9999                 , -9999           , -9999                                     , psigma[3] ]
+		prior_param[:,0]=[np.std(spec_reg)/5   ,  5        , init_param[2]  ,   B0             ,   0      ,    0.5   ,      0                 ,      B0/10         , numax_guess-numax_uncertainty_guess       , psigma[0] ]
 
+		if do_S1==" ":
+			prior_param[:,1]=[np.max(spec_reg)*100 ,2e3/np.min(resol), -9999    , np.max(spec_reg)    ,   tc2_up  ,     5    , 10*np.mean(init_param[6]) , np.max(spec_reg) , np.max(freq)                          , psigma[1] ]
+		else:
+			if init_param[8] >= 200:
+				prior_param[:,1]=[np.max(spec_reg)*100 ,2e3/np.min(resol), -9999    , np.max(spec_reg)    ,   tc2_up  ,     5    , 10*np.mean(init_param[6]) , np.max(spec_reg) , np.max(freq)    , psigma[1] ]
+			else:
+				prior_param[:,1]=[np.max(spec_reg)*100 ,2e3/np.min(resol), -9999    , np.max(spec_reg)    ,   tc2_up  ,     5    , 10*np.mean(init_param[6]) , np.max(spec_reg) , numax_guess+numax_uncertainty_guess   , psigma[1] ]				
+		prior_param[:,2]=[-9999            , -9999         , -9999        , -9999            ,  -9999   ,  -9999   ,  -9999                 , -9999           , -9999                                       , psigma[2] ]
+		prior_param[:,3]=[-9999            , -9999         , -9999        , -9999            ,  -9999   ,  -9999   ,  -9999                 , -9999           , -9999                                       , psigma[3] ]
 		# **************
 		err=do_data_file(freq, spec_reg, outdir + "/" + KIC_number+"_Gaussfit.data", rebin=rebin)
 		err=do_model_file(init_param, relax_param, name_param, prior_param, prior_name, outdir + "/" + KIC_number + "_Gaussfit.model", 
-   					      np.min(freq), np.max(freq), header="# File auto-generated by init_fit.py\n# Fit of Gaussian mode Envelope\n# ID:"+ str(KIC_number)+"\n")
+   				      np.min(freq), np.max(freq), header="# File auto-generated by init_fit.py\n# Fit of Gaussian mode Envelope\n# ID:"+ str(KIC_number)+"\n")
 		# **************
 
-def do_from_starlist(starlist_file, outdir, rebin=1):
+def do_from_starlist(starlist_file, outdir, rebin=1, dir_S1=" "):
 	'''
 		Fonction that reads a starlist file that was created by envelope_measure.pro
 		and create the appropriate data and model files from that
+		If dir_S1 is provided, it must be a directory, the NewGaussfit_Guess dir created by PostMCMC_showbestfit.pro
 	'''
+	missing_stars=[]
+	ok_stars=[]
 	f=open(starlist_file, 'r')
 	txt=f.read()
 	f.close()
@@ -439,20 +474,45 @@ def do_from_starlist(starlist_file, outdir, rebin=1):
 	dir_in=txt[1]
 	data=txt[2:]
 	for t in data:
+		#print(t)
 		s=t.split()
-		kic=s[0]
-		numax_guess=float(s[1])
-		err_numax_guess=float(s[2])
-		Amax_guess=float(s[3])
-		filename=get_filename_from_kic(dir_in, kic, extension='.sav', prefix='*', suffix='*') # Get the file name from the list
-		if len(filename) ==1:
-			spec_file=dir_in + filename[0]
-		else:
-			print("Something wrong: We found more than one file for KIC: ", KIC)
-			print("The program will exit now")
-			exit()
-		mode_initial_setup(spec_file, kic, numax_guess, err_numax_guess, Amax_guess, outdir, fmin=0, fmax=5000, rebin=rebin)
-	show_formated_kiclist(starlist_file,rebin)
+		try:
+			kic=s[0]
+			numax_guess=float(s[1])
+			err_numax_guess=float(s[2])
+			Amax_guess=float(s[3])
+			filename=get_filename_from_kic(dir_in, kic, extension='.sav', prefix='*', suffix='*') # Get the file name from the list
+			if len(filename) ==1:
+				spec_file=dir_in + filename[0]
+			else:
+				print("Something wrong: We found more than one file for KIC: ", KIC)
+				print("The program will exit now")
+				exit()
+			if dir_S1==" ":
+				file_S1=" "
+				do_S1=" "
+			else:
+				file_S1=get_filename_from_kic(dir_S1, kic, extension='.txt', prefix='*', suffix='*') # Get the file name from the list
+				do_S1=dir_S1+"/"+file_S1[0]
+				print(" KIC =", kic)
+				print("     " , file_S1)
+				#exit()
+			try:
+				mode_initial_setup(spec_file, kic, numax_guess, err_numax_guess, Amax_guess, outdir, fmin=0, fmax=5000, rebin=rebin, do_S1=do_S1)
+			except:
+				missing_stars.append(kic)
+			ok_stars.append(kic)
+		except:
+			print("Ignored input line:", s)
+			missing_stars.append(s)
+	if dir_S1==" ":
+		show_formated_kiclist(starlist_file,rebin)
+	else:
+		print("Stars that failed due to lack of S1 files: ")
+		print(missing_stars)
+		print("Stars that passed:")
+		for ok in ok_stars:
+			print(ok, "  ", str(rebin) + ";")
 
 def show_formated_kiclist(starlist_file, rebin):
 	print("List of stars in a format suitable for the MCMC code (just copy/paste this list at the end of the config_presets.cfg")
