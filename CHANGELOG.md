@@ -8,10 +8,12 @@
         * Tuning of prior_calc.cpp::priors_Harvey_Gaussian() in order to enable a fit of the Gaussian envelope in a similar fashion that the MCMC part  
           Of my IDL code 'Preset-Analysis-v8.1', ultimately replacing it (for the Gaussian fit at least for the moment)
         * Full support of the Harvey_Gaussian fit.
-        * New [UNTESTED YET] tool to automatically generate a .data and .model file for the Gaussian envelope fit: init_fit.py
-          Most elements and logic is taken from init_fit.pro of Preset-Analysis-v8.1'. Note that it will still need guesses for Amax and numax. Those are in principle provided by my code 'envelope_measure.pro' (not provided here yet)
+        * New tool to automatically generate a .data and .model file for the Gaussian envelope fit: init_fit.py
+          Most elements and logic is taken from init_fit.pro of Preset-Analysis-v8.1'. Note that it will still need guesses for Amax and numax. Those are in principle provided by my code 'envelope_measure.pro' 
  				* Creation of several function in order to bridge mode_envelope.pro (that gives guesses on Amax and numax) with the init_fit.py function
- 				
+ 				* Adding a tool within init_fit.py that can generate a .model and .data file from the results of at Gaussian fit in order to make a second Gaussian fit (pass 2) that will enhance the noise background guess. This reveals to be sometime usefull due to the fact that priors set automatically in init_fit.py (pass 1) are sometimes poor
+	* Fix issue where simulation files that specify trunc_c [Value] cannot be read due to the fact that the program expect trunc_c Fix [Value]
+
 ### v1.64-dev Improvment ###
 	* New model:
 		- Adding a model named 'model_RGB_asympt_a1etaa3_AppWidth_HarveyLike' that: (1) Handle a pure asymtptotic relation and (2) use random quantities as hyperparameters to evaluate the inaccuracy of that model and to still be able to fit the spectrum exactly despite those inaccuracy
