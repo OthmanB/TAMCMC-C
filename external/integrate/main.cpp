@@ -48,6 +48,7 @@ int main(int argc, char* argv[]){
 	std::cout << "#ftype = " << ftype << std::endl;
 	std::cout << "#--------------"  << std::endl;
 	Alm_norm=gauss_filter_cte(theta0, delta);
+	std::cout << "Alm_norm =" << Alm_norm << std::endl;
 	std::cout << "#l     m      Alm" << std::endl;
 	for (int m=-l;m<=l; m++){
 		r=Alm(l, m, theta0, delta, ftype);

@@ -38,24 +38,35 @@ long double Alm_norm_gate(const double theta, const double phi, const int l, con
 	//const long double theta0=M_PI/2;
 	//const long double delta=M_PI/6;
 	long double sph, Fmax;
-	sph=sph_norm(theta, phi, l, m);
-    VectorXd tmp(1),F;
-    tmp[0]=theta;
-    F=gate_filter(tmp, theta0, delta);
-	return sph*F[0];
+  	VectorXd tmp(1),F;
+  	if (delta != 0){
+		sph=sph_norm(theta, phi, l, m);
+  	    tmp[0]=theta;
+    	F=gate_filter(tmp, theta0, delta);
+    	return sph*F[0];
+	} else{
+		// It does not make sense to compute the norm when delta is 0 ==> return 1
+		return 1;
+	}//Fmax=gauss_filter_cte(theta0, delta);
+
+	return -1;
 }
 
 long double Alm_norm_gauss(const double theta, const double phi, const int l, const int m, const long double theta0, const long double delta){
 	//const long double theta0=M_PI/2;
 	//const long double delta=M_PI/6;
 	long double sph, Fmax;
-	sph=sph_norm(theta, phi, l, m);
-    VectorXd tmp(1),F;
-    tmp[0]=theta;
-	F=gauss_filter(tmp, theta0, delta);
-	//Fmax=gauss_filter_cte(theta0, delta);
+	VectorXd tmp(1),F;
+	if (delta != 0){
+		sph=sph_norm(theta, phi, l, m);
+	    tmp[0]=theta;
+		F=gauss_filter(tmp, theta0, delta);
+		return sph*F[0];
+	} else{
+		return 1;// It does not make sense to compute the norm when delta is 0 ==> return 1
+	}//Fmax=gauss_filter_cte(theta0, delta);
 	//F=F/Fmax;
-	return sph*F[0];
+	return -1;
 }
 
 // A funcion used to perform a Gaussian filtering on the integral term for the 
@@ -102,8 +113,13 @@ long double gauss_filter_cte(const long double theta0, const long double delta){
 	*/
 	VectorXd theta= linspace(0, M_PI, 100);
 	VectorXd F;
-	F=gauss_filter(theta, theta0, delta);
-	return F.maxCoeff();
+	if (delta !=0){
+		F=gauss_filter(theta, theta0, delta);
+		return F.maxCoeff();
+	} else{
+		return 1; // It does not make sense to compute the norm when delta is 0 ==> return 1
+	}
+	return -1;
 }
 
 long double Glm(const int l, const int m, const long double theta_min, const long double theta_max){
@@ -137,20 +153,23 @@ long double Alm(const int l, const int m, const long double theta0, const long d
 	//const long double theta_max=M_PI;
 
 	long double r;
-	if (std::abs(m)<=l){
-		if (ftype == "gate"){
-			r=integrate(Alm_norm_gate, theta_min, theta_max, phi_min, phi_max, l, m, theta0, delta);
-		}
-		if (ftype == "gauss"){
-			theta_min=0;
-			theta_max=M_PI;
-			r=integrate(Alm_norm_gauss, theta_min, theta_max, phi_min, phi_max, l, m, theta0, delta);
+	if (delta !=0){
+		if (std::abs(m)<=l){\
+			if (ftype == "gate"){
+				r=integrate(Alm_norm_gate, theta_min, theta_max, phi_min, phi_max, l, m, theta0, delta);
+			}
+			if (ftype == "gauss"){
+				theta_min=0;
+				theta_max=M_PI;
+				r=integrate(Alm_norm_gauss, theta_min, theta_max, phi_min, phi_max, l, m, theta0, delta);
+			}
+		} else{
+			r=-10;
+			std::cout << "Alm Error: -l<m<l not respected. Will return -10" << std::endl;
 		}
 	} else{
-		r=-10;
-		std::cout << "Alm Error: -l<m<l not respected. Will return -10" << std::endl;
-	}
-		
+		r=0; // If delta is 0, the result is obviously 0
+	}		
 	return r;
 }
 
