@@ -52,6 +52,7 @@ int main(int argc, char* argv[]){
 	std::cout << "#l     m      Alm" << std::endl;
 	for (int m=-l;m<=l; m++){
 		r=Alm(l, m, theta0, delta, ftype);
+		std::cout << "r =" << r << std::endl;
 		std::cout << l << "   " << m << "  " << r/Alm_norm << std::endl;
 	}	
 }
