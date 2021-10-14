@@ -18,7 +18,7 @@ using namespace std;
 
 //#include <gsl/gsl_integration.h>
 
-long double sph_norm(const double theta, const double phi, const int l, const int m){
+long double sph_norm(const long double theta, const long double phi, const int l, const int m){
 	long double Re, Im;
 	Re=boost::math::spherical_harmonic_r(l, m, theta, phi);
     Im=boost::math::spherical_harmonic_i(l, m, theta, phi);
@@ -26,7 +26,7 @@ long double sph_norm(const double theta, const double phi, const int l, const in
 }
 
 
-long double sph_norm2(const double theta, const double phi, const int l, const int m, const int dummy1, const int dummy2){
+long double sph_norm2(const long double theta, const long double phi, const int l, const int m, const int dummy1, const int dummy2){
 	long double Re, Im;
 	Re=boost::math::spherical_harmonic_r(l, m, theta, phi);
     Im=boost::math::spherical_harmonic_i(l, m, theta, phi);
@@ -34,7 +34,7 @@ long double sph_norm2(const double theta, const double phi, const int l, const i
 }
 
 //long double Alm_norm_gate(const double theta, const double phi, const int l, const int m, const long double theta0, const long double delta){
-long double Alm_norm_gate(const double theta, const double phi, const int l, const int m, const long double theta0, const long double delta){
+long double Alm_norm_gate(const long double theta, const long double phi, const int l, const int m, const long double theta0, const long double delta){
 	//const long double theta0=M_PI/2;
 	//const long double delta=M_PI/6;
 	long double sph, Fmax;
@@ -52,7 +52,7 @@ long double Alm_norm_gate(const double theta, const double phi, const int l, con
 	return -1;
 }
 
-long double Alm_norm_gauss(const double theta, const double phi, const int l, const int m, const long double theta0, const long double delta){
+long double Alm_norm_gauss(const long double theta, const long double phi, const int l, const int m, const long double theta0, const long double delta){
 	//const long double theta0=M_PI/2;
 	//const long double delta=M_PI/6;
 	long double sph, Fmax;
