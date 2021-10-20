@@ -37,9 +37,10 @@ long double sph_norm2(const long double theta, const long double phi, const int 
 long double Alm_norm_gate(const long double theta, const long double phi, const int l, const int m, const long double theta0, const long double delta){
 	//const long double theta0=M_PI/2;
 	//const long double delta=M_PI/6;
+	const long double delta_limit=0.001;
 	long double sph, Fmax;
   	VectorXd tmp(1),F;
-  	if (delta != 0){
+  	if (delta >= delta_limit){
 		sph=sph_norm(theta, phi, l, m);
   	    tmp[0]=theta;
     	F=gate_filter(tmp, theta0, delta);
@@ -55,9 +56,10 @@ long double Alm_norm_gate(const long double theta, const long double phi, const 
 long double Alm_norm_gauss(const long double theta, const long double phi, const int l, const int m, const long double theta0, const long double delta){
 	//const long double theta0=M_PI/2;
 	//const long double delta=M_PI/6;
+	const long double delta_limit=0.001;
 	long double sph, Fmax;
 	VectorXd tmp(1),F;
-	if (delta != 0){
+	if (delta >= delta_limit){
 		sph=sph_norm(theta, phi, l, m);
 	    tmp[0]=theta;
 		F=gauss_filter(tmp, theta0, delta);
@@ -111,9 +113,11 @@ long double gauss_filter_cte(const long double theta0, const long double delta){
 		--+----------+-----------+---------------------+----> theta
 		  0         theta0      pi/2    pi-theta0      pi
 	*/
+	const long double delta_limit=0.001;
+	
 	VectorXd theta= linspace(0, M_PI, 100);
 	VectorXd F;
-	if (delta !=0){
+	if (delta >= delta_limit){
 		F=gauss_filter(theta, theta0, delta);
 		return F.maxCoeff();
 	} else{
@@ -147,13 +151,14 @@ long double Alm(const int l, const int m, const long double theta0, const long d
 	long double theta_min=theta0-delta/2; // Default for ftype='gate'
 	long double theta_max=theta0+delta/2;
 
+	const long double delta_limit=0.001;
 	const long double phi_min=0;
 	const long double phi_max=2.*M_PI;
 	//const long double theta_min=0;
 	//const long double theta_max=M_PI;
 
 	long double r;
-	if (delta !=0){
+	if (delta >=delta_limit){
 		if (std::abs(m)<=l){\
 			if (ftype == "gate"){
 				r=integrate(Alm_norm_gate, theta_min, theta_max, phi_min, phi_max, l, m, theta0, delta);
