@@ -12,6 +12,8 @@ void usage(int argc, char* argv[]);
 int  options(int argc, char* argv[]);
 
 int main(int argc, char* argv[]){
+	const long double delta_limit=0.001;
+
 	int l;
 	double r, Alm_norm;
 	double theta0, delta;
@@ -47,13 +49,25 @@ int main(int argc, char* argv[]){
 	std::cout << "#delta = " << delta << std::endl;
 	std::cout << "#ftype = " << ftype << std::endl;
 	std::cout << "#--------------"  << std::endl;
-	Alm_norm=gauss_filter_cte(theta0, delta);
-	//std::cout << "Alm_norm =" << Alm_norm << std::endl;
-	std::cout << "#l     m      Alm" << std::endl;
-	for (int m=-l;m<=l; m++){
-		r=Alm(l, m, theta0, delta, ftype);
-		//std::cout << "r =" << r << std::endl;
-		std::cout << l << "   " << m << "  " << r/Alm_norm << std::endl;
+	if (delta >=delta_limit && theta0>=0 && theta0< M_PI){
+		Alm_norm=gauss_filter_cte(theta0, delta);
+		//std::cout << "Alm_norm =" << Alm_norm << std::endl;
+		std::cout << "#l     m      Alm" << std::endl;
+		for (int m=-l;m<=l; m++){
+			r=Alm(l, m, theta0, delta, ftype);
+			//std::cout << "r =" << r << std::endl;
+			std::cout << l << "   " << m << "  " << r/Alm_norm << std::endl;
+		}	
+	}
+	if (delta <delta_limit && theta0>=0  && theta0< M_PI){
+		for (int m=-l;m<=l; m++){
+			std::cout << l << "   " << m << "  " << 0 << std::endl;
+		}
+	}
+	if (theta0<0 || theta0 > M_PI){
+		for (int m=-l;m<=l; m++){
+			std::cout << l << "   " << m << "  " << -9999 << std::endl;
+		}
 	}	
 }
 

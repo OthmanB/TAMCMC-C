@@ -35,40 +35,23 @@ long double sph_norm2(const long double theta, const long double phi, const int 
 
 //long double Alm_norm_gate(const double theta, const double phi, const int l, const int m, const long double theta0, const long double delta){
 long double Alm_norm_gate(const long double theta, const long double phi, const int l, const int m, const long double theta0, const long double delta){
-	//const long double theta0=M_PI/2;
-	//const long double delta=M_PI/6;
-	const long double delta_limit=0.001;
 	long double sph, Fmax;
   	VectorXd tmp(1),F;
-  	if (delta >= delta_limit){
-		sph=sph_norm(theta, phi, l, m);
-  	    tmp[0]=theta;
-    	F=gate_filter(tmp, theta0, delta);
-    	return sph*F[0];
-	} else{
-		// It does not make sense to compute the norm when delta is 0 ==> return 1
-		return 1;
-	}//Fmax=gauss_filter_cte(theta0, delta);
-
-	return -1;
+	sph=sph_norm(theta, phi, l, m);
+  	tmp[0]=theta;
+    F=gate_filter(tmp, theta0, delta);
+    return sph*F[0];
 }
 
 long double Alm_norm_gauss(const long double theta, const long double phi, const int l, const int m, const long double theta0, const long double delta){
-	//const long double theta0=M_PI/2;
-	//const long double delta=M_PI/6;
-	const long double delta_limit=0.001;
 	long double sph, Fmax;
 	VectorXd tmp(1),F;
-	if (delta >= delta_limit){
-		sph=sph_norm(theta, phi, l, m);
-	    tmp[0]=theta;
-		F=gauss_filter(tmp, theta0, delta);
-		return sph*F[0];
-	} else{
-		return 1;// It does not make sense to compute the norm when delta is 0 ==> return 1
-	}//Fmax=gauss_filter_cte(theta0, delta);
+	sph=sph_norm(theta, phi, l, m);
+	tmp[0]=theta;
+	F=gauss_filter(tmp, theta0, delta);
+	return sph*F[0]; // Note on the normalisation: The normalisation using gauss_filter_cte() happens in main.cpp for optimisation purpose 
+	//Fmax=gauss_filter_cte(theta0, delta);
 	//F=F/Fmax;
-	return -1;
 }
 
 // A funcion used to perform a Gaussian filtering on the integral term for the 
@@ -113,17 +96,11 @@ long double gauss_filter_cte(const long double theta0, const long double delta){
 		--+----------+-----------+---------------------+----> theta
 		  0         theta0      pi/2    pi-theta0      pi
 	*/
-	const long double delta_limit=0.001;
-	
-	VectorXd theta= linspace(0, M_PI, 100);
+
+	VectorXd theta= linspace(0, M_PI, 200);
 	VectorXd F;
-	if (delta >= delta_limit){
-		F=gauss_filter(theta, theta0, delta);
-		return F.maxCoeff();
-	} else{
-		return 1; // It does not make sense to compute the norm when delta is 0 ==> return 1
-	}
-	return -1;
+	F=gauss_filter(theta, theta0, delta);
+	return F.maxCoeff();
 }
 
 long double Glm(const int l, const int m, const long double theta_min, const long double theta_max){
@@ -151,30 +128,26 @@ long double Alm(const int l, const int m, const long double theta0, const long d
 	long double theta_min=theta0-delta/2; // Default for ftype='gate'
 	long double theta_max=theta0+delta/2;
 
-	const long double delta_limit=0.001;
+	//const long double delta_limit=0.001;
 	const long double phi_min=0;
 	const long double phi_max=2.*M_PI;
 	//const long double theta_min=0;
 	//const long double theta_max=M_PI;
 
 	long double r;
-	if (delta >=delta_limit){
-		if (std::abs(m)<=l){\
-			if (ftype == "gate"){
-				r=integrate(Alm_norm_gate, theta_min, theta_max, phi_min, phi_max, l, m, theta0, delta);
-			}
-			if (ftype == "gauss"){
-				theta_min=0;
-				theta_max=M_PI;
-				r=integrate(Alm_norm_gauss, theta_min, theta_max, phi_min, phi_max, l, m, theta0, delta);
-			}
-		} else{
-			r=-10;
-			std::cout << "Alm Error: -l<m<l not respected. Will return -10" << std::endl;
+	if (std::abs(m)<=l){
+		if (ftype == "gate"){
+			r=integrate(Alm_norm_gate, theta_min, theta_max, phi_min, phi_max, l, m, theta0, delta);
+		}
+		if (ftype == "gauss"){
+			theta_min=0;
+			theta_max=M_PI;
+			r=integrate(Alm_norm_gauss, theta_min, theta_max, phi_min, phi_max, l, m, theta0, delta);
 		}
 	} else{
-		r=0; // If delta is 0, the result is obviously 0
-	}		
+		r=-10;
+		std::cout << "Alm Error: -l<m<l not respected. Will return -10" << std::endl;
+	}
 	return r;
 }
 
