@@ -2,7 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import special, integrate
 import itertools
-
+from subprocess import Popen, PIPE
+\
 def gauss_filter(theta, theta0, delta):
 	F=np.exp(-(theta - theta0)**2/(2*delta**2)) + np.exp(-(theta - np.pi + theta0)**2/(2*delta**2)) 
 	return F
@@ -53,7 +54,6 @@ def show_filters(theta0=np.pi/6, delta=np.pi/10):
 	plt.plot(theta, F2)
 	plt.show()
 
-
 # -----
 
 def test_integrate_ylm2(l):
@@ -103,9 +103,48 @@ def integrate_Alm(l, m, phi_range, theta_range, theta0, delta, ftype='gate'):
 		result=[0,0] # When delta is 0, obviously the result is 0
 	return result
 
+def Alm_cpp(l, theta0, delta, ftype, raw=False):
+	try:
+		process = Popen(["./Alm", str(l), str(theta0), str(delta), ftype], stdout=PIPE, stderr=PIPE)
+		(output, err) = process.communicate()
+		exit_code = process.wait()
+		#print(output)
+		output=output.decode("utf-8") 
+		if raw == False:
+			r=output.split('\n')
+			#config=[]
+			l=[]
+			m=[]
+			Alm=[]
+			for line in r:
+				line=line.strip()
+				#print("line =", line)
+				try:
+					if line[0] != "#":
+						s=line.split()
+						l.append(int(s[0]))
+						m.append(float(s[1]))
+						Alm.append(float(s[2]))
+				except:
+					err=True
+			return np.asarray(l),np.asarray(m),np.asarray(Alm)
+		else:
+			return output, err
+	except: # Handling processes that does not exist, aka, when  the Alm file is not available
+		error=True
+		print("Error: Could not execute the Alm C++ program. The most likely explanation is that it is not in the current directory")
+		return -1, error
 
 def Alm(l,m, theta0=np.pi/2, delta=2*8.4*np.pi/180, ftype='gate'):
-    phi_range = [0, 2.*np.pi]
-    theta_range = [0, np.pi]
-    integral=integrate_Alm(l, m, phi_range, theta_range, theta0, delta, ftype=ftype)
-    return integral[0]
+	delta_limit=0.001
+	phi_range = [0, 2.*np.pi]
+	theta_range = [0, np.pi]
+	if (delta >= delta_limit and theta0 >= 0 and theta0<= np.pi):
+		integral=integrate_Alm(l, m, phi_range, theta_range, theta0, delta, ftype=ftype)
+		return integral[0]
+	if (delta < delta_limit and theta0 >= 0 and theta0<= np.pi):
+		integral=0
+		return integral
+	if (theta0 < 0 and theta0< np.pi):
+		integral=-9999 # Note that this is a warning code. Priors should reject that situation
+		return integral
