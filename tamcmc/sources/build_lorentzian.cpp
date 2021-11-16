@@ -7,8 +7,8 @@
 #include <math.h>
 #include <Eigen/Dense>
 #include "build_lorentzian.h"
-# include <iostream>
-# include <iomanip>
+#include <iostream>
+#include <iomanip>
 #include "../../external/integrate/activity.h"
 
 using Eigen::VectorXd;
@@ -431,12 +431,16 @@ VectorXd optimum_lorentzian_calc_a1l_etaa3(const VectorXd& x, const VectorXd& y,
     switch(l){
         case 0:
             f_s=0.;
+            break;
         case 1:
             f_s=f_s1;
+            break;
         case 2:
             f_s=f_s2;
+            break;
         case 3:
             f_s=(f_s1 + f_s2)/2.;
+            break;
     }
     if(gamma_l >= 1 && f_s >= 1){
         if(l != 0){
@@ -539,12 +543,16 @@ VectorXd optimum_lorentzian_calc_a1l_a2a3(const VectorXd& x, const VectorXd& y, 
     switch(l){
         case 0:
             f_s=0.;
+            break;
         case 1:
             f_s=f_s1;
+            break;
         case 2:
             f_s=f_s2;
+            break;
         case 3:
             f_s=(f_s1 + f_s2)/2.;
+            break;
     }
     if(gamma_l >= 1 && f_s >= 1){
         if(l != 0){
@@ -1149,12 +1157,16 @@ VectorXd optimum_lorentzian_calc_a1l_etaa3_v2(const VectorXd& x, const VectorXd&
     switch(l){
         case 0:
             f_s=0.;
+            break;
         case 1:
             f_s=f_s1;
+            break;
         case 2:
             f_s=f_s2;
+            break;
         case 3:
             f_s=(f_s1 + f_s2)/2.;
+            break;
     }
     if(gamma_l >= 1 && f_s >= 1){
         if(l != 0){

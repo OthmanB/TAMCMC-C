@@ -23,3 +23,9 @@ long double Alm_norm_gauss(const long double theta, const long double phi, const
 VectorXd gauss_filter(const VectorXd theta, const long double theta0, const long double delta);
 VectorXd gate_filter(const VectorXd theta, const long double theta0, const long double delta);
 long double gauss_filter_cte(const long double theta0, const long double delta);
+
+long double Alm_norm_gate_2pi(const long double theta, const long double phi, const int l, const int m, const long double theta0, const long double delta);
+long double Alm_norm_gauss_2pi(const long double theta, const long double phi, const int l, const int m, const long double theta0, const long double delta);
+VectorXd gauss_filter_2pi(const VectorXd theta, const long double theta0, const long double delta);
+VectorXd gate_filter_2pi(const VectorXd theta, const long double theta0, const long double delta);
+long double gauss_filter_cte_2pi(const long double theta0, const long double delta);

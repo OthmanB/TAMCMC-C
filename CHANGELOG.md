@@ -1,5 +1,12 @@
 # Version history #
 
+### v1.66-dev New model [IN PROGRESS] ###
+	* Adding acoefs capabilities up to a6: Compose frequencies with a-coefficients and decompose frequencies into a-coefficients [DONE]
+	* Reorganise existing functions to use the new acoefs functions when necessary  
+	* Model that handle <a1>_l, <a2>_l, <a3>_l,<a4>_l,<a5>_l, <a6>_l in linear function and for MS stars
+	* Model that handle a1(nu,l), a2(nu,l), a3(nu,l), a4(nu,l), a5(nu,l), a6(nu,l) in linear function and for MS stars
+	* Update for Alm: Instead of using directly Alm(theta,delta), we give the user possibility to decompose Alm~F(a2,a4,a6) and to decide which aj to not account for
+	 
 ### v1.65-dev Improvments ###
 	* Refactoring the section external code that can compute Glm/Alm function in preparation of the more general solver for any kind of 
           Activity zone. Old function named ylm.cpp and ylm.h were replaced by activity.cpp and activity.h. Note the although functions were
