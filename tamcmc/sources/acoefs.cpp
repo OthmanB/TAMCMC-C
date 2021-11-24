@@ -61,25 +61,45 @@ long double Pslm(const int s,const int l,const int m){
 		Ps=m;
 	}
 	if (s==2){
-		Ps=(3*pow(m,2) -l*(l+1))/(2*l-1);
+		if (l>0){
+			Ps=(3*pow(m,2) -l*(l+1))/(2*l-1);
+		} else{
+			Ps=0;
+		}
 	}
 	if (s==3){
-		Ps=(5*pow(m,3) - (3*l*(l+1)-1)*m)/((l-1)*(2*l-1));
+		if (l>1){
+			Ps=(5*pow(m,3) - (3*l*(l+1)-1)*m)/((l-1)*(2*l-1));
+		} else{
+			Ps=0;
+		}
 	}
 	if (s==4){
 		H=(35*pow(m,4) - 5*(6*l*(l+1)-5)*pow(m,2)) + 3*l*(l+1)*(l*(l+1)-2);
 		c=2*(l-1)*(2*l-1)*(2*l-3);
-		Ps=H/c;
+		if (c !=0){
+			Ps=H/c;
+		} else{
+			Ps=0;
+		}
 	}
 	if (s==5){
 		H=Hslm_Ritzoller1991(s,l,m);
 		c=8*(4*pow(l,4) - 20*pow(l,3) + 35*pow(l,2) - 25*l + 6);
-		Ps=H/c;
+		if (c !=0){
+			Ps=H/c;
+		} else{
+			Ps=0;
+		}
 	}
 	if (s==6){
 		H=Hslm_Ritzoller1991(s,l,m);
 		c=64*pow(l,5) - 480*pow(l,4) + 1360*pow(l,3) - 1800*pow(l,2) + 1096*l - 240;
-		Ps=H/c;
+		if (c !=0){
+			Ps=H/c;
+		} else{
+			Ps=0;
+		}
 	}
 	if (s>6){
 		std::cout << "Warning in Pslm(): s>6 not supported" << std::endl;
@@ -88,6 +108,7 @@ long double Pslm(const int s,const int l,const int m){
 	}
 	return Ps;
 }
+
 
 VectorXd Tnlm(VectorXd& nu_nlm, const int l){
 	VectorXd tnlm;
@@ -160,8 +181,9 @@ VectorXd nunlm_from_acoefs(const long double nunl0, const int l,
 	// This function compute nu_nlm from a series of a-coeficient and provided the central frequency without splitting nunl0
 	VectorXd nu_nlm(2*l+1);
 	for (int m=-l; m<=l; m++){
-		nu_nlm[m+l]=nunl0 + a1*Pslm(1,l,m) + a2*Pslm(2,l,m);
-		switch(l){
+		//nu_nlm[m+l]=nunl0 + a1*Pslm(1,l,m) + a2*Pslm(2,l,m);
+		nu_nlm[m+l]=nunl0 + a1*Pslm(1,l,m) + a2*Pslm(2,l,m) + a3*Pslm(3,l,m) + a4*Pslm(4,l,m)+ a5*Pslm(5,l,m) + a6*Pslm(6,l,m);
+		/*switch(l){
 			case 2:
 				nu_nlm[m+l]=nu_nlm[m+l] + a3*Pslm(3,l,m) + a4*Pslm(4,l,m);
 				break;
@@ -169,6 +191,7 @@ VectorXd nunlm_from_acoefs(const long double nunl0, const int l,
 				nu_nlm[m+l]=nu_nlm[m+l] + a3*Pslm(3,l,m) + a4*Pslm(4,l,m) + a5*Pslm(5,l,m) + a6*Pslm(6,l,m);		
 				break;
 		}
+		*/
 	}
 	return nu_nlm;
 }
