@@ -82,6 +82,8 @@ def default_test_arguments(l):
 	a6=a1/50                					# a6 coeficient
 	f_s=a1                  					# rotational splitting (same as a1)
 	asym=50			        					# Asymetry of the Lorentzian normalised by width
+	b=5. 				 						# Model with some activity in the form of a power law (Function that is not used anymore)
+	alpha=1. 									# Model with some activity in the form of a power law (Function that is not used anymore)
 	gamma_l=2               					# Width of the mode
 	inclination=45          					# Stellar inclination
 	V=function_rot(l, inclination)          	# Mode relative height. Varies with l and inclination
@@ -114,11 +116,158 @@ def get_default_params(param_names, l):
 			exit()
 	return params
 
-def set_expectations(params, param_names, func_name):
+
+def get_params(param, param_names, param_class):
+	# A function that ensure that we get all the variables that are necessary to compute
+	# the visualisation are properly organized and provided. 
+	# Ensure that all the required variable are identified and organised in a way that can be handled
+	# Note that this function does not check whether there is a problem on the parameters
+	# It only checks if param_class is adequately defined. Any parameter that was not found into 
+	# the list of parameters will keep its default value, which can be used to detect errors
+	error_class=True
+	if param_class == 'Height':
+		req_param_names=['l', 'H_l', 'H_lm', 'inclination']
+		req_params=[-1, -1, [-1], -1]
+		error_class=False
+	if param_class == 'fc_l':
+		req_param_names=['fc_l']
+		req_params=[-1]
+		error_class=False
+	if param_class == 'splitting_a1etaa3': # Handling of all splitting models that involve a1, eta and a3
+		req_param_names=['l', 'f_s', 'eta', 'a3', 'b', 'alpha']
+		req_params     =[-1,  -1,     -1   ,  -1 , -1, -1]
+		error_class=False
+	if param_class == 'splitting_a1a2a3':
+		req_param_names=['l', 'f_s',  'a2',   'a3']
+		req_params     =[-1 , -1   ,   -1 ,    -1]
+		error_class=False
+	if param_class == 'splitting_aj':
+		req_param_names=['l', 'a1', 'a2',   'a3', 'a4', 'a5', 'a6',  'eta0']
+		req_params     =[-1 , -1   ,   -1 ,  -1  ,  -1 ,  -1 ,  -1 ,  -1]
+		error_class=False
+
+	for i in range(len(req_param_names)):
+		for j in range(len(param_names)):
+			if param == req:
+				req_params[i]=param[j]
+	return req_params
+
+def splittings_checks(split_params):
+	error=False
+	for s in split_params: # Verify that all parameters are provided
+		if s == -1:
+			error=True
+			print('Warning: Error in split_params')
+	return error
+
+def Hlm_checks(l, H_l=-1, Hlm=[-1], inclination=-1):
+	error=True
+	if Hlm[0] == -1 and inclination !=-1: # Case where only inclination is provided
+		error=False
+		V=function_rot(l, inclination)
+		Hlm=V*H_l
+	if Hlm[0] != -1 and inclination == -1: # Case where the Visibilities are directly provided
+		# Nothing to do except noting that there is no error
+		error=False
+	if error == True: # Any other scenario has a problem
+		print('Error: Unexpected combination of parameter. ')
+		print("       You must provide Hlm directly OR H_l + inclination")
+		print("       The program will exit now")
+		exit()
+	return Hlm
+
+def do_Hlm(params, params_names):
+	# Performs the computation of Hlm depending on the circounstances
+	H_l, l, H_lm, inc=get_params(params,params_names, 'Height')
+	Hlm=Hlm_checks(H_l=H_l, l, H_lm=H_lm, inclination=inc)
+	return Hlm
+
+def do_fc_l(params, param_names):
+	# Retrieve the central frequency
+	fc_l=get_params(params,params_names, 'fc_l')
+	if fc_l == -1:
+		print('Error with the central frequency fc_l: It has to be set to a non-zero, positive value')
+		print('      The program will exit now')
+		exit()
+	return fc_l
+
+def do_splittings(params, param_names, param_class):
+	# Handling of all the cases for splittings
+	# Performs the computation of the frequencies for all modes depending on circounstances
+	split_params=get_params(params,params_names, param_class)
+	fc_l=do_fc_l(params, param_names)
+	error=True
+	if split_params[0] == -1:
+		print('Error in do_splittings: The degree l was not provided')
+		print('      split_params: ', split_params)
+		print('      Please check the requirements in the program')
+		print('      The program will stop now')
+		exit()
+	if param_class == 'splitting_a1etaa3': # Deal with cases a1,eta,a3 and also with the obselete function a1acta3
+		if (split_params[1] != -1) and (split_params[2] == -1) and (split_params[3] != -1) and (split_params[4] == -1) and (split_params[5] == -1): # models with a1, eta, a3 only
+			error=False
+			split_lm=fc_l*(1. + eta*Qlm) + m*f_s + clm*a3  # NEED PROPER FORMATING
+		if (split_params[1] != -1) and (split_params[2] == -1) and (split_params[3] != -1) and (split_params[4] != -1) and (split_params[5] != -1): # models with a1, eta, a3 + b and alpha (obselete model)
+			error=False
+			split_lm=Qlm*(eta*fc_l*pow(f_s,2) + b*pow(fc_l*1e-3,alpha)) + m*f_s + clm*a3  # NEED PROPER FORMATING
+	if param_class == 'splitting_a1a2a3':
+		error=splittings_checks(split_params)
+		if error == False: # We can proceed only if all of the parameters were provided
+			clm=Pslm(3,l,m); # Changes made on 18/11/2021 : Use of acoefs.cpp
+            a2_terms=Pslm(2,l,m)*a2;
+			split_lm=fc_l + m*f_s + a2_terms + clm*a3   # NEED PROPER FORMATING: Use of the function that handle aj here
+	if param_class == 'splitting_aj':
+		error=splittings_checks(split_params)
+		if error == False: # We can proceed only if all of the parameters were provided
+			split_lm=nu_nlm=fc_l + a1*Pslm(1,l,m) + a2*Pslm(2,l,m) + a3*Pslm(3,l,m) + a4*Pslm(4,l,m)+ a5*Pslm(5,l,m) + a6*Pslm(6,l,m)    # NEED PROPER FORMATING: Use of the function that handle aj here
+			split_lm=split_lm + fc_l*eta0*Qlm*pow(a1,2)
+			
+	if error == True:
+		print('Error in do_splittings: Some required parameters for the splitting were not provided.')
+		print('      split_params: ', split_params)
+		print('      Please check the requirements in the program')
+		print('      The program will stop now')
+		exit()
+
+	return split_lm # MUST BE A VECTOR OF SIZE 2l+1
+
+def set_expectations(params, param_names, handled_names, func_name):
 	# This function allows to set what is the expectation value of a given
 	# parameter directly in terms of frequency or power such that it can be
 	# visualise/plot directly over the power spectrum
+	status=False
+	Hlm=do_Hlm(params, params_names)
+	fc_l=do_fc_l(params, param_names)
+	if func_name == "optimum_lorentzian_calc_a1etaa3" :
+
+    if func_name == "optimum_lorentzian_calc_a1acta3":
+
+    if func_name == "optimum_lorentzian_calc_a1a2a3":
+
+    if func_name == "optimum_lorentzian_calc_a1etaa3_v2":
+   
+   	if func_name == "optimum_lorentzian_calc_a1l_etaa3_v2":
+
+    if func_name == "optimum_lorentzian_calc_a1l_etaa3":
+
+    if func_name == "optimum_lorentzian_calc_a1l_a2a3":
+
+    if func_name == "optimum_lorentzian_calc_a1etaAlma3":
+
+    if func_name == "optimum_lorentzian_calc_aj":
+
+    if status == False:
+    	print("Error in main.py: Could not find the function in the preset list of functions.")
+    	print("                  Cannot interpret inputs adequately. The program will exit now")
+    	exit()
+
+	for i in range(len(param_names)):
+		for handled in handled_names:
+			if params_names[i] == "H_l": 
+				yout.append(params)
 	print("TBD")
+
+	return xout, yout
 
 def visualise(freq, power, params):
 	# Function that take the power spectrum that is created with the lorentzian_cpp() function
