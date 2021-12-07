@@ -130,6 +130,7 @@ Model_def::Model_def(Config *config, const VectorXd& Tcoefs, const bool verbose)
 	// Initialize the model, logLikelihood, logPrior, logPosterior variables
 	model.resize(Nmodels, (*config).data.data.Nx);
 	logLikelihood.resize(Nmodels);
+	init_logLikelihood.resize(Nmodels);
 	logPrior.resize(Nmodels);
 	logPosterior.resize(Nmodels);
 
@@ -142,11 +143,12 @@ Model_def::Model_def(Config *config, const VectorXd& Tcoefs, const bool verbose)
 			//std::cout << "... Done" << std::endl;
 		} 
 	}
-
+	init_logLikelihood=logLikelihood;
 	if(verbose == 1){	
 		warning_thld=5000.;
 		std::cout << "Checking that there is not problem with the likelihood or the priors..." << std::endl;
 		std::cout << "      - logLikelihood[" << 0 << "]=" << logLikelihood[0]  << std::endl;
+		std::cout << "      - init_logLikelihood[" << 0 << "]=" << init_logLikelihood[0]  << std::endl;
 		std::cout << "      - logPrior[" << 0 << "]=" << logPrior[0]  << std::endl;
 		std::cout << "      - logPosterior[" << 0 << "]=" << logPosterior[0]  << std::endl;
 		if((logLikelihood[0] == INFINITY) || (logLikelihood[0] == -INFINITY)){
@@ -286,6 +288,9 @@ VectorXd Model_def::call_model(Data *data_struc, int m, bool outparams){
  		case 22: // model_RGB_asympt_a1etaa3_AppWidth_HarveyLike handled by io_asymptotic.cpp (based on model_MS_Globla with Appourchaux 2016, but with ARMM for mixed modes). This model differs from similar others in the fact that it has a lot of hyperparameters for the mixed modes
 			return model_RGB_asympt_a1etaa3_AppWidth_HarveyLike(params.row(m), plength, (*data_struc).x, outparams);
 			break;
+		case 23: // model for aj coefficients 
+			return  model_MS_Global_aj_HarveyLike(params.row(m), plength, (*data_struc).x, outparams);
+			break;
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
 		  std::cout << " model_fct_names_switch = " << model_fct_name_switch << std::endl;
@@ -312,7 +317,8 @@ VectorXd Model_def::call_model(Data *data_struc, int m, bool outparams){
 		  std::cout << "    - model_MS_Global_a1n_a2a3_HarveyLike" << std::endl;
 		  std::cout << "    - model_MS_Global_a1nl_a2a3_HarveyLike" << std::endl;
 		  std::cout << "    - model_MS_Global_a1a2a3_HarveyLike" << std::endl;
-		  std::cout << "    - model_MS_Global_a1etaGlma3_HarveyLike" << std::endl;
+		  std::cout << "    - model_MS_Global_a1etaAlma3_HarveyLike" << std::endl;
+		  std::cout << "    - model_MS_Global_aj_HarveyLike" << std::endl;
           std::cout << "    - 'model_MS_local_basic'" << std::endl;
 		  std::cout << " The program will exit now" << std::endl;
 		  exit(EXIT_FAILURE);
@@ -395,11 +401,17 @@ long double Model_def::call_prior(Data *data_struc, const int m){
 long double Model_def::generate_model(Data *data_struc, const long m, const VectorXd& Tcoefs){
 /*
  * call successively call_model, call_likelihood and call_prior and then calculates the logPosterior. This is also returned.
+ * Update on 7 Dec 2021: the logLikelihood is computed only if the logPrior is not Infinity ==> Performance improvement
 */
 	model.row(m)=call_model(data_struc, m);
-	logLikelihood[m]=call_likelihood(data_struc, m, Tcoefs); // logLikelihood saved at element m of the vector
 	logPrior[m]=call_prior(data_struc, m); // logprior saved at element m of the vector
-	logPosterior[m]= logLikelihood[m] + logPrior[m]; // logPosterior saved at element m of the vector
+	if (logPrior[m] != -INFINITY){
+	  logLikelihood[m]=call_likelihood(data_struc, m, Tcoefs); // logLikelihood saved at element m of the vector
+		logPosterior[m]= logLikelihood[m] + logPrior[m]; // logPosterior saved at element m of the vector
+	} else{
+		logLikelihood[m]=init_logLikelihood[m];// We use the initial logLikelihood to fill the logLikelihood. Necessarily suboptimal ==> avoid this model to be swaped
+		logPosterior[m]= -INFINITY;
+	}
 return logPosterior[m];
 }
 

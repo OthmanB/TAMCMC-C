@@ -59,6 +59,7 @@ class Model_def{
 		MatrixXd vars; // could be 2D because could varies over Nmodels
 		MatrixXd model; // The model calculated using call_model(). 2D as it varies with Nmodels
 		VectorXd logLikelihood; // calculated using call_likelihood()
+		VectorXd init_logLikelihood; // Added on 7 Dec 2021: Use of the initial loglikelihood in replacement of loglikelihood when logPrior is Infinity ==> Improve performance
 		VectorXd logPrior; // calculated using call_prior()
 		VectorXd logPosterior; // calculated using generate_model()... This also calls call_model(), call_likelihood() and call_prior()
 		VectorXd Pmove; // probability of move... usefull for diagnostics

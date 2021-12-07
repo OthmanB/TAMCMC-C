@@ -181,17 +181,7 @@ VectorXd nunlm_from_acoefs(const long double nunl0, const int l,
 	// This function compute nu_nlm from a series of a-coeficient and provided the central frequency without splitting nunl0
 	VectorXd nu_nlm(2*l+1);
 	for (int m=-l; m<=l; m++){
-		//nu_nlm[m+l]=nunl0 + a1*Pslm(1,l,m) + a2*Pslm(2,l,m);
 		nu_nlm[m+l]=nunl0 + a1*Pslm(1,l,m) + a2*Pslm(2,l,m) + a3*Pslm(3,l,m) + a4*Pslm(4,l,m)+ a5*Pslm(5,l,m) + a6*Pslm(6,l,m);
-		/*switch(l){
-			case 2:
-				nu_nlm[m+l]=nu_nlm[m+l] + a3*Pslm(3,l,m) + a4*Pslm(4,l,m);
-				break;
-			case 3:
-				nu_nlm[m+l]=nu_nlm[m+l] + a3*Pslm(3,l,m) + a4*Pslm(4,l,m) + a5*Pslm(5,l,m) + a6*Pslm(6,l,m);		
-				break;
-		}
-		*/
 	}
 	return nu_nlm;
 }
