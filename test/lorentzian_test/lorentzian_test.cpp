@@ -375,7 +375,7 @@ int main(int argc, char* argv[]){
 	} else{
 		if (msg_code == 2){ // Case where the function name was "get_all" >> return all the models only
 			model_info=get_model_info("get_all");
-			std::cout << std::setw(40) << "available functions   " << std::setw(10) << "              required parameters" << std::endl;
+			std::cout << std::setw(40) << "# available functions   " << std::setw(10) << "              required parameters" << std::endl;
 			for (int i=0; i<model_info.func_name.size(); i++){
 				std::cout << std::setw(40) << model_info.func_name[i] << "      " << std::setw(10) << model_info.params_names[i] << std::endl;
 			}
