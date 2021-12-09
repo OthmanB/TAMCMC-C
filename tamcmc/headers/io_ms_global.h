@@ -18,3 +18,4 @@ short int fatalerror_msg_io_MS_Global(const std::string varname, const std::stri
 double getnumax(const VectorXd& fl, const VectorXd& Hl);
 Input_Data set_width_App2016_params_v1(const double numax, Input_Data width_in);
 Input_Data set_width_App2016_params_v2(const double numax, Input_Data width_in);
+VectorXd settings_aj_splittings(const int i, const MCMC_files inputs_MS_global, Input_Data* Snlm_in, const int aj_switch);

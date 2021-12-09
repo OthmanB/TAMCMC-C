@@ -139,10 +139,15 @@ Model_def::Model_def(Config *config, const VectorXd& Tcoefs, const bool verbose)
 	if(empty_container == 0){
 		for(int m=0; m<Nmodels; m++){
 			//std::cout << "Generate model m=" << m ;
-			generate_model(&data_in, m, Tcoefs); // No need of the returned value
+			model.row(m)=call_model(&data_in, m); // Whatever the situation, we need to initialise the model (and then the init_model), even if it leads to NaN
+	    logLikelihood[m]=call_likelihood(&data_in, m, Tcoefs); // Whatever the situation, we need to initialise the logLikelihood saved at element m of the vector, even if it leads to NaN
+      logPrior[m]=call_prior(&data_in, m); // logprior saved at element m of the vector
+	    logPosterior[m]= logLikelihood[m] + logPrior[m]; // logPosterior saved at element m of the vector
+			//generate_model(&data_in, m, Tcoefs); // No need of the returned value // This function execute a new model and the likelihood only if logPrior is not -Infinity... cannot be used here anymore
 			//std::cout << "... Done" << std::endl;
 		} 
 	}
+	init_model=model;
 	init_logLikelihood=logLikelihood;
 	if(verbose == 1){	
 		warning_thld=5000.;
@@ -403,13 +408,14 @@ long double Model_def::generate_model(Data *data_struc, const long m, const Vect
  * call successively call_model, call_likelihood and call_prior and then calculates the logPosterior. This is also returned.
  * Update on 7 Dec 2021: the logLikelihood is computed only if the logPrior is not Infinity ==> Performance improvement
 */
-	model.row(m)=call_model(data_struc, m);
 	logPrior[m]=call_prior(data_struc, m); // logprior saved at element m of the vector
 	if (logPrior[m] != -INFINITY){
+	  model.row(m)=call_model(data_struc, m);
 	  logLikelihood[m]=call_likelihood(data_struc, m, Tcoefs); // logLikelihood saved at element m of the vector
 		logPosterior[m]= logLikelihood[m] + logPrior[m]; // logPosterior saved at element m of the vector
 	} else{
-		logLikelihood[m]=init_logLikelihood[m];// We use the initial logLikelihood to fill the logLikelihood. Necessarily suboptimal ==> avoid this model to be swaped
+		model.row(m)=init_model.row(m);
+	  logLikelihood[m]=init_logLikelihood[m];// We use the initial logLikelihood to fill the logLikelihood. Necessarily suboptimal ==> avoid this model to be swaped
 		logPosterior[m]= -INFINITY;
 	}
 return logPosterior[m];

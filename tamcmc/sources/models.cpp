@@ -1643,21 +1643,19 @@ VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& p
     VectorXd a1_terms(2), a2_terms(2), a3_terms(2),a4_terms(2),a5_terms(2),a6_terms(2);
 
     VectorXd fl0_all(Nmax), Wl0_all(Nmax), noise_params(Nnoise);
-    double fl0, fl1, fl2, fl3, Vl1, Vl2, Vl3, Hl0, Hl1, Hl2, Hl3, Wl0, Wl1, Wl2, Wl3, a1,a2,a3, asym;
+    double fl0, fl1, fl2, fl3, Vl1, Vl2, Vl3, Hl0, Hl1, Hl2, Hl3, Wl0, Wl1, Wl2, Wl3, a1,a2,a3, a4, a5,a6, eta0, asym;
 
     int Nharvey;
     long cpt;
 
-    const int Nrows=1000, Ncols=9; // Number of parameters for each mode
+    const int Nrows=200, Ncols=13; // Number of parameters for each mode
     MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
     int Line=0; // will be used to trim the mode_params table where suited
-
     /*
        -------------------------------------------------------
        ------- Gathering information about the modes ---------
        -------------------------------------------------------
     */
-    
     inclination=params[Nmax + lmax + Nf+Nsplit+Nwidth+Nnoise]; 
 
     // Forcing values of visibilities to be greater than 0... priors will be in charge of the penalisation
@@ -1687,23 +1685,21 @@ VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& p
     a4_terms=params.segment(Nmax + lmax + Nf + 6,2);
     a5_terms=params.segment(Nmax + lmax + Nf + 8,2);
     a6_terms=params.segment(Nmax + lmax + Nf + 10,2);
-    asym=params[Nmax+lmax + Nf + 12];
-    
+    asym=params[Nmax+lmax + Nf + 13];
+
+    if (params[Nmax+lmax + Nf + 12] == 1){
+        eta0=eta0_fct(fl0_all); 
+    } else{
+        eta0=0; // We decide here to include eta0 inside a2 term. eta0 effect can always be removed a posteriori when doing the aj decomposition
+    }    
     model_final.setZero();
-    //std::cout << "[" << Nmax + lmax + Nf + 6 << "]  a2_terms = " << a2_terms.transpose() << std::endl;
-    /*
-    std::cout << "inclination = " << inclination << std::endl;
-    std::cout << "a2_terms = " << a2_terms << std::endl;
-    std::cout << "a3 = " << a3 << std::endl;
-    std::cout << "asym = " << asym << std::endl;
-    */
     /* -------------------------------------------------------
        --------- Computing the models for the modes  ---------
        -------------------------------------------------------
     */
+    //outparams=1;    
     cpt=0;
-    for(long n=0; n<Nmax; n++){
-        
+    for(long n=0; n<Nmax; n++){        
         fl0=fl0_all[n];
         Wl0=std::abs(Wl0_all[n]);
             
@@ -1712,14 +1708,9 @@ VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& p
         } else{
             Hl0=std::abs(params[n]);
         }       
-        /*
-        stc::cout << "Hl0 = " << Hl0 << std::endl;
-        std::cout << "fl0 = " << fl0 << std::endl;
-        std::cout << "Wl0 = " << Wl0 << std::endl;
-        */
-        model_final=optimum_lorentzian_calc_a1a2a3(x, model_final, Hl0, fl0, 0, 0, 0, asym, Wl0, 0, ratios_l0, step, trunc_c);
-        if (outparams){
-            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, asym, inclination;// mode_vec;
+        model_final=optimum_lorentzian_calc_aj(x, model_final, Hl0, fl0, 0, 0, 0, 0, 0, 0, 0, asym, Wl0, 0, ratios_l0, step, trunc_c);
+       if (outparams){
+            mode_params.row(Line) << 0, fl0, Hl0 , Wl0,  0, 0, 0, 0, 0, 0, 0, asym, inclination;// mode_vec;
             Line=Line+1;
         }   
         if(lmax >=1){
@@ -1730,18 +1721,16 @@ VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& p
                 Hl1=std::abs(params[n]/(pi*Wl1))*Vl1;
             } else{
                 Hl1=std::abs(params[n]*Vl1);
-            }   
-            a2=a2_terms[0] + a2_terms[1]*(fl1*1e-3) + a2_terms[2]*(fl1*fl1*1e-6); //two terms: one constant term + one linear in nu, after a11, set in mHz            
-            /*
-            std::cout << "Hl1 = " << Hl1 << std::endl;
-            std::cout << "fl1 = " << fl1 << std::endl;
-            std::cout << "Wl1 = " << Wl1 << std::endl;
-            std::cout << " a1 = " << a1 << std::endl;
-            std::cout << " a2 = " << a2 << std::endl;
-            */
-            model_final=optimum_lorentzian_calc_a1a2a3(x, model_final, Hl1, fl1, a1, a2, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
+            }
+            a1=a1_terms[0] + a1_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz  
+            a2=a2_terms[0] + a2_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+            a3=a3_terms[0] + a3_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+            a4=a4_terms[0] + a4_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+            a5=a5_terms[0] + a5_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+            a6=a6_terms[0] + a6_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+            model_final=optimum_lorentzian_calc_aj(x, model_final, Hl1, fl1, a1, a2, a3,a4, a5,a6,eta0,asym, Wl1, 1, ratios_l1, step, trunc_c);
            if (outparams){
-                mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1, a2, a3, asym, inclination;// mode_vec;
+                mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1, a2, a3, a4, a5,a6, eta0, asym, inclination;// mode_vec;
                 Line=Line+1;
             } 
         }
@@ -1754,17 +1743,15 @@ VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& p
             } else{
                 Hl2=std::abs(params[n]*Vl2);
             }   
-            a2=a2_terms[0] + a2_terms[1]*(fl2*1e-3) + a2_terms[2]*(fl2*fl2*1e-6); //two terms: one constant term + one linear in nu, after a11 
-            /*
-            std::cout << "Hl2 = " << Hl2 << std::endl;
-            std::cout << "fl2 = " << fl2 << std::endl;
-            std::cout << "Wl2 = " << Wl2 << std::endl;
-            std::cout << " a1 = " << a1 << std::endl;
-            std::cout << " a2 = " << a2 << std::endl;
-            */
-            model_final=optimum_lorentzian_calc_a1a2a3(x, model_final, Hl2, fl2, a1, a2, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
+            a1=a1_terms[0] + a1_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz  
+            a2=a2_terms[0] + a2_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+            a3=a3_terms[0] + a3_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+            a4=a4_terms[0] + a4_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+            a5=a5_terms[0] + a5_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+            a6=a6_terms[0] + a6_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+            model_final=optimum_lorentzian_calc_aj(x, model_final, Hl2, fl2, a1, a2, a3,a4,a5,a6, eta0,asym, Wl2, 2, ratios_l2, step, trunc_c);
             if (outparams){
-                mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1, a2, a3, asym, inclination;// mode_vec;
+                mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1, a2, a3, a4, a5,a6, eta0, asym, inclination;// mode_vec;
                 Line=Line+1;
             }      
         }
@@ -1777,22 +1764,20 @@ VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& p
             } else{
                 Hl3=std::abs(params[n]*Vl3);            
             }       
-            a2=a2_terms[0] + a2_terms[1]*(fl3*1e-3) + a2_terms[2]*(fl3*fl3*1e-6); //two terms: one constant term + one linear in nu, after a11  
-            /*std::cout << "Hl3 = " << Hl3 << std::endl;
-            std::cout << "fl3 = " << fl3 << std::endl;
-            std::cout << "Wl3 = " << Wl3 << std::endl;
-            std::cout << " a1 = " << a1 << std::endl;
-            std::cout << " a2 = " << a2 << std::endl;
-            */
-            model_final=optimum_lorentzian_calc_a1a2a3(x, model_final, Hl3, fl3, a1, a2, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
+            a1=a1_terms[0] + a1_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz  
+            a2=a2_terms[0] + a2_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+            a3=a3_terms[0] + a3_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+            a4=a4_terms[0] + a4_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+            a5=a5_terms[0] + a5_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+            a6=a6_terms[0] + a6_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+            model_final=optimum_lorentzian_calc_aj(x, model_final, Hl3, fl3, a1, a2, a3, a4, a5,a6, eta0, asym, Wl3, 3, ratios_l3, step, trunc_c);
             if (outparams){
-                mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1, a2, a3, asym, inclination;// mode_vec;
+                mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1, a2, a3, a4, a5,a6, eta0, asym, inclination;// mode_vec;
                 Line=Line+1;
             } 
         }       
     }
-    //std::cin.ignore();
-
+    //std::cin.ignore();    
     /* -------------------------------------------------------
        ------- Gathering information about the noise ---------
        -------------------------------------------------------
@@ -1812,7 +1797,7 @@ VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& p
         int c=0;
         std::string file_out="params.model";
         std::string modelname = __func__;
-        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1 / a2 / a3 / asymetry / inclination";
+        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1 / a2 / a3 / a4 / a5 / a6 / eta0 / asymetry / inclination";
         VectorXd spec_params(3);
         spec_params << x.minCoeff() , x.maxCoeff(), step;
         MatrixXd noise(Nharvey+1, 3);
@@ -1826,7 +1811,8 @@ VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& p
         noise(Nharvey, 0) = noise_params(c); // White noise 
         write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
     }
-
+//    std::cout << "FINAL" << std::endl;
+//    exit(EXIT_FAILURE);
     return model_final;
 }
 
@@ -3419,7 +3405,7 @@ VectorXd model_MS_local_basic(const VectorXd& params, const VectorXi& params_len
 	}
 
 	//a1=std::abs(params[Nmax + Nvis + Nf]);
-	eta0=0; //params[Nmax + Nvis + Nf + 1]; // 7 Dec 2021: TEMPORARY SETTING of eta0=0. Need to change io_local to set it using Dnu
+	eta0=params[Nmax + Nvis + Nf + 1]; // 7 Dec 2021: Set by io_local to set it using Dnu
 	//eta0=eta0_fct(fl0_all);
     a3=params[Nmax + Nvis + Nf + 2];
 	asym=params[Nmax+Nvis + Nf + 5];
@@ -3578,7 +3564,7 @@ VectorXd model_MS_local_Hnlm(const VectorXd& params, const VectorXi& params_leng
        -------------------------------------------------------
     */
     a1=std::abs(params[Nmax + Nvis + Nf]);
-    eta0=0;//params[Nmax + Nvis + Nf + 1]; // 7 Dec 2021: TEMPORARY SETTING eta0=0 ===> One needs to set it in the io_local using Dnu
+    eta0=params[Nmax + Nvis + Nf + 1]; // 7 Dec 2021: Set in the io_local using Dnu
     //eta0=eta0_fct(fl0_all);
     a3=params[Nmax + Nvis + Nf + 2];
     asym=params[Nmax+Nvis + Nf + 5];

@@ -20,6 +20,9 @@ IO_models::~IO_models(){ // Destructor
 
 }
 
+//int IO_models::size(*data){
+//	return (*data).priors.rows()
+//}
 
 short int IO_models::fill_param(Input_Data *data, const std::string input_name, const std::string prior_name, const double in_val, const VectorXd& prior_vals, const int pos, const int i0_prior){
 /*

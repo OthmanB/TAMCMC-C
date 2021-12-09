@@ -855,35 +855,28 @@ Input_Data build_init_local(const MCMC_files inputs_local, const bool verbose, c
         	}
 		}
 		if(inputs_local.common_names[i] == "asphericity_eta"|| inputs_local.common_names[i] == "Asphericity_eta"){  
-			Snlm_in.inputs_names[1]="Asphericity_eta";
+			Snlm_in.inputs_names[1]="Asphericity_eta0";
 			if(inputs_local.common_names_priors[i] == "Fix_Auto"){ // Case where the centrifugal force is added but FIXED.
 				Snlm_in.priors_names[1]="Fix"; //In all cases the centrifugal force is fixed
 				Snlm_in.relax[1]=0;
 				if(inputs_local.modes_common(i,0) == 1){
-  					if (Snlm_in.inputs[0] != -9999){ 
-						//eta=(4./3.)*!pi*Dnl*(a1_init*1d-6)^2/(rho*G)
-						if(inputs_local.Dnu > 0){
-							Snlm_in.inputs[1]=(4./3.)*pi*Dnl*pow(Snlm_in.inputs[0]*1e-6,2.)/(rho*G); // rho is calculated using Dnu
-						} else{
-							std::cout << "Centrifugal force set to 0 because the user did not provide Dnu in the model file" << std::endl;
-							Snlm_in.inputs[1]=0; // If Dnu was not provided, we must fix the centrifugal distorsion to 0.
-						}
-						std::cout << " -------------" << std::endl;
-						std::cout << "Asphericity_eta given with Fix_Auto ==> Setting the asphericity to the centrifugal force" << std::endl;
-						std::cout << "      eta=" << Snlm_in.inputs[1] << std::endl;
-						std::cout << " -------------" << std::endl;
+  					if(inputs_local.Dnu > 0){
+						Snlm_in.inputs[1]=3./(4.*M_PI*rho*G); // rho is calculated using Dnu
 					} else{
-						std::cout << "Warning: the keyword 'asphericity_eta' must appear after the keyword splitting_a1" << std::endl;
-						std::cout << "         This because the splitting_a1 is used to define the initial value of asphericity" << std::endl;
-						std::cout << "         Edit the .MCMC file accordingly" << std::endl;
-						std::cout << "The program will exit now" << std::endl;
-						exit(EXIT_FAILURE);
+						std::cout << "Centrifugal force set to 0 because the user did not provide Dnu in the model file" << std::endl;
+						Snlm_in.inputs[1]=0; // If Dnu was not provided, we must fix the centrifugal distorsion constant part to 0.
 					}
+					std::cout << " -------------" << std::endl;
+					std::cout << "Asphericity_eta given with Fix_Auto ==> Setting the asphericity to the centrifugal force" << std::endl;
+					std::cout << "      eta0=" << Snlm_in.inputs[1] << std::endl;
+					std::cout << " -------------" << std::endl;
 				} else{
 					Snlm_in.inputs[1]=0;
 				}
 			} else{ // Case where the centrifugal force is user-defined: Could be free or fixed
 				p0=1;
+				std::cout << " WARNING: Asphericity_eta is set to a non-Fix_Auto value: It means that the asphericity parameter is not set to the Centrifugal force automatically "<< std::endl;
+				std::cout << "          If this is not your intend, please set Asphericity_eta to Fix_Auto" << std::endl;
 				io_calls.fill_param(&Snlm_in, "Asphericity_eta", inputs_local.common_names_priors[i], inputs_local.modes_common(i,0), inputs_local.modes_common.row(i), p0, 1);	
 			}
 		}

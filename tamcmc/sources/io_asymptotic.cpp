@@ -630,6 +630,15 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			io_calls.fill_param(&Snlm_in, "rot_core", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 		}
 		if(inputs_MS_global.common_names[i] == "asphericity_eta"|| inputs_MS_global.common_names[i] == "Asphericity_eta"){  
+			std::cout << " Warning: Update on the code (07/12/2021) does not allow to use Asphericity_eta as a keyword in io_asymptotic models" << std::endl;
+			std::cout << "          The calculation of eta is now made systematically within the models and no longer requires the eta parameter" << std::endl;
+			std::cout << "          Consequently, this parameter will be ignored" << std::endl;
+			Snlm_in.inputs_names[1]="Empty";
+			Snlm_in.priors_names[1]="Fix";
+			Snlm_in.inputs_names[1]="Asphericity_eta";
+			Snlm_in.relax[1]=0;
+			Snlm_in.inputs[1]=0;
+			/*
 			Snlm_in.inputs_names[1]="Asphericity_eta";
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){ // Case where the centrifugal force is added but FIXED.
 				Snlm_in.priors_names[1]="Fix"; //In all cases the centrifugal force is fixed
@@ -656,6 +665,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 				p0=2;
 				io_calls.fill_param(&Snlm_in, "Asphericity_eta", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 			}
+			*/
 		}
 
 		if(inputs_MS_global.common_names[i] == "splitting_a3" || inputs_MS_global.common_names[i] == "Splitting_a3"){
