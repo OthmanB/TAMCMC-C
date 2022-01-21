@@ -16,7 +16,8 @@ using Eigen::MatrixXd;
 
 long double sph_norm(const long double theta, const long double phi, const int l, const int m);
 long double sph_norm2(const long double theta, const long double phi, const int l, const int m, const int dummy1, const int dummy2);
-long double Glm(const int l, const int m, const long double theta_min, const long double theta_max);
+//long double Glm(const int l, const int m, const long double theta_min, const long double theta_max);
+long double integrate_Alm_gate(const int l, const int m, const long double theta0, const long double delta);
 long double Alm(const int l, const int m, const long double theta0, const long double delta, std::string ftype);
 long double Alm_norm_gate(const long double theta, const long double phi, const int l, const int m, const long double theta0, const long double delta);
 long double Alm_norm_gauss(const long double theta, const long double phi, const int l, const int m, const long double theta0, const long double delta);

@@ -12,11 +12,6 @@ Use cmake to compile into a build directory:
        'make'
 
 This will generate an executable with parameters as per defined into the main() of ylm.cpp
-Note that this main is just for tests. A proper usage would require to include ylm.cpp into a larger projet,
-after commenting the main().
 
-
-PS: This version has the main() section of activtiy.cpp commented because it is intended to be used as a plug-in for the TAMCMC code.
-If you want to run it as a standalone, uncomment main() section of your choice in activity.cpp.
 
 Othman Benomar

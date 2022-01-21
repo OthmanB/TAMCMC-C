@@ -1,8 +1,35 @@
-# Evaluate the difference between outputs in python and outputs in C++
+# Evaluate the difference between outputs in python and outputs in C++ when using Alm
 import numpy as np
 from subprocess import Popen, PIPE
 from activity import Alm as Alm_python
-from activity import Alm_cpp
+
+def Alm_cpp(l, theta0, delta, ftype, raw=False):
+	process = Popen(["./Alm", str(l), str(theta0), str(delta), ftype], stdout=PIPE, stderr=PIPE)
+	(output, err) = process.communicate()
+	exit_code = process.wait()
+	#print(output)
+	output=output.decode("utf-8") 
+	if raw == False:
+		r=output.split('\n')
+		#config=[]
+		l=[]
+		m=[]
+		Alm=[]
+		for line in r:
+			line=line.strip()
+			#print("line =", line)
+			try:
+				if line[0] != "#":
+					s=line.split()
+					l.append(int(s[0]))
+					m.append(float(s[1]))
+					Alm.append(float(s[2]))
+			except:
+				err=True
+		return np.asarray(l),np.asarray(m),np.asarray(Alm)
+	else:
+		return output, err
+	return -1, -1
 
 def test():
 	print("Test program for Alm computation")
@@ -12,9 +39,9 @@ def test():
 	print("   that I use in C++ (Legendre integral in 2D) is accurate")
 
 	ftype='gauss'
-	els=[1,2]
+	els=[1,2,3]
 	Ntests_theta=4
-	Ntests_delta=10
+	Ntests_delta=20
 	thetas=np.linspace(0, np.pi, Ntests_theta)
 	deltas=np.linspace(0,np.pi/2, Ntests_delta)
 	err=False

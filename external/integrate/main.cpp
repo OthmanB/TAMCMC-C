@@ -63,7 +63,11 @@ int main(int argc, char* argv[]){
 	std::cout << "#--------------"  << std::endl;
 	std::cout << "#l     m      Alm" << std::endl;
 	if (delta >=delta_limit && theta0>=0 && theta0< theta0_limit){
-		Alm_norm=gauss_filter_cte(theta0, delta);
+		if (ftype == "gauss"){
+			Alm_norm=gauss_filter_cte(theta0, delta);
+		} else{
+			Alm_norm=1;
+		}
 		//std::cout << "Alm_norm =" << Alm_norm << std::endl;
 		for (int m=-l;m<=l; m++){
 			r=Alm(l, m, theta0, delta, ftype);
