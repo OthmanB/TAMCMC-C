@@ -213,8 +213,8 @@ VectorXd eval_acoefs(const int l, VectorXd& nu_nls){ // We expect nu_nls=[nu(-l)
 	tnlm=Tnlm(nu_nls, l);
 	switch (l){
 		case 1:
-			aj[0]=(nu_nls[2]- nu_nls[0])/2;
-			aj[1]=((nu_nls[0] + nu_nls[2])/2 - nu_nls[1])/3;
+			aj[0]=tnlm[0]; //(nu_nls[2]- nu_nls[0])/2;
+			aj[1]=snlm[0]/3; //((nu_nls[0] + nu_nls[2])/2 - nu_nls[1])/3;
 			break;
 		case 2:
 			// a1 Term:
@@ -239,25 +239,12 @@ VectorXd eval_acoefs(const int l, VectorXd& nu_nls){ // We expect nu_nls=[nu(-l)
 			aj[4] = tnlm[2]/42 + 5*tnlm[0]/126 - 4*tnlm[1]/63;
 			// Even Terms
 			// We have Snlm = Sum[a2j (P2j - P2j(0))] with j=[1, M/2]
-			Pi21=Pslm(2,3,1) - Pslm(2,3,0);
-			Pi22=Pslm(2,3,2) - Pslm(2,3,0);		
-			Pi23=Pslm(2,3,3) - Pslm(2,3,0);		
-			Pi41=Pslm(4,3,1) - Pslm(4,3,0);		
-			Pi42=Pslm(4,3,2) - Pslm(4,3,0);		
-			Pi43=Pslm(4,3,3) - Pslm(4,3,0);		
-			Pi61=Pslm(6,3,1) - Pslm(6,3,0);		
-			Pi62=Pslm(6,3,2) - Pslm(6,3,0);		
-			Pi63=Pslm(6,3,3) - Pslm(6,3,0);		
 			// a2 term:
-			C=snlm[0]/Pi21 - snlm[2]/Pi21 * Pi61/Pi63;
-			aj[1]=C/A;
+			aj[1]=(-15*snlm[0] + 25*snlm[2])/126;
 			// a4 term:
-			E=1- Pi62/Pi63 * Pi43/Pi42;
-			F=snlm[1]/Pi42 - snlm[2]/Pi42 * Pi62/Pi63;
-			G=Pi23/Pi42 * Pi62/Pi63 - Pi22/Pi42;
-			aj[3]=(F+ aj[1]*G)/E;
+			aj[3]=13*(snlm[0] - 7*snlm[1] + 3*snlm[2])/1001;
 			// a6 term:
-			aj[5]=(snlm[2] - aj[1]*Pi23 - aj[3]*Pi43)/Pi63;
+			aj[5]=(15*snlm[0] - 6*snlm[1] + snlm[2])/1386;
 			break;
 		default:
 			std::cout << "Error eval_acoefs(): l must be between 1 and 3. Your input is l=" << l << std::endl;
