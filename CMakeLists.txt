@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.4.1)
 
-project(cpptamcmc VERSION 1.3.1)
+project(cpptamcmc VERSION 1.6.6)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -72,10 +72,10 @@ set(HEADERS  #_COMMON
     tamcmc/headers/string_handler.h
     tamcmc/headers/io_models.h
     tamcmc/headers/linspace.h
+    tamcmc/headers/acoefs.h
     external/ARMM/solver_mm.h
     external/ARMM/bump_DP.h
     external/ARMM/linfit.h
-    #external/integrate/ylm.h
     external/integrate/activity.h
     )
 
@@ -107,10 +107,10 @@ set(SOURCES_MAIN  #_COMMON
     tamcmc/sources/random_JB.cpp
     tamcmc/sources/io_models.cpp
     tamcmc/sources/linspace.cpp
+    tamcmc/sources/acoefs.cpp
     external/ARMM/solver_mm.cpp
     external/ARMM/bump_DP.cpp
     external/ARMM/linfit.cpp
-    #external/integrate/ylm.cpp
     external/integrate/activity.cpp
     )
  
@@ -149,9 +149,9 @@ set(SOURCES_TOOLS_GETMODEL
 	tamcmc/sources/io_models.cpp
 	tamcmc/sources/linfit.cpp
 	tamcmc/sources/linspace.cpp
+	tamcmc/sources/acoefs.cpp
 	external/ARMM/solver_mm.cpp
 	external/ARMM/bump_DP.cpp
-	#external/integrate/ylm.cpp
 	external/integrate/activity.cpp
         )
 

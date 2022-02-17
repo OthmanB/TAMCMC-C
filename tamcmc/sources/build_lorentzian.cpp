@@ -252,6 +252,28 @@ VectorXd build_l_mode_a1a2a3(const VectorXd& x_l, const double H_l, const double
 return result;
 }
 
+VectorXd build_l_mode_act_simu(const VectorXd& x_l, const double H_l, const double fc_l, const double f_s, const double eta, const double a3, 
+        const double b, const double alpha, const double asym, const double gamma_l, const int l, const VectorXd& V){
+/*
+ * This model includes:
+ *      - Asymetry of Lorentzian asym
+ *      - splitting a1
+ *      - centrifugal force effect eta
+ *      - latitudinal effect a3
+ *      - effect of magnetic field of the form b.nu^alpha
+*/
+    const double a2=0;
+    const double a4=0;
+    const double a5=0;
+    const double a6=0;
+    const double eta0=eta*1e-12; // Equivalence valid only due to change of notation overtime. Do not assume it to be true in other functions ! The 1e-12 comes from a1 (in Hz) in build_l_mode_aj()
+    VectorXd result;
+
+    std::cout << "Warning: b and alpha are ignored as this function is obselete" << std::endl;
+    result=build_l_mode_aj(x_l, H_l, fc_l, f_s, a2, a3, a4, a5, a6, eta0, asym, gamma_l, l, V);
+return result;
+}
+
 VectorXd build_l_mode_aj(const VectorXd& x_l, const double H_l, const double fc_l, 
         const double a1, const double a2, const double a3, const double a4, const double a5, const double a6, 
         const double eta0, const double asym, const double gamma_l, const int l, const VectorXd& V){
