@@ -5427,6 +5427,7 @@ double eta0_fct(const VectorXd& fl0_all){
     xfit=linspace(0, fl0_all.size()-1, fl0_all.size());
     rfit=linfit(xfit, fl0_all); // rfit[0] = Dnu 
     rho=pow(rfit[0]/Dnu_sun,2.) * rho_sun;
-    eta0=3./(4.*M_PI*rho*G); 
+    //eta0=3./(4.*M_PI*rho*G); WRONG DUE TO WRONG ASSUMPTION OMEGA ~ a1. It SHOULD BE OMEGA ~ 2.pi.a1
+    eta0=3.*M_PI/(rho*G);
     return eta0;
 }
