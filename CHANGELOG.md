@@ -1,12 +1,23 @@
 # Version history #
 
-### v1.66-dev New model [IN PROGRESS] ###
-	* Adding acoefs capabilities up to a6: Compose frequencies with a-coefficients and decompose frequencies into a-coefficients [DONE]
-	* Reorganise existing functions to use the new acoefs functions when necessary  
-	* Model that handle <a1>_l, <a2>_l, <a3>_l,<a4>_l,<a5>_l, <a6>_l in linear function and for MS stars
-	* Model that handle a1(nu,l), a2(nu,l), a3(nu,l), a4(nu,l), a5(nu,l), a6(nu,l) in linear function and for MS stars
-	* Update for Alm: Instead of using directly Alm(theta,delta), we give the user possibility to decompose Alm~F(a2,a4,a6) and to decide which aj to not account for
-	 
+### v1.70-dev New model + Improvements + Bug Fix  ###
+	* Bug Fix:
+  	- Some function were putting a a3 coefficient for l=1. a3 does not exist for l=1 and it is corrected [DONE]
+  * Improvments:
+  	- Use of acoefs.cpp in order to hande the aj decomposition in a cleaner way   [DONE]
+  	- Use of a Qlm(l,m) function to avoid mutliple repetition in the code. Qlm(l,m) includes Dnl = 2./3  [DONE]
+		- Reorganise existing functions to use the new acoefs functions when necessary  [DONE]
+	  - Rearanging and cleaning the functions in build_lorentzian.cpp in order to avoid repeating sections that handle the optimisation [DONE]
+  	- Update for Alm: Instead of using directly Alm(theta,delta), we give the user possibility to decompose Alm~F(a2,a4,a6) and to decide which aj to not account for
+  	- The logLikelihood is computed only if the logPrior is not -INFINITY. This avoid us to compute the model when it is not necessary ==> performance improvement  [DONE]
+  	- Removed the model *acta3 that were obselete [DONE]
+  	- Systematic use of eta0 = 3.pi/(G.rho_sun) . (Dnu_sun/Dnu)^2 in models.cpp and io_ms_global.cpp for the centrifugal force instead of eta = eta0.a1^2. Additionnaly eta0 was corrected from a bug [DONE]
+  	- Optimisation of the structure of priors_calc.cpp inside MS_global case.
+	* New models:
+		- Adding acoefs capabilities up to a6: Compose frequencies with a-coefficients and decompose frequencies into a-coefficients [DONE]
+		- Model that handle <a1>_l, <a2>_l, <a3>_l,<a4>_l,<a5>_l, <a6>_l in linear function and for MS stars
+		- Model that handle a1(nu,l), a2(nu,l), a3(nu,l), a4(nu,l), a5(nu,l), a6(nu,l) in linear function and for MS stars
+
 ### v1.65-dev Improvments ###
 	* Refactoring the section external code that can compute Glm/Alm function in preparation of the more general solver for any kind of 
           Activity zone. Old function named ylm.cpp and ylm.h were replaced by activity.cpp and activity.h. Note the although functions were

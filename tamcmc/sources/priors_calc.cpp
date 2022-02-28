@@ -58,7 +58,7 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 
 	Nfl << Nfl0, Nfl1, Nfl2, Nfl3;
 
-	//std::cout << "[0] f=" << f << std::endl;
+//	std::cout << "[0] f=" << f << std::endl;
 
 	// ----- Add a positivity condition on visibilities ------
 	for(int i=Nmax; i<=Nmax+lmax; i++){
@@ -67,7 +67,7 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 			goto end;
 		}
 	}
-	//std::cout << "[1] f=" << f << std::endl;
+//	std::cout << "[1] f=" << f << std::endl;
 	// Specific cases
 	switch (model_index){
 		case 0: // *.a1etaa3 family of models
@@ -226,7 +226,7 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 			}
 			break;
 	}
-	//std::cout << "[2] f=" << f << std::endl;
+//	std::cout << "[2] f=" << f << std::endl;
 
 	// Implement securities to avoid unphysical quantities that might lead to NaNs
 	if(params[Nmax+lmax+Nf+4] < 0){ // Impose that the power coeficient of magnetic effect is positive
@@ -253,11 +253,11 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 		f=-INFINITY;
 		goto end;
 	}
-	//std::cout << "[4]  f=" << f << std::endl;
+//	std::cout << "[3]  f=" << f << std::endl;
 
 	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
 	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
-	//std::cout << "[5] f=" << f << std::endl;
+//	std::cout << "[4] f=" << f << std::endl;
 
 	// Determine the large separation
 	//frstder=Frstder_adaptive_reggrid(params.segment(Nmax+lmax, Nfl0)); // First derivative of fl0 gives Dnu
@@ -266,7 +266,7 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 	fit=linfit(tmp, params.segment(Nmax+lmax, Nfl[0])); // fit[0] is the slope ==> Dnu and fit[1] is the ordinate at origin ==> fit[1]/fit[0] = epsilon
 	Dnu=fit[0];
 
-	//std::cout << "[6] f=" << f << std::endl;
+//	std::cout << "[5] f=" << f << std::endl;
 
 	// Apply a prior on the d02
 	//std::cout << "--- d02 --" << std::endl;
@@ -276,7 +276,7 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 			f=f+logP_gaussian_uniform( 0, Dnu/3., 0.015*Dnu, d02); // This is mainly for F stars
 		}
 	}
-	//std::cout << "[7] f=" << f << std::endl;
+//	std::cout << "[6] f=" << f << std::endl;
 
 	// Set the smootheness condition handled by derivatives_handler.cpp
 	switch(smooth_switch){
@@ -327,8 +327,8 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 				*/
 			  	break;
 	}
-	//std::cout << " Final f:  "<< f << std::endl;
-	//exit(EXIT_SUCCESS);
+//	std::cout << " Final f:  "<< f << std::endl;
+//	exit(EXIT_SUCCESS);
 	end:	
 return f;
 } 

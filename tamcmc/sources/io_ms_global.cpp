@@ -349,11 +349,11 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 	extra_priors[0]=1; // By default, we apply a smoothness condition
 	extra_priors[1]=2.; // By default, the smoothness coeficient is 2 microHz
 	extra_priors[2]=1e6; // aj/a1 No limit, j=1
-	extra_priors[3]=0.25; // aj/a1 No limit, j=2
-	extra_priors[4]=0.15; // aj/a1 No limit, j=3
-	extra_priors[5]=0.10; // aj/a1 No limit, j=4
-	extra_priors[6]=0.10; // aj/a1 No limit, j=5
-	extra_priors[7]=0.10; // aj/a1 No limit, j=6
+	extra_priors[3]=0.50; // aj/a1 No limit, j=2
+	extra_priors[4]=0.20; // aj/a1 No limit, j=3
+	extra_priors[5]=0.15; // aj/a1 No limit, j=4
+	extra_priors[6]=0.05; // aj/a1 No limit, j=5
+	extra_priors[7]=0.05; // aj/a1 No limit, j=6
 	extra_priors[8]=0; // Switch to control whether a prior imposes Sum(Hnlm)_{m=-l, m=+l}=1. Default: 0 (none). >0 values are model_dependent
 	extra_priors[9]=-1;  // Specify rules to apply to specific models (e.g. models a1a2a3 must have extra_priors[5]=1)
 	// ------------------------------------------------
