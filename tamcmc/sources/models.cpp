@@ -108,6 +108,7 @@ VectorXd model_MS_Global_a1l_etaa3_HarveyLike(const VectorXd& params, const Vect
      --------- Computing the models for the modes  ---------
      -------------------------------------------------------
      */
+    //outparams=1;
     cpt=0;
     for(long n=0; n<Nmax; n++){
         
@@ -1622,6 +1623,7 @@ VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& p
     
     const int Nmax=params_length[0]; // Number of Heights
     const int lmax=params_length[1]; // number of degree - 1
+    //const std::std::vector<int> Nfl{params_length[2], params_length[3], params_length[4], params_length[5]};
     const int Nfl0=params_length[2]; // number of l=0 frequencies
     const int Nfl1=params_length[3]; // number of l=1 frequencies
     const int Nfl2=params_length[4]; // number of l=2 frequencies
@@ -1642,7 +1644,7 @@ VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& p
     VectorXd model_l0(x.size()), model_l1(x.size()), model_l2(x.size()), model_l3(x.size()), model_noise(x.size()), model_final(x.size());
     VectorXd a1_terms(2), a2_terms(2), a3_terms(2),a4_terms(2),a5_terms(2),a6_terms(2);
 
-    VectorXd fl0_all(Nmax), Wl0_all(Nmax), noise_params(Nnoise);
+    VectorXd fl0_all(Nmax), Wl0_all(Nmax), Hl0_all(Nmax), noise_params(Nnoise);
     double fl0, fl1, fl2, fl3, Vl1, Vl2, Vl3, Hl0, Hl1, Hl2, Hl3, Wl0, Wl1, Wl2, Wl3, a1,a2,a3, a4, a5,a6, eta0, asym;
 
     int Nharvey;
@@ -1678,6 +1680,7 @@ VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& p
 
     fl0_all=params.segment(Nmax + lmax, Nfl0); // required for the interpolation of the widths
     Wl0_all=params.segment(Nmax + lmax + Nf + Nsplit, Nmax);
+    Hl0_all=params.segment(0, Nmax);
 
     a1_terms=params.segment(Nmax + lmax + Nf, 2);
     a2_terms=params.segment(Nmax + lmax + Nf + 2,2); // aj and asym terms  //two terms: one constant term + one linear in nu
@@ -1699,10 +1702,9 @@ VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& p
     */
     //outparams=1;    
     cpt=0;
-    for(long n=0; n<Nmax; n++){        
+    for(long n=0; n<Nfl0; n++){        
         fl0=fl0_all[n];
-        Wl0=std::abs(Wl0_all[n]);
-            
+        Wl0=std::abs(Wl0_all[n]);     
         if(do_amp){
             Hl0=std::abs(params[n]/(pi*Wl0)); // A^2/(pi.Gamma)
         } else{
@@ -1712,71 +1714,76 @@ VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& p
        if (outparams){
             mode_params.row(Line) << 0, fl0, Hl0 , Wl0,  0, 0, 0, 0, 0, 0, 0, asym, inclination;// mode_vec;
             Line=Line+1;
-        }   
-        if(lmax >=1){
-            fl1=params[Nmax+lmax+Nfl0+n];
-            Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
-            if(do_amp){
-                //Hl1=std::abs(params[n]/(pi*Wl1));
-                Hl1=std::abs(params[n]/(pi*Wl1))*Vl1;
-            } else{
-                Hl1=std::abs(params[n]*Vl1);
-            }
-            a1=a1_terms[0] + a1_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz  
-            a2=a2_terms[0] + a2_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
-            a3=a3_terms[0] + a3_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
-            a4=a4_terms[0] + a4_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
-            a5=a5_terms[0] + a5_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
-            a6=a6_terms[0] + a6_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
-            model_final=optimum_lorentzian_calc_aj(x, model_final, Hl1, fl1, a1, a2, a3,a4, a5,a6,eta0,asym, Wl1, 1, ratios_l1, step, trunc_c);
-           if (outparams){
-                mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1, a2, a3, a4, a5,a6, eta0, asym, inclination;// mode_vec;
-                Line=Line+1;
-            } 
         }
-        if(lmax >=2){
-            fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
-            Wl2=std::abs(lin_interpol(fl0_all, Wl0_all, fl2));
-            if(do_amp){
-                Hl2=std::abs(params[n]/(pi*Wl2))*Vl2;
-                //Hl2=std::abs(params[n]/(pi*Wl2));
-            } else{
-                Hl2=std::abs(params[n]*Vl2);
-            }   
-            a1=a1_terms[0] + a1_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz  
-            a2=a2_terms[0] + a2_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
-            a3=a3_terms[0] + a3_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
-            a4=a4_terms[0] + a4_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
-            a5=a5_terms[0] + a5_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
-            a6=a6_terms[0] + a6_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
-            model_final=optimum_lorentzian_calc_aj(x, model_final, Hl2, fl2, a1, a2, a3,a4,a5,a6, eta0,asym, Wl2, 2, ratios_l2, step, trunc_c);
-            if (outparams){
-                mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1, a2, a3, a4, a5,a6, eta0, asym, inclination;// mode_vec;
-                Line=Line+1;
-            }      
+    }   
+    for(long n=0; n<Nfl1; n++){        
+        fl1=params[Nmax+lmax+Nfl0+n];
+        Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
+        if(do_amp){
+            //Hl1=std::abs(params[n]/(pi*Wl1));
+            //Hl1=std::abs(params[n]/(pi*Wl1))*Vl1;
+            Hl1=std::abs(lin_interpol(fl0_all, Hl0_all, fl1)/(pi*Wl1)*Vl1); // Modified on 1 Mar 2022
+        } else{
+            //Hl1=std::abs(params[n]*Vl1);
+            Hl1=std::abs(lin_interpol(fl0_all, Hl0_all, fl1)); // Modified on 1 Mar 2022
         }
-        if(lmax >=3){
-            fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
-            Wl3=std::abs(lin_interpol(fl0_all, Wl0_all, fl3));
-            if(do_amp){
-                //Hl3=std::abs(params[n]/(pi*Wl3));
-                Hl3=std::abs(params[n]/(pi*Wl3))*Vl3;
-            } else{
-                Hl3=std::abs(params[n]*Vl3);            
-            }       
-            a1=a1_terms[0] + a1_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz  
-            a2=a2_terms[0] + a2_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
-            a3=a3_terms[0] + a3_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
-            a4=a4_terms[0] + a4_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
-            a5=a5_terms[0] + a5_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
-            a6=a6_terms[0] + a6_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
-            model_final=optimum_lorentzian_calc_aj(x, model_final, Hl3, fl3, a1, a2, a3, a4, a5,a6, eta0, asym, Wl3, 3, ratios_l3, step, trunc_c);
-            if (outparams){
-                mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1, a2, a3, a4, a5,a6, eta0, asym, inclination;// mode_vec;
-                Line=Line+1;
-            } 
-        }       
+        a1=a1_terms[0] + a1_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz  
+        a2=a2_terms[0] + a2_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+        a3=a3_terms[0] + a3_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+        a4=a4_terms[0] + a4_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+        a5=a5_terms[0] + a5_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+        a6=a6_terms[0] + a6_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+        model_final=optimum_lorentzian_calc_aj(x, model_final, Hl1, fl1, a1, a2, a3,a4, a5,a6,eta0,asym, Wl1, 1, ratios_l1, step, trunc_c);
+        if (outparams){
+            mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1, a2, a3, a4, a5,a6, eta0, asym, inclination;// mode_vec;
+            Line=Line+1;
+        } 
     }
+    for(long n=0; n<Nfl2; n++){        
+        fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
+        Wl2=std::abs(lin_interpol(fl0_all, Wl0_all, fl2));
+        if(do_amp){
+            Hl2=std::abs(lin_interpol(fl0_all, Hl0_all, fl2)/(pi*Wl2)*Vl2);  // Modified on 1 Mar 2022
+            //Hl2=std::abs(params[n]/(pi*Wl2));
+        } else{
+            //Hl2=std::abs(params[n]*Vl2);
+            Hl2=std::abs(lin_interpol(fl0_all, Hl0_all, fl2)*Vl2); // Modified on 1 Mar 2022
+        }   
+        a1=a1_terms[0] + a1_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz  
+        a2=a2_terms[0] + a2_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+        a3=a3_terms[0] + a3_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+        a4=a4_terms[0] + a4_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+        a5=a5_terms[0] + a5_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+        a6=a6_terms[0] + a6_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+        model_final=optimum_lorentzian_calc_aj(x, model_final, Hl2, fl2, a1, a2, a3,a4,a5,a6, eta0,asym, Wl2, 2, ratios_l2, step, trunc_c);
+        if (outparams){
+            mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1, a2, a3, a4, a5,a6, eta0, asym, inclination;// mode_vec;
+            Line=Line+1;
+        }      
+    }
+    for(long n=0; n<Nfl3; n++){        
+        fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
+        Wl3=std::abs(lin_interpol(fl0_all, Wl0_all, fl3));
+        if(do_amp){
+            //Hl3=std::abs(params[n]/(pi*Wl3));
+            //Hl3=std::abs(params[n]/(pi*Wl3))*Vl3;
+            Hl3=std::abs(lin_interpol(fl0_all, Hl0_all, fl3)/(pi*Wl3)*Vl3);  // Modified on 1 Mar 2022
+        } else{
+            //Hl3=std::abs(params[n]*Vl3);            
+            Hl3=std::abs(lin_interpol(fl0_all, Hl0_all, fl3)*Vl3); // Modified on 1 Mar 2022
+        }       
+        a1=a1_terms[0] + a1_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz  
+        a2=a2_terms[0] + a2_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+        a3=a3_terms[0] + a3_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+        a4=a4_terms[0] + a4_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+        a5=a5_terms[0] + a5_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+        a6=a6_terms[0] + a6_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+        model_final=optimum_lorentzian_calc_aj(x, model_final, Hl3, fl3, a1, a2, a3, a4, a5,a6, eta0, asym, Wl3, 3, ratios_l3, step, trunc_c);
+        if (outparams){
+            mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1, a2, a3, a4, a5,a6, eta0, asym, inclination;// mode_vec;
+            Line=Line+1;
+        } 
+    }       
     //std::cin.ignore();    
     /* -------------------------------------------------------
        ------- Gathering information about the noise ---------
@@ -1812,7 +1819,7 @@ VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& p
         write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
     }
 //    std::cout << "FINAL" << std::endl;
-//    exit(EXIT_FAILURE);
+   // exit(EXIT_FAILURE);
     return model_final;
 }
 

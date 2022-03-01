@@ -16,6 +16,7 @@
 #include "io_ms_global.h"
 #include "io_models.h"
 #include "function_rot.h"
+#include "interpol.h"
 
 using Eigen::VectorXd;
 using Eigen::VectorXi;
@@ -301,7 +302,8 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
    		std::cout << "The program will exit now" << std::endl;
    		exit(EXIT_FAILURE);
    }
-      
+    
+   //exit(EXIT_SUCCESS);  
    return iMS_global;
 }
 
@@ -316,9 +318,8 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 	const double M_sun=1.98855e30; //in kg
 	const double rho_sun=M_sun*1e3/(4*pi*std::pow(R_sun*1e5,3)/3); //in g.cm-3
 	const int Nmax_prior_params=4; // The maximum number of parameters for the priors. Should be 4 in all my code
-
 	const double Hmin=1, Hmax=10000; // Define the default lower and upper boundary for the Jeffreys priors applied to heights
-
+	const std::vector<double> Vl{1, 1.5, 0.53, 0.08};
 	double rho=pow(inputs_MS_global.Dnu/Dnu_sun,2.) * rho_sun;
 	double Dnl=0.75, trunc_c=-1;
 	double numax=inputs_MS_global.numax;
@@ -602,6 +603,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 			io_calls.fill_param(&width_in, "Width_l0", "Fix", h_inputs[i], tmpXd, i, 0);			
 		}
 	}
+
 	
 	// --- Default setup for frequencies ---
 	for(int i=0; i<f_inputs.size(); i++){
@@ -612,36 +614,24 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 			io_calls.fill_param(&freq_in, "Frequency_l", "Fix", f_inputs[i], tmpXd, i, 0);			
 		}
 	}
-
 	// ----------- Calculate numax -----------
-	// Flated the output vector
-	tmpXd.resize(Nf_el.sum());
-	cpt=0;
+	// Flaten the output vector
 	if(numax <=0){
+		tmpXd.resize(Nf_el.sum());
 		std::cout << "numax not provided. Input numax may be required by some models... Calculating numax..." << std::endl;
-		for(int el=0; el<=3; el++){
-			if( Nf_el[el] != 0){
-				if(el == 0){
-					//std::cout << "l=0" << std::endl;
-					tmpXd.segment(cpt , Nf_el[el])=height_in.inputs; 
-				}
-				if(el == 1){
-					//std::cout << "l=1" << std::endl;
-					tmpXd.segment(cpt , Nf_el[el])=height_in.inputs*1.5; ; //using default visibilities as weights 
-				}
-				if(el == 2){
-					//std::cout << "l=2" << std::endl;
-					tmpXd.segment(cpt , Nf_el[el])=height_in.inputs*0.53; //using default visibilities as weights
-				}
-				if(el == 3){
-					//std::cout << "l=3" << std::endl;
-					tmpXd.segment(cpt , Nf_el[el])=height_in.inputs*0.08; //using default visibilities as weights
-				}
-			cpt=cpt+Nf_el[el];
-			//std::cout << "cpt[" << el <<	 "]" << cpt << std::endl;
+		//std::cout << height_in.inputs << std::endl;
+		tmpXd.segment(0 , Nf_el[0])=height_in.inputs;
+		cpt=Nf_el[0];
+		std::cout << freq_in.inputs << std::endl;
+		for(int el=1; el<=3; el++){
+			for(int n=0; n<Nf_el[el]; n++){
+				tmpXd[cpt+n]=std::abs(lin_interpol(freq_in.inputs.segment(0, Nf_el[0]), height_in.inputs, freq_in.inputs[Nf_el[0]+n]))*Vl[el]; // Modified on 1 Mar 2022 
+				//std::cout << "l=" << el << "  n=" << n << std::endl;
 			}
+			cpt=cpt+Nf_el[el];
+			//std::cout << "cpt[" << el <<	 "]=" << cpt << std::endl;
 		}
-		//std::cout << "getting in getnumax..." << std::endl;
+		std::cout << "getting in getnumax..." << std::endl;
 		numax=getnumax(freq_in.inputs , tmpXd); // We had to flatten the Height vector and put visibilities
 		std::cout << "     numax: " << numax << std::endl;
 	} else {
@@ -768,8 +758,11 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
    				exit(EXIT_SUCCESS);
     		} 
     }
-   	
-	for(int i=0; i<inputs_MS_global.common_names.size(); i++){
+ 	
+	for(int i=0; i<inputs_MS_global.common_names.size(); i++){	
+		//std::cout << "5 - " << i << std::endl;
+		//std::cout << "inputs_MS_global.common_names[i] = " << inputs_MS_global.common_names[i] << std::endl;
+
 		// --- Common parameters than can be run during setup ---
 		if(inputs_MS_global.common_names[i] == "freq_smoothness" || inputs_MS_global.common_names[i] == "Freq_smoothness"){
 			if(inputs_MS_global.common_names_priors[i] != "bool"){
@@ -1128,6 +1121,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
             bool_a1sini=1;
 		}
 	}
+
 if (aj_switch == 1 && a2_param_count !=3){
 	std::cout << " Invalid number of constraints for a2: Please set a2_0, a2_1 and a2_2" <<std::endl;
 	exit(EXIT_SUCCESS); 
@@ -1263,6 +1257,7 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
    	io_calls.fill_param(&Inc_in, "Empty", "Fix", 0, Inc_in.priors.col(0), 0, 1); // Note that inputs_MS_global.modes_common.row(0) is not used... just dummy   	
    	io_calls.fill_param(&Snlm_in, "Empty", "Fix", 0, Snlm_in.priors.col(0), 0, 1); // "Splitting_a1" default values are erased
 }
+
 	// ----------------------------------------------------
 	// ---------------- Handling noise --------------------
 	// ----------------------------------------------------
@@ -1322,13 +1317,12 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8] + all_in.plength[9];
 	io_calls.fill_param(&all_in, "Truncation parameter", "Fix", trunc_c, inputs_MS_global.modes_common.row(0), p0, 1);
 	if (all_in.inputs[p0] <= 0){
-		std::cout << "Warning: trunc_c <= 0. This is forbidden. Setting default to 10000. (No truncation)" << std::endl;
+		std::cout << "Warning: trunc_c = " << all_in.inputs[p0] << " <= 0. This is forbidden. Setting default to 10000. (No truncation)" << std::endl;
 		all_in.inputs[p0]=10000.; // In case of a non-sense value for c, we use Full-Lorentzian as default
 	}
 	// -- Add the Amplitude switch --
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8] + all_in.plength[9] + 1;
 	io_calls.fill_param(&all_in, "Switch for fit of Amplitudes or Heights", "Fix", do_amp, inputs_MS_global.modes_common.row(0), p0,1);
-		
 			
 	if(verbose == 1){
 		std::cout << " ----------------- Configuration summary -------------------" << std::endl;
