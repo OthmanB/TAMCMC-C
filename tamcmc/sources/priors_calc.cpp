@@ -291,45 +291,11 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 					}
 					i0=i0+Nfl[el];			
 				}
-				/*
-				//std::cout << " ------- Frequency derivatives ------" << std::endl;	
-				if(Nfl[0] != 0){
-					scdder=Scndder_adaptive_reggrid(params.segment(Nmax+lmax, Nfl[0])); // The l=0 frequencies
-				}
-				//std::cout << "--- Fl0 --" << std::endl;
-				for(int i=0; i<Nfl[0]; i++){
-					f=f+ logP_gaussian(0, scoef,scdder.deriv[i]); // Penalize the value
-				}
-			
-				if(Nfl[1] != 0){
-					scdder=Scndder_adaptive_reggrid(params.segment(Nmax+lmax+Nfl[0], Nfl[1])); // The l=1 frequencies
-				}
-				//std::cout << "--- Fl1 --" << std::endl;
-				for(int i=0; i<Nfl[1]; i++){
-					f=f+ logP_gaussian(0, scoef,scdder.deriv[i]); // Penalize the value
-				}
-	
-				if(Nfl[2] != 0){
-					scdder=Scndder_adaptive_reggrid(params.segment(Nmax+lmax+Nfl[0]+Nfl[1], Nfl[2])); // The l=2 frequencies
-				}
-				//std::cout << "--- Fl2 --" << std::endl;
-				for(int i=0; i<Nfl2; i++){
-					f=f+ logP_gaussian(0, scoef,scdder.deriv[i]); // Penalize the value
-	
-				}
-				if(Nfl[3] != 0){
-					scdder=Scndder_adaptive_reggrid(params.segment(Nmax+lmax+Nfl[0]+Nfl[1]+Nfl[2], Nfl[3])); // The l=3 frequencies
-				}
-				//std::cout << "--- Fl3 --" << std::endl;
-				for(int i=0; i<Nfl[3]; i++){
-					f=f+ logP_gaussian(0, scoef,scdder.deriv[i]); // Penalize the value
-				}
-				*/
 			  	break;
 	}
+	end:	
 //	std::cout << " Final f:  "<< f << std::endl;
 //	exit(EXIT_SUCCESS);
-	end:	
 return f;
 } 
 
