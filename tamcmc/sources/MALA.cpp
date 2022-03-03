@@ -336,6 +336,8 @@ VectorXd MALA::new_prop_values(const VectorXd& vars, int m){
 /*
  * This function generate new samples according to the current proposal law
 */
+	bool is_finite=true;
+	int c;
 	VectorXd ran, shift(Nvars);
 	MatrixXd tmpmat;
 
@@ -347,7 +349,16 @@ VectorXd MALA::new_prop_values(const VectorXd& vars, int m){
 	
 	// ***** Update of the proposal laws *****
 	ran=vars + Lchol*Eigen::Map<VectorXd>(y, epsilon2.rows()); // Compute the multivariate distribution and project it into the parameter space
-
+	
+	c=0;
+	while (is_finite == true && c<ran.size()){
+		is_finite=std::isfinite(ran[c]);
+		if (is_finite == false){
+			std::cout << "Warning : Generation of a new vector lead to non-finite value: Recomputing..." << std::endl;
+			ran=vars + Lchol*Eigen::Map<VectorXd>(y, epsilon2.rows()); // Compute the multivariate distribution and project it into the parameter space	
+		}
+		c=c+1;
+	}
 	delete y;
 return ran;
 }

@@ -1,5 +1,9 @@
 # Version history #
 
+### v1.71 EXPERIMENTAL Improvment ###
+	- Adding a check of the finitness of the new proposal vector. If not successful, it retries to generate a new random vector
+	  This will come at an extra computation cost of Nchain*Nparams ~ 500 operations
+
 ### v1.70-dev New model + Improvements + Bug Fix  ###
 	* Bug Fix:
   	- Some function were putting a a3 coefficient for l=1. a3 does not exist for l=1 and it is corrected [DONE]
