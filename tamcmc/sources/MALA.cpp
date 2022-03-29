@@ -356,8 +356,6 @@ VectorXd MALA::new_prop_values(const VectorXd& vars, int m){
 		if (is_finite == false){
 			std::cout << "Warning : Generation of a new vector lead to non-finite value: Recomputing..." << std::endl;
 			y = r8vec_normal_01 ( epsilon2.rows(), &seed );
-			std::cout << "      y = " << y << std::endl;
-			std::cout << "   epsilon2 = " << epsilon2 << std::endl; 
 			ran=vars + Lchol*Eigen::Map<VectorXd>(y, epsilon2.rows()); // Compute the multivariate distribution and project it into the parameter space	
 		}
 		c=c+1;
