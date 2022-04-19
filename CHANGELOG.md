@@ -1,5 +1,8 @@
 # Version history #
 
+### v1.72 Bug Fixes and New model ###
+	- Bug fixes 
+	- Model for RGB stars with constant width (experimental): model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3
 ### v1.71 EXPERIMENTAL Improvment ###
 	- Adding a check of the finitness of the new proposal vector. If not successful, it retries to generate a new random vector
 	  This will come at an extra computation cost of Nchain*Nparams ~ 500 operations

@@ -296,6 +296,9 @@ VectorXd Model_def::call_model(Data *data_struc, int m, bool outparams){
 		case 23: // model for aj coefficients 
 			return  model_MS_Global_aj_HarveyLike(params.row(m), plength, (*data_struc).x, outparams);
 			break;
+		case 24: // Same as model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3 but with free l=0 Width. l=2 and l=3 are interpolated from those. l=1 are defined by mixed modes relations
+			return model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3(params.row(m), plength, (*data_struc).x, outparams);
+			break;
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
 		  std::cout << " model_fct_names_switch = " << model_fct_name_switch << std::endl;
@@ -314,6 +317,7 @@ VectorXd Model_def::call_model(Data *data_struc, int m, bool outparams){
           std::cout << "    - 'model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2'" << std::endl;
 		  std::cout << "    - 'model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3'" << std::endl;
 		  std::cout << "    - 'model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3'" << std::endl;
+		  std::cout << "    - 'model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3' " << std::endl;
 		  
           std::cout << "    - 'model_MS_Global_a1l_etaa3_HarveyLike'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1n_etaa3_HarveyLike'" << std::endl;

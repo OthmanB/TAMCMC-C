@@ -52,13 +52,12 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	bool do_a11_eq_a12=1, do_avg_a1n=1, do_amp=0;
 	bool bool_a1sini=0, bool_a1cosi=0;
 	int lmax, Nmixedmodes_params, en, ind, Ntot, p0, p0_effective, cpt;
-	//uint8_t do_width_Appourchaux=0; // We need more than a boolean here, but no need to use a 64 bit signed int
-	int do_width_Appourchaux=0;
+	uint8_t do_width_Appourchaux=0; // We need more than a boolean here, but no need to use a 64 bit signed int
 	double tol=1e-2, tmp;
 	VectorXi pos_el, pos_relax0, els_eigen, Nf_el(4), plength;
 	VectorXd ratios_l, tmpXd, extra_priors, fl1p_all;
 	std::vector<int> pos_relax;
-	std::vector<double> f_inputs, h_inputs, w_inputs, f_priors_min, f_priors_max, f_el;
+	std::vector<double> f_inputs, h_inputs, w_inputs, f_priors_min, f_priors_max, f_el;;
 	std::vector<bool> f_relax, h_relax, w_relax; 
 	std::vector<int> rf_el, rw_el, rh_el;
 	std::vector<std::string> tmpstr_vec;
@@ -84,21 +83,6 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
             	do_a11_eq_a12=1;
             	do_avg_a1n=1;
             	do_width_Appourchaux=2;
-            	if(numax != -9999){ 
-            		if (numax <= 0){ // Check that if there is a value, this one is a valid input for numax
-            			std::cout << "    The model: " << all_in.model_fullname << " is supposed to have numax for (optional) argument" << std::endl;
-            			std::cout << "    However, you provided a negative input. Please either:" << std::endl;
-            			std::cout << "           [1] Not specify any numax or set !n -9999 in the .model file. In that case, the code will calculate a numax using weighted average of frequencies using Heights as weights" << std::endl;
-            			std::cout << "           [2] Specify a valid (positive) numax." << std::endl;
-            			std::cout << "    The program will exit now. " << std::endl;
-            			exit(EXIT_SUCCESS);
-            		}
-            	}	
-            }
-            if(all_in.model_fullname == "model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3"){
-            	do_a11_eq_a12=1;
-            	do_avg_a1n=1;
-            	do_width_Appourchaux=1;
             	if(numax != -9999){ 
             		if (numax <= 0){ // Check that if there is a value, this one is a valid input for numax
             			std::cout << "    The model: " << all_in.model_fullname << " is supposed to have numax for (optional) argument" << std::endl;
@@ -225,13 +209,13 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	if (do_width_Appourchaux == 0){
 		io_calls.initialise_param(&width_in, w_relax.size(), Nmax_prior_params, -1, -1); 
 	} 
-	if (do_width_Appourchaux == 1){ // CONSTANT WIDTH CASE
-		io_calls.initialise_param(&width_in, 1, Nmax_prior_params, -1, -1);
-	}
+	//if (do_width_Appourchaux == 1){
+	//	io_calls.initialise_param(&width_in, 5, Nmax_prior_params, -1, -1);
+	//}
 	if (do_width_Appourchaux == 2){
 		io_calls.initialise_param(&width_in, 6, Nmax_prior_params, -1, -1);
 	}
-	if (do_width_Appourchaux > 2 ){
+	if (do_width_Appourchaux == 1 || do_width_Appourchaux > 2 ){
 		std::cout << "Fatal error on io_asymptotic.cpp: Allowed Appourchaux Widths models are only model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3 or model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3. This because other models" << std::endl;
 		std::cout << "are not yet implemented. However the logical switches do_width_Appourchaux did not match and is not consistent with non-Appourchaux width"<< std::endl;
 		std::cout << "Serious debug required here. The program will exit now" << std::endl;
@@ -239,8 +223,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 
 	}
 
-	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3"
-			|| "model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3"){
+	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3"){
 		// Generate initial set of l=1		
 		// The initial values at fl0 + Dnu/2 + delta0l = inputs_MS_global.Dnu/100
 		VectorXd fl0(Nf_el[0]); 
@@ -248,7 +231,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			fl0[i]=f_inputs[i];
 		}
 		fl1p_all=asympt_nu_p_from_l0_Xd(fl0, inputs_MS_global.Dnu, 1, inputs_MS_global.Dnu/100, fl0.minCoeff() - inputs_MS_global.Dnu, fl0.maxCoeff() + inputs_MS_global.Dnu);
-		Nmixedmodes_params=Nmixedmodes_g_params + fl1p_all.size(); // Adding the fl1p modes in the parameter list 
+		Nmixedmodes_params=Nmixedmodes_g_params + fl1p_all.size(); // Adding the fl1p modes in the parameter list
 	} else{
 		Nmixedmodes_params=Nmixedmodes_g_params;
 	}
@@ -301,8 +284,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		}
 	}
 
-	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3"
-		|| "model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3"){
+	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3"){
 		// Add the fl1p modes into the frequency parameters 
 		cpt=Nf_el[0] + Nmixedmodes_g_params;
 		for(int i=0; i<fl1p_all.size();i++){
@@ -386,9 +368,6 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3"){
 		extra_priors[4]=1;
 	}
-	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3"){ // Deal with Dnu priors the same way as "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3"
-		extra_priors[4]=1;
-	}
 	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3"){ // Deal with Dnu priors the same way as "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3"
 		extra_priors[4]=1;
 	}
@@ -399,7 +378,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	// ------------------------------------------------
 
 	for(int i=0; i<inputs_MS_global.common_names.size(); i++){
-		//std::cout << "i =" << i << std::endl;
+		std::cout << "i =" << i << std::endl;
 		// --- Common parameters than can be run during setup ---
 		if(inputs_MS_global.common_names[i] == "freq_smoothness" || inputs_MS_global.common_names[i] == "Freq_smoothness"){
 			if(inputs_MS_global.common_names_priors[i] != "bool"){
@@ -512,13 +491,6 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 				io_calls.fill_param(&freq_in, "sigma_fl1m", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 			}
 			//std::cout << "		DONE" << std::endl;
-		}
-		if(inputs_MS_global.common_names[i] == "Hfactor"){
-			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
-				fatalerror_msg_io_MS_Global("Hfactor", "Fix_Auto", "", "" );
-			}
-			p0=Nf_el[0]+7;
-			io_calls.fill_param(&freq_in, "Hfactor", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 		}
 		if(inputs_MS_global.common_names[i] == "sigma_fl1m_0"){
 			//std::cout << "sigma_fl1m_0" << std::endl;
@@ -638,23 +610,9 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			}
 		} 	
 		if((inputs_MS_global.common_names[i] == "width" || inputs_MS_global.common_names[i] == "Width") && (do_width_Appourchaux == 1)){
-			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
-                tmpstr="Jeffreys";
-                tmpXd.resize(4);
-                tmpXd << resol, inputs_MS_global.Dnu/3., -9999., -9999.;
-                std::cout << "Fix_Auto requested for Widths... For all free Widths, the prior will be with this syntax:" << std::endl;
-                std::cout << "          " << std::left << std::setw(15) << tmpstr << " [Spectrum Resolution]   [Deltanu / 3]   -9999    -9999" << std::endl;
-                std::cout << "          " << "Resolution: " << resol << std::endl;
-                tmp=0;
-                for(p0=0; p0<w_inputs.size(); p0++){ // Compute the mean
-                	tmp=tmp + w_inputs[p0]/w_inputs.size();
-                }
-                std::cout << " Mean Width:" << tmp << std::endl;
-                io_calls.fill_param(&width_in, "Width_l", tmpstr, tmp,  tmpXd, 0, 0);
-            } else{
-                std::cout << "Please use the 'Fix_Auto' option for the width when considering a constant width for the whole range of fit (do_width_Appourchaux == 1)" << std::endl;
-                exit(EXIT_SUCCESS);
-            }
+				std::cout << "       Width argument found in the model file, but model name is: model_MS_Global_a1etaa3_AppWidth_HarveyLike. "  << std::endl;
+				std::cout << "       This is incompatible. The argument will be ignored. Fit of the Width is performed using Appourchaux+2016 relation (5 parameters + numax)" << std::endl;
+				std::cout << "       Pursuing..." <<std::endl;
 		}	
 		// --- Splittings and asymetry ---
 		if(inputs_MS_global.common_names[i] == "rot_env" || inputs_MS_global.common_names[i] == "Rot_env"){
@@ -680,6 +638,34 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			Snlm_in.inputs_names[1]="Asphericity_eta";
 			Snlm_in.relax[1]=0;
 			Snlm_in.inputs[1]=0;
+			/*
+			Snlm_in.inputs_names[1]="Asphericity_eta";
+			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){ // Case where the centrifugal force is added but FIXED.
+				Snlm_in.priors_names[1]="Fix"; //In all cases the centrifugal force is fixed
+				Snlm_in.relax[2]=0;
+				if(inputs_MS_global.modes_common(i,0) == 1){
+  					if (Snlm_in.inputs[0] != -9999){ 
+						//eta=(4./3.)*!pi*Dnl*(a1_init*1d-6)^2/(rho*G)
+						Snlm_in.inputs[2]=(4./3.)*pi*Dnl*pow(Snlm_in.inputs[0]*1e-6,2.)/(rho*G);
+						std::cout << " -------------" << std::endl;
+						std::cout << "Asphericity_eta given with Fix_Auto ==> Setting the asphericity to the centrifugal force" << std::endl;
+						std::cout << "      eta=" << Snlm_in.inputs[1] << std::endl;
+						std::cout << " -------------" << std::endl;
+					} else{
+						std::cout << "Warning: the keyword 'asphericity_eta' must appear after the keyword splitting_a1" << std::endl;
+						std::cout << "         This because the splitting_a1 is used to define the initial value of asphericity" << std::endl;
+						std::cout << "         Edit the .MCMC file accordingly" << std::endl;
+						std::cout << "The program will exit now" << std::endl;
+						exit(EXIT_FAILURE);
+					}
+				} else{
+					Snlm_in.inputs[2]=0;
+				}
+			} else{ // Case where the centrifugal force is user-defined: Could be free or fixed
+				p0=2;
+				io_calls.fill_param(&Snlm_in, "Asphericity_eta", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			}
+			*/
 		}
 
 		if(inputs_MS_global.common_names[i] == "splitting_a3" || inputs_MS_global.common_names[i] == "Splitting_a3"){
@@ -891,9 +877,13 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	
 	// --- Put the Width ---
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] +  all_in.plength[3]  + all_in.plength[4] + all_in.plength[5] + all_in.plength[6];
-	if(do_width_Appourchaux == 0 || do_width_Appourchaux == 1){ // Most models
+	if(do_width_Appourchaux == 0){ // Most models
 		io_calls.add_param(&all_in, &width_in, p0);
 	} 
+	//if(do_width_Appourchaux == 1){// Case of: model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1
+	//	width_in=set_width_App2016_params_v1(numax, width_in);
+	//	io_calls.add_param(&all_in, &width_in, p0);
+	//}
 	if(do_width_Appourchaux == 2){// Case of: model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1
 		width_in=set_width_App2016_params_v2(numax, width_in);
 		io_calls.add_param(&all_in, &width_in, p0);
