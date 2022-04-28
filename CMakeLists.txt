@@ -73,10 +73,12 @@ set(HEADERS  #_COMMON
     tamcmc/headers/io_models.h
     tamcmc/headers/linspace.h
     tamcmc/headers/acoefs.h
+    tamcmc/headers/polyfit.h
     external/ARMM/solver_mm.h
     external/ARMM/bump_DP.h
     external/ARMM/linfit.h
     external/integrate/activity.h
+    external/spline/src/spline.h
     )
 
 #Bring the core program sources into the project
@@ -108,6 +110,7 @@ set(SOURCES_MAIN  #_COMMON
     tamcmc/sources/io_models.cpp
     tamcmc/sources/linspace.cpp
     tamcmc/sources/acoefs.cpp
+    tamcmc/sources/polyfit.cpp
     external/ARMM/solver_mm.cpp
     external/ARMM/bump_DP.cpp
     external/ARMM/linfit.cpp
@@ -148,6 +151,7 @@ set(SOURCES_TOOLS_GETMODEL
 	tamcmc/sources/derivatives_handler.cpp
 	tamcmc/sources/io_models.cpp
 	tamcmc/sources/linfit.cpp
+    tamcmc/sources/polyfit.cpp
 	tamcmc/sources/linspace.cpp
 	tamcmc/sources/acoefs.cpp
 	external/ARMM/solver_mm.cpp
@@ -163,6 +167,7 @@ set(SOURCES_TOOLS_TESTSOLVER
 	external/ARMM/bump_DP.cpp
     	tamcmc/sources/interpol.cpp
    	tamcmc/sources/derivatives_handler.cpp
+    tamcmc/sources/polyfit.cpp
    	external/ARMM/linfit.cpp
 	external/ARMM/linspace.cpp
 	tamcmc/sources/noise_models.cpp
