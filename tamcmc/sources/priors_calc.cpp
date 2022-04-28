@@ -312,6 +312,7 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 	const int impose_normHnlm=extra_priors[3];
 	const int model_switch=extra_priors[4];  // Switch that specify the model that is used... its definition is made inside io_asymptotic.cpp
 
+	//std::cout << "[0] f =" << f << std::endl;
 
 	//const int numax=extra_priors[3]; 'Prior on numax, only applied if non-zero Not used.
 	
@@ -338,7 +339,7 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 	a3=params[Nmax+lmax+Nf+3];
 	rot_env=std::abs(params[Nmax + lmax + Nf]);
 
-//	std::cout << "[1] f =" << f << std::endl;
+	//std::cout << "[1] f =" << f << std::endl;
 	// ----- Add a positivity condition on visibilities ------
 	for(int i=Nmax; i<=Nmax+lmax; i++){
 		if(params[i] < 0){
@@ -378,8 +379,10 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 		f=-INFINITY;
 		goto end;
 	}
-	// ------ Add a positiviy condition on Width parameters -----
+	// ------ Add a positivity condition on Width parameters -----
+	//std::cout << "[3.1] f =" << f << std::endl;
 	for (i=i0; i<i0 + Nwidth; i++){
+		//std::cout << "i = " << i << "   : params[" << i << "] =" << params[i] <<  "     priors_names_switch:" << priors_names_switch[i] << std::endl;
 		switch(priors_names_switch[i]){
 			case 2:
 				if (params[i] < 0){
@@ -389,11 +392,11 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 			break;
 		}
 	}
-	//std::cout << "[3] f =" << f << std::endl;
+	//std::cout << "[3.2] f =" << f << std::endl;
 
 	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
 	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
-//	std::cout << "[4] f =" << f << std::endl;
+	//std::cout << "[4] f =" << f << std::endl;
 
 	// ----- Add a positivity condition on inclination -------
 	// The prior could return values -90<i<90. We want it to give only 0<i<90
@@ -447,7 +450,14 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 				}				
 			}	
  		break;
-	}
+ 		case 3:
+ 			//std::cout << "params[Nmax + lmax + Nfl0 + 6] = " << params[Nmax + lmax + Nfl0 + 6] << std::endl;
+ 			if (params[Nmax + lmax + Nfl0 + 6] < 0){ // Imposes that Wfactor >= 0(which is likely gaussian prior)
+				f=-INFINITY;
+				goto end;
+			}
+		break;
+ 	}
 	//std::cout << "[5] f =" << f << std::endl;
 
 	// Apply a prior on the d02 : NOTE CANNOT DUE TO POTENTIAL l=2 MIXED MODES

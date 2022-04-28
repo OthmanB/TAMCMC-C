@@ -51,12 +51,13 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	// All Default booleans
 	bool do_a11_eq_a12=1, do_avg_a1n=1, do_amp=0;
 	bool bool_a1sini=0, bool_a1cosi=0;
+	bool status_model = false;
 	int lmax, Nmixedmodes_params, en, ind, Ntot, p0, p0_effective, cpt;
 	//uint8_t do_width_Appourchaux=0; // We need more than a boolean here, but no need to use a 64 bit signed int
-	int do_width_Appourchaux=0;
+	int do_width_Appourchaux=0, model_type=-1, bias_type=-1;
 	double tol=1e-2, tmp;
 	VectorXi pos_el, pos_relax0, els_eigen, Nf_el(4), plength;
-	VectorXd ratios_l, tmpXd, extra_priors, fl1p_all;
+	VectorXd ratios_l, tmpXd, extra_priors, fl1p_all, fref, ferr;
 	std::vector<int> pos_relax;
 	std::vector<double> f_inputs, h_inputs, w_inputs, f_priors_min, f_priors_max, f_el;
 	std::vector<bool> f_relax, h_relax, w_relax; 
@@ -80,7 +81,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
         if(inputs_MS_global.common_names[i] == "model_fullname" ){ // This defines if we assume S11=S22 or not (the executed model will be different)
         	all_in.model_fullname=inputs_MS_global.common_names_priors[i];
             if(all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3" ||
-            		"model_RGB_asympt_a1etaa3_AppWidth_HarveyLike"){
+            		"model_RGB_asympt_a1etaa3_AppWidth_HarveyLike" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4"){
             	do_a11_eq_a12=1;
             	do_avg_a1n=1;
             	do_width_Appourchaux=2;
@@ -136,7 +137,6 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			}
 
         }
- 
     }
     if(all_in.model_fullname == " "){
     	std::cout << "Model name empty. Cannot proceed. Check that the .model file contains the model_fullname variable." << std::endl;
@@ -213,12 +213,12 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	// ------------------------------------------------------------------------------------------
 	if( do_amp){
 		std::cout << "   ===> Requested to fit squared amplitudes instead of Height... Converting height inputs into A_squared = pi*Height*Width..." << std::endl;
-		tmpstr_h="Amplitude_l0";
+		tmpstr_h="Amplitude_l0_rgb";
 		for(int i=0; i<h_inputs.size(); i++){
 			h_inputs[i]=pi*w_inputs[i]*h_inputs[i]; 
 		}
 	} else{
-		tmpstr_h="Height_l0";
+		tmpstr_h="Height_l0_rgb";
 	}
     // Set default value of priors for Height Width and frequency
 	io_calls.initialise_param(&height_in, h_relax.size(), Nmax_prior_params, -1, -1);
@@ -238,7 +238,6 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		exit(EXIT_FAILURE);
 
 	}
-
 	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3"
 			|| "model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3"){
 		// Generate initial set of l=1		
@@ -249,7 +248,29 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		}
 		fl1p_all=asympt_nu_p_from_l0_Xd(fl0, inputs_MS_global.Dnu, 1, inputs_MS_global.Dnu/100, fl0.minCoeff() - inputs_MS_global.Dnu, fl0.maxCoeff() + inputs_MS_global.Dnu);
 		Nmixedmodes_params=Nmixedmodes_g_params + fl1p_all.size(); // Adding the fl1p modes in the parameter list 
-	} else{
+		status_model=true;
+	}
+	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4"){
+		// Generate initial set of ferr and fref. fref is basically a grid of nodes for the x-axis of the bias splines		
+		// We use the hyper-prior section of the .model file in order to get the list of fref. It is up to the user to provide that after examination of the spectrum
+		if (inputs_MS_global.hyper_priors.size() > 3){
+			for (int i=0; i<inputs_MS_global.hyper_priors.size()-1;i++){ // Check that we have values that are monotonically increasing
+				if (inputs_MS_global.hyper_priors[i+1] < inputs_MS_global.hyper_priors[i]){
+					std::cout << "Error in io_asymptotic, model " << all_in.model_fullname << std::endl;
+					std::cout << " You must ensure that values in the hyper prior section are non-zero and are monotonically increasing" << std::endl;
+				} 
+			}
+			fref=inputs_MS_global.hyper_priors;
+		} else{
+			std::cout << "Error in io_asymptotic, model " << all_in.model_fullname << std::endl;
+			std::cout << " You must have at least 4 non-zero data points in the hyper_priors section in order to describe the bias frequencies used as hanchors" << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		ferr.resize(fref.size()); ferr.setZero(); // The initial bias vector is set to 0
+		Nmixedmodes_params=Nmixedmodes_g_params + 2*fref.size() + 1; // Adding the fref and ferr modes in the parameter list + Hfactor : BEWARE: WHEN WRITTING THIS, I REALIZE THAT the +1 MAY BE MISSING IN v3 models... 
+		status_model=true;
+	} 
+	if (status_model == false) {// status_model checks whether we already got a model defined. If not, it set the parameters to the default value
 		Nmixedmodes_params=Nmixedmodes_g_params;
 	}
 
@@ -301,8 +322,8 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		}
 	}
 
-	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3"
-		|| "model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3"){
+	status_model=false;
+	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3"){
 		// Add the fl1p modes into the frequency parameters 
 		cpt=Nf_el[0] + Nmixedmodes_g_params;
 		for(int i=0; i<fl1p_all.size();i++){
@@ -310,7 +331,43 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			io_calls.fill_param(&freq_in, "Frequency_RGB_l1p", "GUG",  fl1p_all[i], tmpXd, cpt, 0);
 			cpt=cpt+1;
 		}
+		status_model=true;
 	}
+
+	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4"){
+		// Add the fref into the frequency parameters 
+		cpt=Nf_el[0] + Nmixedmodes_g_params + 1; // The +1 is due to Hfactor here...
+		for(int i=0; i<fref.size();i++){
+			tmpXd << -9999, -9999, -9999, -9999; // The reference frequencies of the spline are not free parameters (they could, but my guess is that it will get messy...)
+			io_calls.fill_param(&freq_in, "fref_bias", "Fix",  fref[i], tmpXd, cpt, 0);
+			cpt=cpt+1;
+		}
+		// Add the ferr into the frequency parameters
+		// The FIRST frequency (lower edge) is allowed to have larger excursion to the low frequency range
+		tmpXd << -inputs_MS_global.Dnu/2 , inputs_MS_global.Dnu/20, -9999, -9999; // default parameters for a Uniform prior
+		io_calls.fill_param(&freq_in, "ferr_bias", "Uniform",  ferr[0], tmpXd, cpt, 0);
+		cpt=cpt+1;
+		// Core
+		tmpXd << -inputs_MS_global.Dnu/20 , inputs_MS_global.Dnu/20, -9999, -9999; // default parameters for a Uniform prior
+		for(int i=1; i<ferr.size()-1;i++){
+			//tmpXd << fref[i-1] , fref[i+1], -9999, -9999; // default parameters for a Uniform prior
+			io_calls.fill_param(&freq_in, "ferr_bias", "Uniform",  ferr[i], tmpXd, cpt, 0);
+			cpt=cpt+1;
+		}
+		// The LAST frequency (upper edge) is allowed to have larger excursion to the high frequency range
+		//tmpXd << fref[ferr.size()-2] , ferr[ferr.size()-1] + inputs_MS_global.Dnu/2, -9999, -9999; // default parameters for a Uniform prior
+		tmpXd << -inputs_MS_global.Dnu/20 , inputs_MS_global.Dnu/2, -9999, -9999; // default parameters for a Uniform prior
+		io_calls.fill_param(&freq_in, "ferr_bias", "Uniform",  ferr[ferr.size()-1], tmpXd, cpt, 0);
+		cpt=cpt+1;
+		status_model=true;
+
+	}
+	if (status_model == false) {// status_model checks whether we already got a model defined. If not, it set the parameters to the default value
+		std::cout << " Something went wrong in io_asymptotic: The model " << all_in.model_fullname << " did not pass an expected checkpoint " << std::endl;
+		std::cout << " Please check the code and/or the model name" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	
 	// ----------- Calculate numax -----------
 	// Flated the output vector
 	//tmpXd.resize(Nf_el.sum());
@@ -383,6 +440,9 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	extra_priors[2]=0.2; // By default a3/a1<=0.2
 	extra_priors[3]=0; // Switch to control whether a prior imposes Sum(Hnlm)_{m=-l, m=+l}=1. Default: 0 (none). >0 values are model_dependent
 	extra_priors[4]=-1; // By default the model switch is not defined
+	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4"){ // The spline is handling inside the model, so there is no new priors for it. Prior MUST differ from v3
+		extra_priors[4]=3;
+	}
 	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3"){
 		extra_priors[4]=1;
 	}
@@ -414,6 +474,20 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 				fatalerror_msg_io_MS_Global("trunc_c", "Fix", "[Truncation parameter]", "20" );
 			} else{
 				trunc_c=inputs_MS_global.modes_common(i,0); // This value is added to the input vector at the end of this function.
+			}
+		}	
+		if(inputs_MS_global.common_names[i] == "model_type"){
+			if(inputs_MS_global.common_names_priors[i] != "Fix"){
+				fatalerror_msg_io_MS_Global("model_type", "Fix", "[Value]", "(0: use of fl0 to construct fl1p, 1: use a 2nd order polynomial to fit fl0 to construct O2p fl1p)" );
+			} else{
+				model_type=inputs_MS_global.modes_common(i,0); // This value is added to the input vector at the end of this function.
+			}
+		}	
+		if(inputs_MS_global.common_names[i] == "bias_type"){
+			if(inputs_MS_global.common_names_priors[i] != "Fix"){
+				fatalerror_msg_io_MS_Global("bias_type", "Fix", "[Value]", "(0: window bias, 1: Cubic spline, 2: Hermite spline" );
+			} else{
+				bias_type=inputs_MS_global.modes_common(i,0); // This value is added to the input vector at the end of this function.
 			}
 		}	
 		// --- Frequencies ---
@@ -448,12 +522,13 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		// ---- l=1 mixed modes Global parameters ---
 		if(inputs_MS_global.common_names[i] == "delta01" && all_in.model_fullname != "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3" && all_in.model_fullname != "model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3"){ // Valid parameter only for a specific model
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
+				p0=Nf_el[0];
 //				fatalerror_msg_io_MS_Global("delta01", "Fix_Auto", "", "" );
                 tmpstr="Uniform";
                 tmpXd.resize(4);
-                tmpXd << -5.*inputs_MS_global.Dnu/100, 5.*inputs_MS_global.Dnu/100, -9999., -9999.;
+                tmpXd << -10.*inputs_MS_global.Dnu/100, 10.*inputs_MS_global.Dnu/100, -9999., -9999.;
                 std::cout << "Fix_Auto requested for delta01..., the prior will be with this syntax (negative delta01):" << std::endl;
-                std::cout << "          " << std::left << std::setw(15) << tmpstr << " [-5*Deltanu/100]  [+5*Deltanu/100]   0.00000      -9999    -9999" << std::endl;
+                std::cout << "          " << std::left << std::setw(15) << tmpstr << " [-10*Deltanu/100]  [+10*Deltanu/100]   0.00000      -9999    -9999" << std::endl;
                 std::cout << "          Initial guess: Dnu/100  = " << inputs_MS_global.Dnu/100 << std::endl;
                 io_calls.fill_param(&freq_in, "delta01", tmpstr, inputs_MS_global.Dnu/100 ,  tmpXd, p0, 0);
 			} else{
@@ -483,13 +558,11 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			io_calls.fill_param(&freq_in, "q", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 		}
 		if(inputs_MS_global.common_names[i] == "sigma_Hl1"){
-			//std::cout << "sigma_Hl1" << std::endl;
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 				fatalerror_msg_io_MS_Global("sigma_Hl1", "Fix_Auto", "", "" );
 			}
 			p0=Nf_el[0]+4;
 			io_calls.fill_param(&freq_in, "sigma_Hl1", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
-			//std::cout << "       DONE" << std::endl;
 		}
 		if(inputs_MS_global.common_names[i] == "sigma_fl1g"){
 			//std::cout << "sigma_fl1g" << std::endl;
@@ -502,7 +575,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			}
 			//std::cout << "		DONE" << std::endl;
 		}
-		if(inputs_MS_global.common_names[i] == "sigma_fl1m"){
+		if(inputs_MS_global.common_names[i] == "sigma_fl1m" && all_in.model_fullname != "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4" ){
 			//std::cout << "sigma_fl1m" << std::endl;
 			if (extra_priors[4] == 1){ // Deal with this parameters only for specific models as per defined by extra_priors[4] value			
 				if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
@@ -511,7 +584,13 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 				p0=Nf_el[0]+6;
 				io_calls.fill_param(&freq_in, "sigma_fl1m", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 			}
-			//std::cout << "		DONE" << std::endl;
+		}
+		if(inputs_MS_global.common_names[i] == "Wfactor"){
+			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
+				fatalerror_msg_io_MS_Global("Wfactor", "Fix_Auto", "", "" );
+			}
+			p0=Nf_el[0]+6;
+			io_calls.fill_param(&freq_in, "Wfactor", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 		}
 		if(inputs_MS_global.common_names[i] == "Hfactor"){
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
@@ -520,6 +599,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			p0=Nf_el[0]+7;
 			io_calls.fill_param(&freq_in, "Hfactor", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 		}
+
 		if(inputs_MS_global.common_names[i] == "sigma_fl1m_0"){
 			//std::cout << "sigma_fl1m_0" << std::endl;
 			if (extra_priors[4] == 2){ // Deal with this parameters only for specific models as per defined by extra_priors[4] value
@@ -865,15 +945,22 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	// ------------- Sticking everything together in a Input_Data structure --------------
 	// -------------------------------------------------------------------------------------
 	
+	//if(model_type ==-1 && bias_type==-1 && (all_in.model_fullname != "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4")){ // If it is a model that does not include any model_type (or bias_type) value, then it has no bias function 
 	plength.resize(11);
 	plength[0]=h_inputs.size(); plength[1]=lmax                  ; plength[2]=Nf_el[0];
 	plength[3]=Nf_el[1]       ; plength[4]=Nf_el[2]		   ; plength[5]=Nf_el[3];
 	plength[6]=Snlm_in.inputs.size(); plength[7]=width_in.inputs.size() ; plength[8]=Noise_in.inputs.size(); 
 	plength[9]=Inc_in.inputs.size();
-	plength[10]=3; // This is trunc_c, do_amp and sigma_limit;
-	
-	io_calls.initialise_param(&all_in, plength.sum(), Nmax_prior_params, plength, extra_priors);
-	
+ 	if (model_type ==-1 && bias_type ==-1){
+		plength[10]=3; // This is trunc_c, do_amp and sigma_limit;
+	} else{
+		plength[10]=6; // This is trunc_c, do_amp and sigma_limit, model_type, bias_type, Nferr;
+	}
+	io_calls.initialise_param(&all_in, plength.sum(), Nmax_prior_params, plength, extra_priors); // The final two arguments are used for model_type or bias_type
+	if ((model_type ==-1 && bias_type !=-1) || (model_type !=-1 && bias_type ==-1)){
+		std::cout << "Error in io_asymptotic: model_type and bias_type must be defined for the specified model:" << all_in.model_fullname << std::endl;
+		exit(EXIT_FAILURE);
+	}
 	// --- Put the Height or Amplitudes---
 	p0=0;
 	io_calls.add_param(&all_in, &height_in, p0); // height_in may contain either height or amplitudes depending on specified keywords
@@ -921,6 +1008,22 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	tmpXd.resize(4);
 	tmpXd << -9999, -9999, -9999, -9999;
 	io_calls.fill_param(&all_in, "Maximum limit on random values generated by N(0,sigma_m)", "Fix", sigma_limit, tmpXd, p0,1);
+	// -- Add the hyper-priors for the bias function (if any)--
+	if (model_type !=-1){
+		p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8] + all_in.plength[9] + 3;
+		tmpXd.resize(4);
+		tmpXd << -9999, -9999, -9999, -9999;
+		io_calls.fill_param(&all_in, "model type ", "Fix", model_type, tmpXd, p0,1);
+	}
+	if (bias_type !=-1){
+		p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8] + all_in.plength[9] + 4;
+		tmpXd.resize(4);
+		tmpXd << -9999, -9999, -9999, -9999;
+		io_calls.fill_param(&all_in, "bias type ", "Fix", bias_type, tmpXd, p0,1);
+		io_calls.fill_param(&all_in, "Nferr ", "Fix", ferr.size(), tmpXd, p0+1,1); // Nferr
+	}
+
+	//
 	if(verbose == 1){
 		std::cout << " ----------------- Configuration summary -------------------" << std::endl;
 		std::cout << "Model Name = " << all_in.model_fullname << std::endl;

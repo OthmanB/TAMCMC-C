@@ -148,7 +148,7 @@ VectorXd ksi_fct2(const VectorXd& nu, const VectorXd& nu_p, const VectorXd& nu_g
 	return ksi_pg;
 }
 
-VectorXd gamma_l_fct2(const VectorXd& ksi_pg, const VectorXd& nu_m, const VectorXd& nu_p_l0, const VectorXd& width_l0, const VectorXd& hl_h0_ratio, const int el)
+VectorXd gamma_l_fct2(const VectorXd& ksi_pg, const VectorXd& nu_m, const VectorXd& nu_p_l0, const VectorXd& width_l0, const VectorXd& hl_h0_ratio, const int el, const long double factor=1.0)
 {
 	long double width0_at_l;
 	VectorXd width_l(ksi_pg.size());
@@ -164,7 +164,7 @@ VectorXd gamma_l_fct2(const VectorXd& ksi_pg, const VectorXd& nu_m, const Vector
 		for (int i=0; i<ksi_pg.size(); i++)
 		{
 			width0_at_l=lin_interpol(nu_p_l0, width_l0, nu_m[i]);
-			width_l[i]=width0_at_l * (1. - ksi_pg[i])/ std::sqrt(hl_h0_ratio[i]);
+			width_l[i]=width0_at_l * (1. - factor*ksi_pg[i])/ std::sqrt(hl_h0_ratio[i]);
 		}
 		// ---- DEBUG LINES ----
 		//std::cout << "   DEBUG FOR gamma_l_fct2..." << std::endl;
@@ -177,14 +177,14 @@ VectorXd gamma_l_fct2(const VectorXd& ksi_pg, const VectorXd& nu_m, const Vector
 	return width_l;
 }
 
-VectorXd h_l_rgb(const VectorXd& ksi_pg)
+VectorXd h_l_rgb(const VectorXd& ksi_pg, const long double factor=1.0)
 {
 	const double tol=1e-5;
 	VectorXi pos;
 	VectorXd tmp(ksi_pg.size()), hl_h0;
 
 	tmp.setConstant(1);
-	hl_h0=tmp - ksi_pg;
+	hl_h0=tmp - factor*ksi_pg;
 	hl_h0=hl_h0.array().sqrt();
 	pos=where_dbl(hl_h0, 0, tol);
 	if(pos[0] != -1)

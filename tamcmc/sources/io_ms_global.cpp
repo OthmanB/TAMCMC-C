@@ -152,7 +152,7 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 	
 	i=0;
 	cpt=0;
-	iMS_global.hyper_priors.resize(10);
+	iMS_global.hyper_priors.resize(50);
 	if(verbose == 1) {std::cout << " - Hyper priors:" << std::endl;}
 	while ((out < 4) && !cfg_session.eof()){ // the priors, until we reach the next # symbol
 			std::getline(cfg_session, line0);

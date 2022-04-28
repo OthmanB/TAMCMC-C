@@ -96,11 +96,11 @@ int main(int argc, char* argv[]){
 			// After all the comments, the first line must contain plength
 			plength=str_to_Xiarr(line0, " \t"); // The separator is either a space of a tabulation
 			status_compat=check_retrocompatibility(plength, modelname); // Verify the consistency of the vector with earlier version of the code
-
 			// All the following lines must correspond to a vector of inputs. 1 line <==> 1 model. Maximum of Nmaxlines lines permitted
 			i=0;
 			std::getline(cfg_session, line0);
 			while(!cfg_session.eof() && i < Nmaxlines){ 
+				//std::getline(cfg_session, line0);
 				line0=strtrim(line0);
 				char0=strtrim(line0.substr(0, 1));
 				
@@ -115,7 +115,6 @@ int main(int argc, char* argv[]){
 					arr0=adapt2new_MSGlobal(plength, arr0, 20.); // last value is c0
 				}				
 				model0=model_list.call_model_explicit(&data_model, plength, arr0, modelname_switch);
-
 				if(i==0){// Initialisation of the Matrix of parameters
 					models.resize(Nmaxlines, model0.size());
 				} 
@@ -136,7 +135,6 @@ int main(int argc, char* argv[]){
    			std::cout << "The program will exit now" << std::endl;
    			exit(EXIT_FAILURE);
 		}
-		
 		std::cout << "  4. Writing outputs into the output file in a simple matricial format... " << std::endl;
 		data_out.resize(data.data.rows(), data.data.cols() + Nmodels) ; //We take the initial data and the models as additional columns
 		data_out.block(0, 0, data.data.rows(), data.data.cols())=data.data; // Put the data first

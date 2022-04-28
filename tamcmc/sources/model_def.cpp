@@ -28,7 +28,6 @@ Model_def::Model_def(Config *config, const VectorXd& Tcoefs, const bool verbose)
 	
 	bool error;
 	double warning_thld;
-	
 	Nmodels=config->MALA.Nchains;
 	model_fct_name=config->modeling.model_fct_name;
 	likelihood_fct_name=config->modeling.likelihood_fct_name;
@@ -72,7 +71,6 @@ Model_def::Model_def(Config *config, const VectorXd& Tcoefs, const bool verbose)
 	index_to_relax.resize(Nparams);
 	vars_names.resize(Nparams); // set to maximum possible size this is 1D
 	cons_names.resize(Nparams);
-
 
 	if( relax.sum() <= 1){
 		std::cout << "Less than one parameter free! No minimization possible!" << std::endl;
@@ -136,6 +134,7 @@ Model_def::Model_def(Config *config, const VectorXd& Tcoefs, const bool verbose)
 
 	Data data_in=config->data.data;
 	bool empty_container=0; // Used to know whether we fill MatrixXd/VectorXd for all Nmodels
+
 	if(empty_container == 0){
 		for(int m=0; m<Nmodels; m++){
 			//std::cout << "Generate model m=" << m ;
@@ -299,6 +298,9 @@ VectorXd Model_def::call_model(Data *data_struc, int m, bool outparams){
 		case 24: // Same as model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3 but with free l=0 Width. l=2 and l=3 are interpolated from those. l=1 are defined by mixed modes relations
 			return model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3(params.row(m), plength, (*data_struc).x, outparams);
 			break;
+		case 25: // Same as model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3 but with a spline for describing the intrinsic bias of the asymptotic model
+			return model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(params.row(m), plength, (*data_struc).x, outparams);
+			break;
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
 		  std::cout << " model_fct_names_switch = " << model_fct_name_switch << std::endl;
@@ -318,7 +320,8 @@ VectorXd Model_def::call_model(Data *data_struc, int m, bool outparams){
 		  std::cout << "    - 'model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3'" << std::endl;
 		  std::cout << "    - 'model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3'" << std::endl;
 		  std::cout << "    - 'model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3' " << std::endl;
-		  
+		   std::cout << "    - 'model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4' " << std::endl;
+
           std::cout << "    - 'model_MS_Global_a1l_etaa3_HarveyLike'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1n_etaa3_HarveyLike'" << std::endl;
           std::cout << "    - 'model_MS_Global_a1nl_etaa3_HarveyLike'" << std::endl;

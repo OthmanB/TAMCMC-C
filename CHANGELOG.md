@@ -1,8 +1,38 @@
 # Version history #
 
+### v1.73 New model ###
+  - WARNING: I NOTICED THAT THE HFACTOR MODIFICATION MAY BE A PROBLEM IN v3 models. The io_asymptotic is clerarly quite messy and would require cleaning once we 
+             have converged toward a nice solution for the fitting
+  - Addition: I have added a corrective factor Wfactor, similarly to Hfactor, it changes Wl=(1 + zeta(nu)).W(l=0) to Wl=(1 + Wfactor.zeta(nu)).W(l=0).
+  				    It is an optional parameter set to 1 when not provided so that it is retrocompatible with older version. However:
+  				    	- It requires to add Wfactor as an argument in the .model file (GU prior is recommended at that stage with Upper bound at 1 to avoid negative widths)
+  				    	- It was tested and explicitly implemented only for model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4
+	- Model for RGB stars : model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4
+		 Changes are in external/ARMM, introduction of polyfit.cpp/h in sources/headers, adding external/spline. 
+	     * Contrary to v3, it has the following capabilities:
+           1. model_type = 1 : The user can choose to use the l=0, shifted with d01 in order to generate l=1 p modes.
+                  In this case, we make use of:
+             solve_mm_asymptotic_O2from_l0(nu_l0_in, el, delta0l, DPl, alpha_g, q, resol, bool returns_pg_freqs=true, verbose=false, freq_min=fmin, freq_max=fmax)
+           2. OR model_type=0: it can use an O2 polynomial:   
+               solve_mm_asymptotic_O2p(Dnu_p, epsilon, el, delta0l, alpha_p, nmax, DPl, alpha_g, q, fmin, fmax, resol, true, false); //returns_pg_freqs=true, verbose=false
+              Here, Dnu_p, epsilon are calculated using a linear fit of l=0 frequencies.
+              alpha_p, nmax are determined using a 2nd order fit of l=0 frequencies.
+              The switch between these two option is made using a control parameter at the end of vector of parameters (replacing sigma_limit of v2 and v3 and named model_type)
+         	The fit incorporate a list of Nerr parameters situated between ferr=[Nmax+ lmax + Nfl0 + 8] and [Nmax+ lmax + Nfl0 + 8 +Nerr] that are used to correct from the bias of the exact asymptotic model
+          These are associated to a list of Nerr list of fixed frequencies between fref=[Nmax+ lmax + Nfl0 + 8 + Nerr] and [Nmax+ lmax + Nfl0 + 8 + 2 Nerr] that provided frequencies of (a) case of bias_type = 0 (cte):
+               The reference frequencies fref are used as 'windows' for determining region of 'constant bias': If a mode lies within a window [fref(j),fref(j+1)] of the list, then we apply the correction ferr(j)
+               This means that multiple modes may have the same correction factor ferr(j) and that some window may have 0. Be aware of this when post processing: Each window must be cleaned of solutions with 0 modes
+           (b) case of bias_type = 1 (Cubic spline, ie strongly correlated as it is twice continuously differentiable):
+               The reference frequencies fref are used as 'anchors' for a spline defined by the values ferr.
+               The spline fitting is performed here in this function using the spline module from https://github.com/ttk592/spline/ also forked to my repo
+           (c) case of bias_type = 2 (Hermite spline, ie less correlated variable as it is once continuously differentiable):
+               The reference frequencies fref are used as 'anchors' for a spline defined by the values ferr.
+               The spline fitting is performed here in this function using the spline module from https://github.com/ttk592/spline/ also forked to my repo
+
 ### v1.72 Bug Fixes and New model ###
 	- Bug fixes 
 	- Model for RGB stars with constant width (experimental): model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3
+
 ### v1.71 EXPERIMENTAL Improvment ###
 	- Adding a check of the finitness of the new proposal vector. If not successful, it retries to generate a new random vector
 	  This will come at an extra computation cost of Nchain*Nparams ~ 500 operations
