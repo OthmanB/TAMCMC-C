@@ -1,12 +1,20 @@
 # Version history #
 
-### v1.73 New model ###
+### v1.73 New model and tools ###
   - WARNING: I NOTICED THAT THE HFACTOR MODIFICATION MAY BE A PROBLEM IN v3 models. The io_asymptotic is clerarly quite messy and would require cleaning once we 
              have converged toward a nice solution for the fitting
   - Addition: I have added a corrective factor Wfactor, similarly to Hfactor, it changes Wl=(1 + zeta(nu)).W(l=0) to Wl=(1 + Wfactor.zeta(nu)).W(l=0).
   				    It is an optional parameter set to 1 when not provided so that it is retrocompatible with older version. However:
   				    	- It requires to add Wfactor as an argument in the .model file (GU prior is recommended at that stage with Upper bound at 1 to avoid negative widths)
   				    	- It was tested and explicitly implemented only for model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4
+  				WARNING: FULL TESTS MADE ONLY FOR THE cubic spline (hermite spline should also work though)
+  - Addition: 
+  		- tools/quickshow.py: Allows you to quickly visualise a params.model file (either created by the IDL postprocessing file or by the debug 'outparams=true' option inside the models)
+  		- tools/Gaussfit_tools/init_fit.py : Adding the capability of using a data file (instead of a sav file) in order to create an initial configuration file for fitting a gaussian. Because usually those data files are already made as the result of a fit, their range is restricted and thus, the user will have to be carefull with the lower harvey profile: The results of the gaussian fit are likely to give weak constrain on it due to the lack of data to support the fit in that region (if the original data file does include low-frequencies)
+  		- tools/recale_height.py: A small function that allows you to divide the power of a spectrum by a certain factor (default is factor=1000). This could be usefull to have 
+  			better convergence properties of the MCMC as it avoid to have large covariance terms (errors on the height are usually of the order of 20% of the input). The matrix inversion  process when evaluating the best MCMC 'step size' can indeed suffer from important error propagation issue if the covariance terms are too different from approximately 1 to 10.
+ 	- Changes: The auto prior for delta0l: Use of a narrower prior: +/-2% of Dnu (instead of 5%)
+ 	
 	- Model for RGB stars : model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4
 		 Changes are in external/ARMM, introduction of polyfit.cpp/h in sources/headers, adding external/spline. 
 	     * Contrary to v3, it has the following capabilities:

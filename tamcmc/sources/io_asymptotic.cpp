@@ -526,11 +526,11 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 //				fatalerror_msg_io_MS_Global("delta01", "Fix_Auto", "", "" );
                 tmpstr="Uniform";
                 tmpXd.resize(4);
-                tmpXd << -10.*inputs_MS_global.Dnu/100, 10.*inputs_MS_global.Dnu/100, -9999., -9999.;
+                tmpXd << -1.*inputs_MS_global.Dnu/100, 1.*inputs_MS_global.Dnu/100, -9999., -9999.;
                 std::cout << "Fix_Auto requested for delta01..., the prior will be with this syntax (negative delta01):" << std::endl;
                 std::cout << "          " << std::left << std::setw(15) << tmpstr << " [-10*Deltanu/100]  [+10*Deltanu/100]   0.00000      -9999    -9999" << std::endl;
-                std::cout << "          Initial guess: Dnu/100  = " << inputs_MS_global.Dnu/100 << std::endl;
-                io_calls.fill_param(&freq_in, "delta01", tmpstr, inputs_MS_global.Dnu/100 ,  tmpXd, p0, 0);
+                std::cout << "          Initial guess: Dnu/100  = " << 0.5*inputs_MS_global.Dnu/100 << std::endl;
+                io_calls.fill_param(&freq_in, "delta01", tmpstr, 0.5*inputs_MS_global.Dnu/100 ,  tmpXd, p0, 0);
 			} else{
 				p0=Nf_el[0];
 				io_calls.fill_param(&freq_in, "delta01", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	

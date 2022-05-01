@@ -4901,7 +4901,7 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
     MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
     int Line=0; // will be used to trim the mode_params table where suited
     
-    outparams=true;
+    //outparams=true;
     /*
        -------------------------------------------------------
        ------- Gathering information about the modes ---------
@@ -5010,17 +5010,17 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
         xfit=linspace(0, fl0_all.size()-1, fl0_all.size());
         rfit=linfit(xfit, fl0_all); // rfit[0] = Dnu
         const double Dnu_p=rfit[0];
-        /*
-        std::cout << " ---- 1st Order Fit ----" << std::endl;
-        std::cout << " Dnu_p =" << rfit[0] << std::endl;
-        std::cout << " epsilon_p + n0 =" << rfit[1]/rfit[0] << std::endl;
-        std::cout << " ---- 2nd Order Fit ----" << std::endl;
-        */
-        rfit=polyfitXd(xfit, fl0_all, 2); // rfit[0] = A, rfit[1]=B, rfit[2]=C : alpha_p=2 C / Dnu_p   ; nmax = (1 - B/Dnu_p)/alpha_p ; epsilon = A/Dnu_p - alpha_p * nmax^2 / 2
-        const long double alpha_p=2 *rfit[2]/Dnu_p;
-        const long double nmax = (1-rfit[1]/Dnu_p)/alpha_p;
-        const long double n0=floor(rfit[0]/Dnu_p - alpha_p * pow(nmax,2) / 2);
-        const long double epsilon_p = rfit[0]/Dnu_p - alpha_p * pow(nmax,2) / 2 - n0; // remove n0
+        const long double n0=floor(rfit[0]/Dnu_p);
+        const double epsilon_p = rfit[0]/Dnu_p -n0;
+        //std::cout << " ---- 1st Order Fit ----" << std::endl;
+        //std::cout << " Dnu_p =" << rfit[0] << std::endl;
+        //std::cout << " epsilon_p + n0 =" << rfit[1]/rfit[0] << std::endl;
+        //std::cout << " ---- 2nd Order Fit ----" << std::endl;
+        //rfit=polyfitXd(xfit, fl0_all, 2); // rfit[0] = A, rfit[1]=B, rfit[2]=C : alpha_p=2 C / Dnu_p   ; nmax = (1 - B/Dnu_p)/alpha_p ; epsilon = A/Dnu_p - alpha_p * nmax^2 / 2
+        //const long double alpha_p=2 *rfit[2]/Dnu_p;
+        //const long double nmax = (1-rfit[1]/Dnu_p)/alpha_p;
+        //const long double n0=floor(rfit[0]/Dnu_p - alpha_p * pow(nmax,2) / 2);
+        //const long double epsilon_p = rfit[0]/Dnu_p - alpha_p * pow(nmax,2) / 2 - n0; // remove n0
         /*
         std::cout << " A=rfit[0] =" << rfit[0] << std::endl;
         std::cout << " B=rfit[1] =" << rfit[1] << std::endl;
@@ -5047,7 +5047,8 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
         std::cout << "fmin =" << fmin << "   fmax =" << fmax << std::endl;
         std::cout << " Getting inside solver:" << std::endl;
         */
-        freqs_l1=solve_mm_asymptotic_O2p(Dnu_p, epsilon_p, 1, delta0l, alpha_p, nmax, DPl, alpha_g, q_star, 0, fmin - Dnu_p, fmax + Dnu_p, step, true, false);
+        //freqs_l1=solve_mm_asymptotic_O2p(Dnu_p, epsilon_p, 1, delta0l, alpha_p, nmax, DPl, alpha_g, q_star, 0, fmin - Dnu_p, fmax + Dnu_p, step, true, false);
+        freqs_l1=solve_mm_asymptotic_O2p(Dnu_p, epsilon_p, 1, delta0l, 0, 0., DPl, alpha_g, q_star, 0, fmin - Dnu_p, fmax + Dnu_p, step, true, false);
         //std::cout << " Getting outside solver " << std::endl;
         /*
         std::cout << "Dnu_p = " << Dnu_p << std::endl;
