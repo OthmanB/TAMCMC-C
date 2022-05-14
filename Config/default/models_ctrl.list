@@ -2,10 +2,10 @@
 # Case index , model function name, # comment
 0 Test_Gaussian 			
 1 model_Harvey_Gaussian				
-2 model_MS_Global_a1etaa3_HarveyLike		
+2 model_MS_Global_a1etaa3_HarveyLike		    # THIS MODEL CAN BE REMOVED (OVERLAPS WITH aj)
 3 model_MS_Global_a1etaa3_HarveyLike_Classic	
-4 model_MS_Global_a1etaa3_Harvey1985		
-5 model_MS_Global_a1acta3_Harvey1985		 # obselete
+4 model_MS_Global_a1etaa3_Harvey1985		  # THIS MODEL MUST BE UPDATED (WITH aj)
+5 model_MS_Global_a1acta3_Harvey1985		 # obselete: THIS MODEL CAN BE REMOVED
 6 model_MS_Global_a1l_etaa3_HarveyLike		
 7 model_MS_Global_a1n_etaa3_HarveyLike		
 8 model_MS_Global_a1nl_etaa3_HarveyLike		
@@ -20,8 +20,8 @@
 17 model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3
 18 model_MS_Global_a1n_a2a3_HarveyLike
 19 model_MS_Global_a1nl_a2a3_HarveyLike
-20 model_MS_Global_a1a2a3_HarveyLike
-21 model_MS_Global_a1etaAlma3_HarveyLike
+20 model_MS_Global_a1a2a3_HarveyLike          # THIS MODEL CAN BE REMOVED (OVERLAPS WITH aj)
+21 model_MS_Global_ajAlm_HarveyLike
 22 model_RGB_asympt_a1etaa3_AppWidth_HarveyLike
 23 model_MS_Global_aj_HarveyLike
 24 model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3

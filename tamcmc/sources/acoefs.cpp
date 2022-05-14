@@ -190,11 +190,11 @@ VectorXd nunlm_from_acoefs(const long double nunl0, const int l,
 VectorXd eval_acoefs(const int l, VectorXd& nu_nls){ // We expect nu_nls=[nu(-l), nu(-l+1), ... , nu[0], nu[1], ... nu(l)]
 	// Function that gets the splitted frequencies of a given mode (n,l) and determines the analytical a-coefficients
 	// from a1 to a6 and for l<=3
-	// More details on the equations that lead to this are on Benomar+2021 and in acoefs.py on github acoefs_check project
+	// More details on the equations that lead to this are on Benomar+2022 and in acoefs.py on github acoefs_check project
 	long double Num_a1, Den_a1;
-	const long double A=-14;//, B=0, D=0;// A0=-14, A1=-3, B0=1,B1=-2/3, C0=-15,C1=-4, D0=18,D1=14/3;
-	long double C, E, F, G;
-	long double Pi21, Pi22, Pi23, Pi41, Pi42, Pi43, Pi61, Pi62, Pi63;
+	//const long double A=-14;//, B=0, D=0;// A0=-14, A1=-3, B0=1,B1=-2/3, C0=-15,C1=-4, D0=18,D1=14/3;
+	//long double C, E, F, G;
+	//long double Pi21, Pi22, Pi23, Pi41, Pi42, Pi43, Pi61, Pi62, Pi63;
 
 	VectorXd aj(6), tnlm, snlm;
 	aj.setZero();

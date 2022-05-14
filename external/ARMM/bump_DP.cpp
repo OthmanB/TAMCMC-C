@@ -647,7 +647,7 @@ Params_synthetic_star make_synthetic_asymptotic_star(Cfg_synthetic_star cfg_star
 	DPl=freqs.dPg; 
 
 	ksi_pg=ksi_fct2(nu_m_l1, freqs.nu_p, freqs.nu_g, Dnu_p, DPl, cfg_star.q_star, "precise"); //"precise" // assume Dnu_p, DPl and q constant
-	h1_h0_ratio=h_l_rgb(ksi_pg); // WARNING: Valid assummption only not too evolved RGB stars (below the bump, see Kevin mail 10 August 2019)
+	h1_h0_ratio=h_l_rgb(ksi_pg, cfg_star.Hfactor); // WARNING: Valid assummption only not too evolved RGB stars (below the bump, see Kevin mail 10 August 2019). Hfactor Added on May 2, 2022
 	
 	height_l1p.resize(nu_m_l1.size());
 	for (int i=0; i<nu_m_l1.size();i++)
@@ -658,7 +658,7 @@ Params_synthetic_star make_synthetic_asymptotic_star(Cfg_synthetic_star cfg_star
 
 	height_l1p=height_l1p*cfg_star.Vl[0];
 	height_l1=h1_h0_ratio.cwiseProduct(height_l1p);
-	width_l1=gamma_l_fct2(ksi_pg, nu_m_l1, nu_l0, width_l0, h1_h0_ratio, el);
+	width_l1=gamma_l_fct2(ksi_pg, nu_m_l1, nu_l0, width_l0, h1_h0_ratio, el, cfg_star.Wfactor); //Wfactor Added on May 2, 2022
 	
 	// Generating splittings with a two-zone averaged rotation rates
 	if (cfg_star.rot_env_input >=0)

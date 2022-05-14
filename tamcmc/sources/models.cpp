@@ -6,6 +6,8 @@
 #include "noise_models.h"
 #include "../../external/ARMM/solver_mm.h"
 #include "../../external/ARMM/bump_DP.h"
+#include "../../external/integrate/activity.h"
+#include "acoefs.h"
 #include "interpol.h"
 #include "linfit.h"
 #include "polyfit.h"
@@ -1491,11 +1493,6 @@ VectorXd model_MS_Global_a1a2a3_HarveyLike(const VectorXd& params, const VectorX
         } else{
             Hl0=std::abs(params[n]);
         }       
-        /*
-        stc::cout << "Hl0 = " << Hl0 << std::endl;
-        std::cout << "fl0 = " << fl0 << std::endl;
-        std::cout << "Wl0 = " << Wl0 << std::endl;
-        */
         model_final=optimum_lorentzian_calc_a1a2a3(x, model_final, Hl0, fl0, 0, 0, 0, asym, Wl0, 0, ratios_l0, step, trunc_c);
         if (outparams){
             mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, asym, inclination;// mode_vec;
@@ -1511,13 +1508,6 @@ VectorXd model_MS_Global_a1a2a3_HarveyLike(const VectorXd& params, const VectorX
                 Hl1=std::abs(params[n]*Vl1);
             }   
             a2=a2_terms[0] + a2_terms[1]*(fl1*1e-3) + a2_terms[2]*(fl1*fl1*1e-6); //two terms: one constant term + one linear in nu, after a11, set in mHz            
-            /*
-            std::cout << "Hl1 = " << Hl1 << std::endl;
-            std::cout << "fl1 = " << fl1 << std::endl;
-            std::cout << "Wl1 = " << Wl1 << std::endl;
-            std::cout << " a1 = " << a1 << std::endl;
-            std::cout << " a2 = " << a2 << std::endl;
-            */
             model_final=optimum_lorentzian_calc_a1a2a3(x, model_final, Hl1, fl1, a1, a2, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
            if (outparams){
                 mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1, a2, a3, asym, inclination;// mode_vec;
@@ -1534,13 +1524,6 @@ VectorXd model_MS_Global_a1a2a3_HarveyLike(const VectorXd& params, const VectorX
                 Hl2=std::abs(params[n]*Vl2);
             }   
             a2=a2_terms[0] + a2_terms[1]*(fl2*1e-3) + a2_terms[2]*(fl2*fl2*1e-6); //two terms: one constant term + one linear in nu, after a11 
-            /*
-            std::cout << "Hl2 = " << Hl2 << std::endl;
-            std::cout << "fl2 = " << fl2 << std::endl;
-            std::cout << "Wl2 = " << Wl2 << std::endl;
-            std::cout << " a1 = " << a1 << std::endl;
-            std::cout << " a2 = " << a2 << std::endl;
-            */
             model_final=optimum_lorentzian_calc_a1a2a3(x, model_final, Hl2, fl2, a1, a2, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
             if (outparams){
                 mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1, a2, a3, asym, inclination;// mode_vec;
@@ -1557,12 +1540,6 @@ VectorXd model_MS_Global_a1a2a3_HarveyLike(const VectorXd& params, const VectorX
                 Hl3=std::abs(params[n]*Vl3);            
             }       
             a2=a2_terms[0] + a2_terms[1]*(fl3*1e-3) + a2_terms[2]*(fl3*fl3*1e-6); //two terms: one constant term + one linear in nu, after a11  
-            /*std::cout << "Hl3 = " << Hl3 << std::endl;
-            std::cout << "fl3 = " << fl3 << std::endl;
-            std::cout << "Wl3 = " << Wl3 << std::endl;
-            std::cout << " a1 = " << a1 << std::endl;
-            std::cout << " a2 = " << a2 << std::endl;
-            */
             model_final=optimum_lorentzian_calc_a1a2a3(x, model_final, Hl3, fl3, a1, a2, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
             if (outparams){
                 mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1, a2, a3, asym, inclination;// mode_vec;
@@ -1650,7 +1627,6 @@ VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& p
     double fl0, fl1, fl2, fl3, Vl1, Vl2, Vl3, Hl0, Hl1, Hl2, Hl3, Wl0, Wl1, Wl2, Wl3, a1,a2,a3, a4, a5,a6, eta0, asym;
 
     int Nharvey;
-    long cpt;
 
     const int Nrows=200, Ncols=13; // Number of parameters for each mode
     MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
@@ -1703,7 +1679,6 @@ VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& p
        -------------------------------------------------------
     */
     //outparams=1;    
-    cpt=0;
     for(long n=0; n<Nfl0; n++){        
         fl0=fl0_all[n];
         Wl0=std::abs(Wl0_all[n]);     
@@ -1828,7 +1803,7 @@ VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& p
 
 
 
-VectorXd model_MS_Global_a1etaAlma3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams) // Added on 31 Mar 2021
+VectorXd model_MS_Global_ajAlm_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams) // Added on 31 Mar 2021
     {
     /* Model of the power spectrum of a Main sequence solar-like star
      * Make use of Gizon 2002, AN 323, 251 for describing the perturbation from Active Region on a2
@@ -1842,13 +1817,6 @@ VectorXd model_MS_Global_a1etaAlma3_HarveyLike(const VectorXd& params, const Vec
     const double step=x[1]-x[0]; // used by the function that optimise the lorentzian calculation
     const long double pi = M_PI; //3.141592653589793238462643383279502884L;  
  
-    const double G=6.667e-8;
-    const double Dnu_sun=135.1;
-    const double R_sun=6.96342e5; //in km
-    const double M_sun=1.98855e30; //in kg
-    const double rho_sun=M_sun*1e3/(4*pi*std::pow(R_sun*1e5,3)/3); //in g.cm-3
-    const long double Dnl=0.75; 
-
     const int Nmax=params_length[0]; // Number of Heights
     const int lmax=params_length[1]; // number of degree - 1
     const int Nfl0=params_length[2]; // number of l=0 frequencies
@@ -1860,55 +1828,52 @@ VectorXd model_MS_Global_a1etaAlma3_HarveyLike(const VectorXd& params, const Vec
     const int Nnoise=params_length[8]; // number of parameters for the noise. Should be 7 for a global MS model
     const int Ninc=params_length[9]; // number of parameters for the stellar inclination. Should be 1 for a global MS model
     const int Ncfg=params_length[10]; // number of extra configuration parameters (e.g. truncation parameter)
-
     const int Nf=Nfl0+Nfl1+Nfl2+Nfl3;
     const double trunc_c=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc];
     const bool do_amp=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc+1];
+    const int decompose_Alm=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc+2]; // TO VERIFY THE SLOT
+    const std::string filter_type="gate";
 
     double inclination;
     
-    VectorXd xfit, rfit;
+    VectorXd xfit, rfit, aj(6);
     VectorXd ratios_l0(1), ratios_l1(3), ratios_l2(5), ratios_l3(7);
     VectorXd model_l0(x.size()), model_l1(x.size()), model_l2(x.size()), model_l3(x.size()), model_noise(x.size()), model_final(x.size());
-
-    VectorXd fl0_all(Nmax), Wl0_all(Nmax), noise_params(Nnoise), epsilon_terms(3), thetas(2); //Hl0_all[Nmax],
-    double fl0, fl1, fl2, fl3, Vl1, Vl2, Vl3, Hl0, Hl1, Hl2, Hl3, Wl0, Wl1, Wl2, Wl3, a1, eta0, epsilon_nl, a3, asym;
+    VectorXd a1_terms(2), a3_terms(2),a5_terms(2);
+    VectorXd fl0_all(Nmax), Wl0_all(Nmax), Hl0_all(Nmax), noise_params(Nnoise), epsilon_terms(2), thetas(2); //Hl0_all[Nmax],
+    double fl0, fl1, fl2, fl3, Vl1, Vl2, Vl3, Hl0, Hl1, Hl2, Hl3, Wl0, Wl1, Wl2, Wl3, a1, a3, a5, eta0, epsilon_nl, asym;
     double rho;
 
     int Nharvey;
-    long cpt;
 
-    const int Nrows=1000, Ncols=12; // Number of parameters for each mode
+    const int Nrows=1000, Ncols=16; // Number of parameters for each mode
     MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
     int Line=0; // will be used to trim the mode_params table where suited
-
-    //outparams=true;
+    aj.setZero();
+    outparams=true;
     /*
        -------------------------------------------------------
        ------- Gathering information about the modes ---------
        -------------------------------------------------------
     */
     
-    a1=pow(params[Nmax + lmax + Nf+3],2)+ pow(params[Nmax + lmax + Nf+4],2);
+    a1_terms=params.segment(Nmax + lmax + Nf, 2);
+    a3_terms=params.segment(Nmax + lmax + Nf + 2,2);
+    a5_terms=params.segment(Nmax + lmax + Nf + 4,2);
+    epsilon_terms=params.segment(Nmax + lmax + Nf + 6,2); // This is the intensity of active region (in the Sun it is around 10^-3). epsilon terms are after the a3 and asym terms  //three terms: one constant term + one linear in nu + one quadratic in nu
+    thetas=params.segment(Nmax + lmax + Nf + 8,2)*M_PI/180.; // Extension of the active regions.
+    asym=params[Nmax+lmax + Nf + 11];    
+    inclination=params[Nmax + lmax + Nf + Nsplit + Nwidth + Nnoise];
     
-    inclination=std::atan(params[Nmax + lmax + Nf+4]/params[Nmax + lmax + Nf+3]); 
-    inclination=inclination*180./pi;
-
-    //std::cout << "a1 = " << a1 << std::endl;
-    //std::cout << "inclination = " << inclination << std::endl;
-
     // Forcing values of visibilities to be greater than 0... priors will be in charge of the penalisation
     ratios_l0.setOnes();
     if(lmax >=1){
         Vl1=std::abs(params[Nmax]);
         ratios_l1=amplitude_ratio(1, inclination);
-        //std::cout << "Vl1 " << Vl1 << std::endl;
     }
     if(lmax >=2){
         Vl2=std::abs(params[Nmax+1]);
         ratios_l2=amplitude_ratio(2, inclination);
-        //std::cout << "Vl2 " << Vl2 << std::endl;
-
     }
     if(lmax >=3){
         Vl3=std::abs(params[Nmax+2]);
@@ -1917,152 +1882,177 @@ VectorXd model_MS_Global_a1etaAlma3_HarveyLike(const VectorXd& params, const Vec
 
     fl0_all=params.segment(Nmax + lmax, Nfl0); // required for the interpolation of the widths
     Wl0_all=params.segment(Nmax + lmax + Nf + Nsplit, Nmax);
+    Hl0_all=params.segment(0, Nmax);
 
-    epsilon_terms=params.segment(Nmax + lmax + Nf + 6,3); // This is the intensity of active region (in the Sun it is around 10^-3). epsilon terms are after the a3 and asym terms  //three terms: one constant term + one linear in nu + one quadratic in nu
-    //thetas=params.segment(Nmax + lmax + Nf + 9,2); // Extension of the active regions.
-    thetas << params[Nmax + lmax + Nf + 9], params[Nmax + lmax + Nf + 9] + params[Nmax + lmax + Nf + 10] ; // {theta_min, theta_min + Dtheta} Extension of the active regions.
-    a3=params[Nmax + lmax + Nf + 2];
-    asym=params[Nmax+lmax + Nf + 5];
-    
     model_final.setZero();
-    //std::cout << "[" << Nmax + lmax + Nf + 6 << "]  a2_terms = " << a2_terms.transpose() << std::endl;
-    /*
-    std::cout << "inclination = " << inclination << std::endl;
-    std::cout << "a2_terms = " << a2_terms << std::endl;
-    std::cout << "a3 = " << a3 << std::endl;
-    std::cout << "asym = " << asym << std::endl;
-    */
 
     // --- Large separation and centrifugal force ---
-    eta0=eta0_fct(fl0_all);
-
+    if (params[Nmax+lmax + Nf + 10] == 1){ // IT IS HIGHLY RECOMMENDED TO ALWAYS KEEP IT TO 1 HERE FOR THIS MODEL AS a2 IS NOT A PARAMETER (contrary to the aj model)
+        eta0=eta0_fct(fl0_all); 
+    } else{
+        eta0=0; // We decide here to include eta0 inside a2 term. eta0 effect can always be removed a posteriori when doing the aj decomposition
+    }   
     /* -------------------------------------------------------
        --------- Computing the models for the modes  ---------
        -------------------------------------------------------
     */
-/*
-    std::cout << "a1      =" << a1 << std::endl;
-    std::cout << "xfit    =" << xfit.transpose() << std::endl;
-    std::cout << "fl0_all =" << fl0_all.transpose() << std::endl;
-    std::cout << "Dnu =" << rfit[0] << std::endl;
-    std::cout << "rho =" << rho << std::endl;
-    std::cout << "thetas =" << thetas.transpose() << std::endl;
-    std::cout << "epsilon_terms =" << epsilon_terms.transpose() << std::endl;
-    std::cout << "eta0 = " << eta0 << std::endl;
-    //exit(EXIT_SUCCESS);
-*/
-    cpt=0;
-    for(long n=0; n<Nmax; n++){
-        
+    for(long n=0; n<Nfl0; n++){        
         fl0=fl0_all[n];
-        Wl0=std::abs(Wl0_all[n]);
-            
+        Wl0=std::abs(Wl0_all[n]);     
         if(do_amp){
             Hl0=std::abs(params[n]/(pi*Wl0)); // A^2/(pi.Gamma)
         } else{
             Hl0=std::abs(params[n]);
-        }       
-        /*
-        stc::cout << "Hl0 = " << Hl0 << std::endl;
-        std::cout << "fl0 = " << fl0 << std::endl;
-        std::cout << "Wl0 = " << Wl0 << std::endl;
-        */
-        model_final=optimum_lorentzian_calc_a1etaAlma3(x, model_final, Hl0, fl0, 0, 0, 0, thetas, 0, asym, Wl0, 0, ratios_l0, step, trunc_c);
-        if (outparams){
-            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, 0, 0, a3, asym, inclination;// mode_vec;
+        }
+        model_final=optimum_lorentzian_calc_aj(x, model_final, Hl0, fl0, 0, 0, 0, 0, 0, 0, 0, asym, Wl0, 0, ratios_l0, step, trunc_c);
+       if (outparams){
+            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, asym, inclination;
             Line=Line+1;
-        }   
-        if(lmax >=1){
-            fl1=params[Nmax+lmax+Nfl0+n];
-            Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
-            if(do_amp){
-                //Hl1=std::abs(params[n]/(pi*Wl1));
-                Hl1=std::abs(params[n]/(pi*Wl1))*Vl1;
-            } else{
-                Hl1=std::abs(params[n]*Vl1);
-            }   
-            epsilon_nl=epsilon_terms[0] + epsilon_terms[1]*(fl1*1e-3) + epsilon_terms[2]*(fl1*fl1*1e-6); //two terms: one constant term + one linear in nu, after a11, set in mHz            
-            /*
-            std::cout << "Hl1 = " << Hl1 << std::endl;
-            std::cout << "fl1 = " << fl1 << std::endl;
-            std::cout << "Wl1 = " << Wl1 << std::endl;
-            std::cout << " a1 = " << a1 << std::endl;
-            std::cout << " a2 = " << a2 << std::endl;
-            */
-            model_final=optimum_lorentzian_calc_a1etaAlma3(x, model_final, Hl1, fl1, a1, eta0, epsilon_nl, thetas, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
-           if (outparams){
-                mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1, eta0*1e-6, epsilon_nl, thetas[0], thetas[1], a3, asym, inclination;// mode_vec;
-                Line=Line+1;
-            } 
         }
-        if(lmax >=2){
-            fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
-            Wl2=std::abs(lin_interpol(fl0_all, Wl0_all, fl2));
-            if(do_amp){
-                Hl2=std::abs(params[n]/(pi*Wl2))*Vl2;
-                //Hl2=std::abs(params[n]/(pi*Wl2));
-            } else{
-                Hl2=std::abs(params[n]*Vl2);
-            }   
-            epsilon_nl=epsilon_terms[0] + epsilon_terms[1]*(fl2*1e-3) + epsilon_terms[2]*(fl2*fl2*1e-6); //two terms: one constant term + one linear in nu, after a11 
-            /*
-            std::cout << "Hl2 = " << Hl2 << std::endl;
-            std::cout << "fl2 = " << fl2 << std::endl;
-            std::cout << "Wl2 = " << Wl2 << std::endl;
-            std::cout << " a1 = " << a1 << std::endl;
-            std::cout << " a2 = " << a2 << std::endl;
-            */
-            model_final=optimum_lorentzian_calc_a1etaAlma3(x, model_final, Hl2, fl2, a1, eta0, epsilon_nl, thetas, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
-            if (outparams){
-                mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1, eta0*1e-6, epsilon_nl, thetas[0], thetas[1], a3, asym, inclination;// mode_vec;
-                Line=Line+1;
-            }      
+    }   
+        
+    for(long n=0; n<Nfl1; n++){        
+        fl1=params[Nmax+lmax+Nfl0+n];
+        Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
+        if(do_amp){
+            Hl1=std::abs(lin_interpol(fl0_all, Hl0_all, fl1)/(pi*Wl1)*Vl1); // Modified on 1 Mar 2022
+        } else{
+            Hl1=std::abs(lin_interpol(fl0_all, Hl0_all, fl1)); // Modified on 1 Mar 2022
         }
-        if(lmax >=3){
-            fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
-            Wl3=std::abs(lin_interpol(fl0_all, Wl0_all, fl3));
-            if(do_amp){
-                //Hl3=std::abs(params[n]/(pi*Wl3));
-                Hl3=std::abs(params[n]/(pi*Wl3))*Vl3;
-            } else{
-                Hl3=std::abs(params[n]*Vl3);            
-            }       
-            epsilon_nl=epsilon_terms[0] + epsilon_terms[1]*(fl3*1e-3) + epsilon_terms[2]*(fl3*fl3*1e-6); //two terms: one constant term + one linear in nu, after a11  
-            /*std::cout << "Hl3 = " << Hl3 << std::endl;
-            std::cout << "fl3 = " << fl3 << std::endl;
-            std::cout << "Wl3 = " << Wl3 << std::endl;
-            std::cout << " a1 = " << a1 << std::endl;
-            std::cout << " a2 = " << a2 << std::endl;
-            */
-            model_final=optimum_lorentzian_calc_a1etaAlma3(x, model_final, Hl3, fl3, a1, eta0, epsilon_nl, thetas, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
-            if (outparams){
-                mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1, eta0*1e-6, epsilon_nl, thetas[0], thetas[1], a3, asym, inclination;// mode_vec;
-                Line=Line+1;
-            } 
-        }       
-    }
-    //std::cin.ignore();
+        a1=a1_terms[0] + a1_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz  
+        a3=a3_terms[0] + a3_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+        a5=a5_terms[0] + a5_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+        epsilon_nl=epsilon_terms[0] + epsilon_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz            
+        //eta0=0; // FOR TEST PURPOSE ONLY
+        switch (decompose_Alm){
+            case -1:
+                model_final=optimum_lorentzian_calc_ajAlm(x, model_final, Hl1, fl1, a1, a3, a5, eta0, epsilon_nl, thetas, asym, Wl1, 1, ratios_l1, step, trunc_c);
+                break;
+            // do_a2, do_a4, do_a6
+            case 0: // decompose_Alm = 0 ==> do_a2=true, do_a4=true, do_a6=true
+                aj=decompose_Alm_fct(1, fl1, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
+                //std::cout << "l=1   thetas=" << thetas.transpose()  << "    epsilon_nl=" << epsilon_nl << "   odds aj=" << aj.transpose() << std::endl;
+                model_final=optimum_lorentzian_calc_aj(x, model_final, Hl1, fl1, a1, aj[1], a3, aj[3], a5,aj[5], eta0, asym, Wl1, 1, ratios_l1, step, trunc_c);   
+                break; 
+            case 1:  // decompose_Alm = 1 ==> do_a2=true, do_a4=true, do_a6=false
+                aj=decompose_Alm_fct(1, fl1, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
+                aj[5]=0;
+                model_final=optimum_lorentzian_calc_aj(x, model_final, Hl1, fl1, a1, aj[1], a3, aj[3], a5, 0, eta0, asym, Wl1, 1, ratios_l1, step, trunc_c);   
+                break; 
+            case 2:  // decompose_Alm = 1 ==> do_a2=true, do_a4=false, do_a6=false
+                aj=decompose_Alm_fct(1, fl1, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
+                aj[3]=0; aj[5]=0;
+                model_final=optimum_lorentzian_calc_aj(x, model_final, Hl1, fl1, a1, aj[1], a3, 0, a5, 0, eta0, asym, Wl1, 1, ratios_l1, step, trunc_c);   
+                break; 
+            default:
+                std::cout << " Error in model_MS_Global_ajAlm_HarveyLike: decompose_Alm must be set to -1 (use Alm directly), 0 (do_a2=true, do_a4=true, do_a6=true), 1 (do_a2=true, do_a4=true, do_a6=fasle) or 2 (do_a2=true, do_a4=false, do_a6=false) " << std::endl;
+                exit(EXIT_FAILURE);
+        }
+        if (outparams){
+            mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1, aj[1], a3, aj[3], a5, aj[5], eta0*1e-6, epsilon_nl, thetas[0], thetas[1], asym, inclination;// mode_vec;
+            Line=Line+1;
+        } 
+   }
 
+    for(long n=0; n<Nfl2; n++){        
+        fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
+        Wl2=std::abs(lin_interpol(fl0_all, Wl0_all, fl2));
+        if(do_amp){
+            Hl2=std::abs(lin_interpol(fl0_all, Hl0_all, fl2)/(pi*Wl2)*Vl2);  // Modified on 1 Mar 2022
+        } else{
+            Hl2=std::abs(lin_interpol(fl0_all, Hl0_all, fl2)*Vl2); // Modified on 1 Mar 2022
+        }   
+        a1=a1_terms[0] + a1_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz  
+        a3=a3_terms[0] + a3_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+        a5=a5_terms[0] + a5_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+        epsilon_nl=epsilon_terms[0] + epsilon_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11 
+        switch (decompose_Alm){
+            case -1:
+                model_final=optimum_lorentzian_calc_ajAlm(x, model_final, Hl2, fl2, a1, a3, a5, eta0, epsilon_nl, thetas, asym, Wl2, 2, ratios_l2, step, trunc_c);
+                break;
+            // do_a2, do_a4, do_a6
+            case 0: // decompose_Alm = 0 ==> do_a2=true, do_a4=true, do_a6=true
+                aj=decompose_Alm_fct(2, fl2, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
+                model_final=optimum_lorentzian_calc_aj(x, model_final, Hl2, fl2, a1, aj[1], a3, aj[3], a5,aj[5], eta0, asym, Wl2, 2, ratios_l2, step, trunc_c);   
+                break; 
+            case 1:  // decompose_Alm = 1 ==> do_a2=true, do_a4=true, do_a6=false
+                aj=decompose_Alm_fct(2, fl2, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
+                aj[5]=0;
+                model_final=optimum_lorentzian_calc_aj(x, model_final, Hl2, fl2, a1, aj[1], a3, aj[3], a5, 0, eta0, asym, Wl2, 2, ratios_l2, step, trunc_c);   
+                break; 
+            case 2:  // decompose_Alm = 1 ==> do_a2=true, do_a4=false, do_a6=false
+                aj=decompose_Alm_fct(2, fl2, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
+                aj[3]=0; aj[5]=0;
+                model_final=optimum_lorentzian_calc_aj(x, model_final, Hl2, fl2, a1, aj[1], a3, 0, a5, 0, eta0, asym, Wl2, 2, ratios_l2, step, trunc_c);   
+                break; 
+            default:
+                std::cout << " Error in model_MS_Global_ajAlm_HarveyLike: decompose_Alm must be set to -1 (use Alm directly), 0 (do_a2=true, do_a4=true, do_a6=true), 1 (do_a2=true, do_a4=true, do_a6=fasle) or 2 (do_a2=true, do_a4=false, do_a6=false) " << std::endl;
+                exit(EXIT_FAILURE);
+        }
+        if (outparams){
+            mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1, aj[1], a3, aj[3], a5, aj[5], eta0*1e-6, epsilon_nl, thetas[0], thetas[1], asym, inclination;// mode_vec;
+            Line=Line+1;
+        }      
+    }
+  
+    for(long n=0; n<Nfl3; n++){        
+        fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
+        Wl3=std::abs(lin_interpol(fl0_all, Wl0_all, fl3));
+        if(do_amp){
+            Hl3=std::abs(lin_interpol(fl0_all, Hl0_all, fl3)/(pi*Wl3)*Vl3);  // Modified on 1 Mar 2022
+        } else{
+            Hl3=std::abs(lin_interpol(fl0_all, Hl0_all, fl3)*Vl3); // Modified on 1 Mar 2022
+        }       
+        a1=a1_terms[0] + a1_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz  
+        a3=a3_terms[0] + a3_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+        a5=a5_terms[0] + a5_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
+        epsilon_nl=epsilon_terms[0] + epsilon_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11  
+        switch (decompose_Alm){
+            case -1:
+                model_final=optimum_lorentzian_calc_ajAlm(x, model_final, Hl3, fl3, a1, a3, a5, eta0, epsilon_nl, thetas, asym, Wl3, 3, ratios_l3, step, trunc_c);
+                break;
+            // do_a2, do_a4, do_a6
+            case 0: // decompose_Alm = 0 ==> do_a2=true, do_a4=true, do_a6=true
+                aj=decompose_Alm_fct(3, fl3, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
+                model_final=optimum_lorentzian_calc_aj(x, model_final, Hl3, fl3, a1, aj[1], a3, aj[3], a5,aj[5], eta0, asym, Wl3, 3, ratios_l3, step, trunc_c);   
+                break; 
+            case 1:  // decompose_Alm = 1 ==> do_a2=true, do_a4=true, do_a6=false
+                aj=decompose_Alm_fct(3, fl3, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
+                aj[5]=0;
+                model_final=optimum_lorentzian_calc_aj(x, model_final, Hl3, fl3, a1, aj[1], a3, aj[3], a5, 0, eta0, asym, Wl3, 3, ratios_l3, step, trunc_c);   
+                break; 
+            case 2:  // decompose_Alm = 1 ==> do_a2=true, do_a4=false, do_a6=false
+                aj=decompose_Alm_fct(3, fl3, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
+                aj[3]=0; aj[5]=0;
+                model_final=optimum_lorentzian_calc_aj(x, model_final, Hl3, fl3, a1, aj[1], a3, 0, a5, 0, eta0, asym, Wl3, 3, ratios_l3, step, trunc_c);   
+                break; 
+            default:
+                std::cout << " Error in model_MS_Global_ajAlm_HarveyLike: decompose_Alm must be set to -1 (use Alm directly), 0 (do_a2=true, do_a4=true, do_a6=true), 1 (do_a2=true, do_a4=true, do_a6=fasle) or 2 (do_a2=true, do_a4=false, do_a6=false) " << std::endl;
+                exit(EXIT_FAILURE);
+        }
+        if (outparams){
+            mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1, aj[1], a3, aj[3], a5, aj[5], eta0*1e-6, epsilon_nl, thetas[0], thetas[1], asym, inclination;// mode_vec;
+            Line=Line+1;
+        } 
+    }       
     /* -------------------------------------------------------
        ------- Gathering information about the noise ---------
        -------------------------------------------------------
     */
-    //std::cout << "Before computing noise model" << std::endl;
     noise_params=params.segment(Nmax+lmax+Nf+Nsplit+Nwidth, Nnoise);
     Nharvey=(Nnoise-1)/3;
-    //std::cout << "Nharvey = " << Nharvey << std::endl;
-    //std::cout << "noise_params = " << noise_params.transpose() << std::endl;
     /* -------------------------------------------------------
        ---------- Computing the mode of the noise ------------
        -------------------------------------------------------
     */
     model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
-
+    
   if(outparams){
         int c=0;
         std::string file_out="params.model";
         std::string modelname = __func__;
-        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1 / eta0(10^6) / epsilon_nl / theta_min theta_max / a3 / asymetry / inclination";
+        std::string name_params = "#Note: decompose_Alm=-1 : Alm directly, 0: do a2, a4, a6, +1: do a2, a4, +2: do a2 only \n# Input mode parameters. degree / freq / H / W / a1  / a2 /  a3  / a4 / a5 / eta0(10^6) / epsilon_nl / theta0 (rad) /  delta (rad) / asymetry / inclination";
+        //std::string name_params = "# Input mode parameters. degree / freq / H / W / a1  / a2 /  a3  / a4 / a5 / eta0(10^6) / epsilon_nl / theta0 (rad) /  delta (rad) / asymetry / inclination";
         VectorXd spec_params(3);
         spec_params << x.minCoeff() , x.maxCoeff(), step;
         MatrixXd noise(Nharvey+1, 3);
@@ -2076,7 +2066,8 @@ VectorXd model_MS_Global_a1etaAlma3_HarveyLike(const VectorXd& params, const Vec
         noise(Nharvey, 0) = noise_params(c); // White noise 
         write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
     }
-
+    
+    //exit(EXIT_SUCCESS);
     return model_final;
 }
 
@@ -6009,7 +6000,7 @@ VectorXd model_Test_Gaussian(const VectorXd& params, const VectorXi& params_leng
 void write_star_params(const VectorXd& spec_params, const VectorXd& raw_params, const VectorXi& plength, const MatrixXd& mode_params, const MatrixXd& noise_params, 
     const std::string file_out, const std::string modelname, const std::string name_params){
 
-    VectorXi Nchars_spec(3), Nchars_params(15), Nchars_noise(3), precision_spec(3), precision_params(15), precision_noise(3);
+    VectorXi Nchars_spec(3), Nchars_params(17), Nchars_noise(3), precision_spec(3), precision_params(17), precision_noise(3);
 
     std::ofstream outfile;
     outfile.open(file_out.c_str());
@@ -6039,8 +6030,8 @@ void write_star_params(const VectorXd& spec_params, const VectorXd& raw_params, 
 
         // ---------------------
         outfile << "# Configuration of mode parameters. This file was generated by models.cpp (TAMCMC code version >1.61)" << std::endl;
-        Nchars_params    << 5, 20, 20, 20, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16; // Handle max 15 input here. The only constrain is to have deg/freq/H/W first
-        precision_params << 1, 10, 10, 10, 8, 8 , 8 , 8 , 8 , 8 , 8 , 8 , 8 , 8 , 8;
+        Nchars_params    << 5, 20, 20, 20, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16 , 16; // Handle max 15 input here. The only constrain is to have deg/freq/H/W first
+        precision_params << 1, 10, 10, 10, 8, 8 , 8 , 8 , 8 , 8 , 8 , 8 , 8 , 8 , 8, 8 , 8;
         outfile << name_params << std::endl; //"# Input mode parameters. degree / freq / H / W / splitting a1 / a2_0  / a2_1  / a2_2 / a3 / asymetry / inclination" << std::endl;   
         
         for(int i=0; i<mode_params.rows(); i++){
@@ -6173,4 +6164,26 @@ double eta0_fct(const VectorXd& fl0_all){
     //eta0=3./(4.*M_PI*rho*G); WRONG DUE TO WRONG ASSUMPTION OMEGA ~ a1. It SHOULD BE OMEGA ~ 2.pi.a1
     eta0=3.*M_PI/(rho*G);
     return eta0;
+}
+
+/*
+    This function takes for argument elements necessary for:
+        - accounting of the centrifugal effects: eta0, a1
+        - accounting of the activity using Gizon prescription for activity: epsilon_nl, thetas=[theta0, delta], filter_type
+    And it perturbates accordingly the central frequency fc_l of a given mode of degree l
+    Note: This will only generate valid even a-coefficients (up to 6). Because there is no elements
+           of perturbation on even a-coefficients, a1, a3, a5 will be returned as 0. DO NOT USE THEM IN THE MODELING
+*/
+VectorXd decompose_Alm_fct(const int l, const long double fc_l, const long double eta0, const long double a1, const long double epsilon_nl, const VectorXd& thetas, const std::string filter_type){
+    VectorXd aj, nu_nlm(2*l+1);
+    for (int m=-l; m<=l; m++){
+        nu_nlm[m+l]=fc_l;
+        if (eta0 > 0){
+            nu_nlm[m+l] = nu_nlm[m+l] + fc_l*eta0*Qlm(l,m)*pow(a1*1e-6,2);
+        } 
+        nu_nlm[m+l]=nu_nlm[m+l] + epsilon_nl*Alm(l, m, thetas[0], thetas[1], filter_type);
+    }
+    //std::cout << "fc_l= " << fc_l << "  nu_nlm =" << nu_nlm.transpose() << std::endl;
+    aj=eval_acoefs(l, nu_nlm);
+    return aj;
 }

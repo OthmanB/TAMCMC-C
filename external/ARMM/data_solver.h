@@ -194,6 +194,8 @@ struct Cfg_synthetic_star{
 	std::string filetemplate;
 	long double sigma_p;
 	long double sigma_m;
+	long double Hfactor;
+	long double Wfactor;
 };
 
 struct Params_synthetic_star{

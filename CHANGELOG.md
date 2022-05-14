@@ -1,5 +1,18 @@
 # Version history #
 
+### v1.81 Improvment ###
+		- Adding in the model with activity  'model_MS_Global_ajAlm_HarveyLike' the possibility of not using Alm directly: Using decompose_Alm option we can now converts it to a2,a4,a6 terms. The user can then choose which terms are used and wich ones are not. It allows to
+			  control the fit accuracy, in line with the simulations involving aj coefficients
+			  	- decompose_Alm = -1 : Use Alm directly (no decomposition)
+			  	- decompose_Alm = 0  : use a2, a4, a6
+					- decompose_Alm = 1  : use a2, a4
+			  	- decompose_Alm = 2  : use a2 only
+			By default, decompose_Alm is set to -1 in the io_ms_global.cpp
+
+### v1.8 Fixes and test  ####
+	- Fixes the problem of a3 that is always positive in the posterior: It was due to some residual lines of codes in priors_calc.cpp inteded for the obselete models with activity as a power law.
+	- Model with activity 'model_MS_Global_a1etaAlma3_HarveyLike' renaming 'model_MS_Global_ajAlm_HarveyLike'  to verification and full testing [TESTING]
+
 ### v1.73 New model and tools ###
   - WARNING: I NOTICED THAT THE HFACTOR MODIFICATION MAY BE A PROBLEM IN v3 models. The io_asymptotic is clerarly quite messy and would require cleaning once we 
              have converged toward a nice solution for the fitting

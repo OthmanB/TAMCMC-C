@@ -29,11 +29,6 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 
 	const int smooth_switch=extra_priors[0];
 	const double scoef=extra_priors[1];
-	//const double a3ova1_limit=extra_priors[2];
-	//const double a2ova1_limit=extra_priors[4]; // limit for a2 when this is in use
-	//const int impose_normHnlm=extra_priors[3];
-	//const int model_index=extra_priors[5]; // An index specifying specific rules that might be applied for specific models
-	//const int numax=extra_priors[3]; 'Prior on numax, only applied if non-zero Not used.
 	VectorXd ajova1_limit(6);
 	ajova1_limit << extra_priors[2], extra_priors[3],extra_priors[4],extra_priors[5], extra_priors[6], extra_priors[7];
 	const int impose_normHnlm=extra_priors[8];
@@ -53,7 +48,7 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 	int i0, j;
 	double fl, fl1, fl2,fl3;
 	double Dnu, d02, aj, a1, a2, a3, alfa, b, fmax, Q11, max_b, el, em;
-	VectorXd tmp, fit, a2_terms, epsilon_terms, thetas, Nfl(4), a1_n;
+	VectorXd tmp, fit, a2_terms, epsilon_terms, thetas_terms, Nfl(4), a1_n;
 	Deriv_out frstder, scdder;
 
 	Nfl << Nfl0, Nfl1, Nfl2, Nfl3;
@@ -67,7 +62,7 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 			goto end;
 		}
 	}
-//	std::cout << "[1] f=" << f << std::endl;
+	//std::cout << "[1] f=" << f << std::endl;
 	// Specific cases
 	switch (model_index){
 		case 0: // *.a1etaa3 family of models
@@ -82,7 +77,6 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 			for (int n=0; n<Nfl1; n++){
 				fl1=params[Nmax+lmax+Nfl0+n];
 				a2=a2_terms[0] + a2_terms[1]*(fl1*1e-3) + a2_terms[2]*(fl1*fl1*1e-6);
-				//std::cout << "      abs(a2/a1) = " << std::abs(a2/a1)  << "   " << (std::abs(a2/a1) >= a2ova1_limit) << std::endl;
 				if (std::abs(a2/a1) >= ajova1_limit[1]){
 					f=-INFINITY;
 					goto end;
@@ -92,7 +86,6 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 			for (int n=0; n<Nfl2; n++){
 				fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
 				a2=a2_terms[0] + a2_terms[1]*(fl2*1e-3) + a2_terms[2]*(fl2*fl2*1e-6);
-				//std::cout << "      abs(a2/a1) = " << std::abs(a2/a1)  << "   " << (std::abs(a2/a1) >= a2ova1_limit) << std::endl;
 				if (std::abs(a2/a1) >= ajova1_limit[1]){
 					f=-INFINITY;
 					goto end;
@@ -113,7 +106,6 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 				f=-INFINITY;
 				goto end;
 			}
-			//std::cout << " f after l=3:  " << f << std::endl;
 			break;
 		case 2: //model_MS_Global_a1l_etaa3_HarveyLike
 			a1=(std::abs(params[Nmax + lmax + Nf]) + std::abs(params[Nmax + lmax + Nf+6]))/2; // a1_avg = (a11 + a12)/2
@@ -154,24 +146,47 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 			std::cout << "in priors_calc.cpp: case 7 needs checks. Exiting" << std::endl;
 			exit(EXIT_SUCCESS);
 			break;
-		case 8: // model_MS_Global_a1etaGlma3_HarveyLike
-			a1=pow(params[Nmax + lmax + Nf+3],2)+ pow(params[Nmax + lmax + Nf+4],2);
-			a3=params[Nmax+lmax+Nf+2];
- 		   // Prior on a3/a1 ratio. a3 << a1 is enforced here by putting a3ova1_limit
-			if(std::abs(a3/a1) >= ajova1_limit[2]){
+		case 8: // model_MS_Global_ajAlm_HarveyLike
+		    epsilon_terms=params.segment(Nmax + lmax + Nf + 6,2); // This is the intensity of active region (in the Sun it is around 10^-3). epsilon terms are after the a3 and asym terms  //three terms: one constant term + one linear in nu + one quadratic in nu
+		    thetas_terms=params.segment(Nmax + lmax + Nf + 8,2); // Extension of the active regions.
+			//std::cout << "[In priors] epsilon_terms = " << epsilon_terms.transpose() << std::endl;
+			//std::cout << "[In priors] thetas_terms = " << thetas_terms.transpose() << std::endl;
+			// Ensure that none of the aj coefficient exceeds the set limits at any given frequency
+			i0=Nfl[0]; // We start at l=1... need to get the pointer to Nmax+lmax+Nfl0 then
+			//std::cout << " Nfl = " << Nfl.transpose() << std::endl;
+			for (int el=1; el<lmax+1; el++){
+				for (int j=1; j<3;j++){ // compare a3 (j=1), a5 (j=2),to a1 (j=0) >> set the limit
+					for (int n=0; n<Nfl[el]; n++){
+						fl=params[Nmax+lmax+i0+n];
+						a1=params[Nmax + lmax + Nf] + params[Nmax+lmax+Nf+1]*(fl*1e-3);
+						aj=params[Nmax + lmax + Nf+ 2*j] + params[Nmax+lmax+Nf+ 2*j+1]*(fl*1e-3);
+						//std::cout << "  f(l=" << el << ", n=" << n << ")  =" << fl << std::endl;
+						//std::cout << "  a1(l=" << el << ", n=" << n << ") ="<< a1 << std::endl;
+						//std::cout << "  a" << 2*j+1 << "(l=" << el << ", n=" << n << ") = " << aj << std::endl;
+						//std::cout << "         ajova1_limit[" << 2*j << "] = " << ajova1_limit[2*j] << std::endl;
+						//std::cout << "     ----- " << std::endl;
+						if (std::abs(aj/a1) >= ajova1_limit[2*j]){
+							f=-INFINITY;
+							goto end;
+						}
+					}
+				}
+				for (int n=0; n<Nfl[el]; n++){ // Positivity of the activity intensity 
+					fl=params[Nmax+lmax+i0+n];
+					//epsilon_nl=epsilon_terms[0] + epsilon_terms[1]*(fl*1e-3); //two terms: one constant term + one linear in nu, set in mHz
+					//std::cout << "  f(l=" << el << ", n=" << n << ")  =" << fl <<  "     "  << epsilon_terms[0] + epsilon_terms[1]*(fl*1e-3) << std::endl;
+					if (epsilon_terms[0] + epsilon_terms[1]*(fl*1e-3) < 0){ 
+						f=-INFINITY;
+						goto end;
+					}
+				}
+				i0=i0+Nfl[el];
+			}
+			if (thetas_terms[0] < thetas_terms[1]/2){
 				f=-INFINITY;
 				goto end;
 			}
-			//epsilon_terms=params.segment(Nmax + lmax + Nf + 6,3);
-			//thetas=params.segment(Nmax+lmax+Nf+6+3,2);
-			//std::cout << "[In priors] epsilon_terms = " << epsilon_terms.transpose() << std::endl;
-			//std::cout << "[In priors] thetas = " << thetas.transpose() << std::endl;
-			/*if (thetas[0]>thetas[1]){ // Impose theta_min <= theta_max
-					std::cout << " theta condition issue: delta=" << thetas[1]-thetas[0] << std::endl;
-					f=-INFINITY;
-					goto end;				
-			}
-			*/
+			//exit(EXIT_SUCCESS);
 			break;
 		case 9:
 			// Ensure that none of the aj coefficient exceeds the set limits at any given frequency
@@ -183,11 +198,6 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 						fl=params[Nmax+lmax+i0+n];
 						a1=params[Nmax + lmax + Nf] + params[Nmax+lmax+Nf+1]*(fl*1e-3);
 						aj=params[Nmax + lmax + Nf+ 2*j] + params[Nmax+lmax+Nf+ 2*j+1]*(fl*1e-3);
-						//std::cout << "  f(l=" << el << ", n=" << n << ")  =" << fl << std::endl;
-						//std::cout << "  a1(l=" << el << ", n=" << n << ") ="<< a1 << std::endl;
-						//std::cout << "  a" << j+1 << "(l=" << el << ", n=" << n << ") = " << aj << std::endl;
-						//std::cout << "         ajova1_limit[" << j << "] = " << ajova1_limit[j] << std::endl;
-						//std::cout << "     ----- " << std::endl;
 						if (std::abs(aj/a1) >= ajova1_limit[j]){
 							f=-INFINITY;
 							goto end;
@@ -198,6 +208,7 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 				//std::cout << " el = " << el << "       Nmax+lmax+i0 = " << Nmax+lmax+i0 << std::endl;
 				//std::cout << "     ----- " << std::endl;
 			}
+			break;
 		default:
 			a1=params[Nmax+lmax+Nf]; // By default it is the slot reserved for a1 (Classic models)
 			switch(impose_normHnlm){ 
@@ -226,13 +237,8 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 			}
 			break;
 	}
-//	std::cout << "[2] f=" << f << std::endl;
+	//std::cout << "[2] f=" << f << std::endl;
 
-	// Implement securities to avoid unphysical quantities that might lead to NaNs
-	if(params[Nmax+lmax+Nf+4] < 0){ // Impose that the power coeficient of magnetic effect is positive
-		f=-INFINITY;
-		goto end;
-	}
 	if(priors_names_switch[Nmax+lmax+Nf+Nsplit+Nwidth+3] != 0){
 		if( (params[Nmax+lmax+Nf+Nsplit+Nwidth+3] < 0) || // Harvey profile height
 		    (params[Nmax+lmax+Nf+Nsplit+Nwidth+4] < 0) || // Harvey profile tc
@@ -253,11 +259,11 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 		f=-INFINITY;
 		goto end;
 	}
-//	std::cout << "[3]  f=" << f << std::endl;
+	//std::cout << "[3]  f=" << f << std::endl;
 
 	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
 	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
-//	std::cout << "[4] f=" << f << std::endl;
+	//std::cout << "[4] f=" << f << std::endl;
 
 	// Determine the large separation
 	//frstder=Frstder_adaptive_reggrid(params.segment(Nmax+lmax, Nfl0)); // First derivative of fl0 gives Dnu
@@ -266,7 +272,7 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 	fit=linfit(tmp, params.segment(Nmax+lmax, Nfl[0])); // fit[0] is the slope ==> Dnu and fit[1] is the ordinate at origin ==> fit[1]/fit[0] = epsilon
 	Dnu=fit[0];
 
-//	std::cout << "[5] f=" << f << std::endl;
+	//std::cout << "[5] f=" << f << std::endl;
 
 	// Apply a prior on the d02
 	//std::cout << "--- d02 --" << std::endl;
@@ -276,7 +282,7 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 			f=f+logP_gaussian_uniform( 0, Dnu/3., 0.015*Dnu, d02); // This is mainly for F stars
 		}
 	}
-//	std::cout << "[6] f=" << f << std::endl;
+	//std::cout << "[6] f=" << f << std::endl;
 
 	// Set the smootheness condition handled by derivatives_handler.cpp
 	switch(smooth_switch){
@@ -294,8 +300,8 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 			  	break;
 	}
 	end:	
-//	std::cout << " Final f:  "<< f << std::endl;
-//	exit(EXIT_SUCCESS);
+	//std::cout << " Final f:  "<< f << std::endl;
+	//exit(EXIT_SUCCESS);
 return f;
 } 
 
