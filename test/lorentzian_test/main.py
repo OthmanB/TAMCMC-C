@@ -5,6 +5,29 @@ from acoefs import nunlm_from_acoefs
 from subprocess import Popen, PIPE
 from iteration_utilities import deepflatten
 
+def eta0_fct(Dnu=None, rho=None, verbose=False):
+	if rho == None:
+		if Dnu !=None:
+			Dnu_sun=135.1
+			#numax_sun=3150.
+			R_sun=6.96342e5 #in km
+			M_sun=1.98855e30 #in kg
+			rho_sun=M_sun*1e3/(4*np.pi*(R_sun*1e5)**3/3) #in g.cm-3
+			rho=(Dnu/Dnu_sun)**2 * rho_sun
+			if verbose == True:
+				print('Computing rho using Dnu...')
+				print(' rho =', rho)
+		else:
+			print('Error in eta0(): You need to provide at least one of the following argument:')
+			print('                 - Dnu')
+			print('                 - rho')
+			exit()
+	G=6.667e-8 # cm3.g-1.s-2
+	#eta0=3./(4.*np.pi*rho*G) # second^2 # WRONG BECAUSE WE ASSUMED OMEGA ~ a1. IT SHOULD BE OMEGA ~ 2.pi.a1
+	eta0=3.*np.pi/(rho*G)
+	return eta0
+
+
 def Qlm(l,m):
     Qlm=(l*(l+1) - 3*m**2)/((2*l - 1)*(2*l + 3))
     Qlm=Qlm*2./3
@@ -86,21 +109,13 @@ def default_test_arguments(l):
 	# function that list all of the arguments that can be fed into the 'lorentzian_test' C++ function
 	# and set their default values. Names are set identical to their counterpart in the C++ function (see './lorentzian_test get_all' for details)
 	# Usual function for the definition for the Lorentzian components in a global fit:
-	# ---- Constants ----
-	G=6.667e-8;
-	Dnu_sun=135.1;
-	R_sun=6.96342e5; #in km
-	M_sun=1.98855e30; #in kg
-	rho_sun=M_sun*1e3/(4*np.pi*(R_sun*1e5)**3 /3); #in g.cm-3
 	# -------------------
 	Dnu_star=135.1
-	rho=(Dnu_star/Dnu_sun)**2. * rho_sun;
 	# -------------------
 	H_l=1    									# Maximum height
 	fc_l=1000  									# Central frequency
 	a1=10    									# a1 coeficient
-	eta0=3./(4.*np.pi*G*rho)					# coefficient of distorsion due to the centrifugal force: eta0*Qlm(l,m) with Qlm = Dnl * [l(l+1) - 6m^2]/
-	#eta=eta0*Dnl*Qlm(l,m)*(a1*1e-6)**2  		# coeficient of distorsion due to the centrifugal force (alternate form that includes a1) !!! WARNING: CHECK Dnl and Qlm in the THEORY... MAY BE THE SAME
+	eta0=eta0_fct(Dnu=Dnu_star) 			    # coefficient of distorsion due to the centrifugal force: eta0*Qlm(l,m) with Qlm = Dnl * [l(l+1) - 6m^2]/
 	a2=a1/100									# a2 coeficient
 	a3=a1/50			    					# a3 coeficient
 	a4=a1/50									# a4 coeficient
@@ -317,7 +332,7 @@ def do_splittings(params, param_names, func_name):
 		print("param_class == ", param_class, " IS NOT TESTED. YOU NEED TO WRITE/CHECK CODE FOR IT" )
 		exit()
 	#
-	if param_class == 'splitting_a1etaAlma3':
+	if param_class == 'splitting_ajAlm':
 		split_lm, err=nu_nlm(fc_l, l, a1=split_params[1], a2=0, a3=split_params[2],a4=0,a5=split_params[3],a6=0, eta0=0, theta0=split_params[4], delta=split_params[5], filter_type=split_params[6])
 		print("param_class == ", param_class, " IS NOT TESTED. YOU NEED TO WRITE/CHECK CODE FOR IT" )
 		exit()
@@ -376,8 +391,8 @@ def parameter_class(func_name):
 	param_class='-1'
 	if func_name == 'optimum_lorentzian_calc_a1etaa3' or func_name == 'optimum_lorentzian_calc_a1acta3':
 		param_class='splitting_a1etaa3'
-	if func_name =='optimum_lorentzian_calc_a1etaAlma3':
-		param_class='splitting_a1etaAlma3'
+	if func_name =='optimum_lorentzian_calc_ajAlm':
+		param_class='splitting_ajAlm'
 	if func_name =='optimum_lorentzian_calc_a1a2a3':
 		param_class='splitting_a1a2a3'
 	if func_name =='optimum_lorentzian_calc_aj':
@@ -461,7 +476,7 @@ def main():
 	# We will loop on all of the models that are listed in func_names
 	for i in range(len(func_names)):
 		if do_funcs[i] == False:
-			print(func_names[i], ' Skiping...')
+			print(func_names[i], ' Skipping...')
 		if do_funcs[i] == True: # Do only requested tests
 			print(func_names[i], ' Testing...')
 			for l in l_all:
