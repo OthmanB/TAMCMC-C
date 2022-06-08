@@ -235,16 +235,16 @@ Func_info get_model_info(std::string func_name, const bool ignore_error_msg){
 		struc.error=false;
 		i=i+1;
 	}	
-	if (func_name == "optimum_lorentzian_calc_a1etaAlma3" || func_name == "get_all"){
+	if (func_name == "optimum_lorentzian_calc_ajAlm" || func_name == "get_all"){
 		if (func_name != "get_all"){
 			struc.func_name[i]=func_name;
-			std::cout << " WARNING: THE FUNCTION " << func_name << " IS STILL EVOLVING " << std::endl;
+		//	std::cout << " WARNING: THE FUNCTION " << func_name << " IS STILL EVOLVING " << std::endl;
 		} else{
-			struc.func_name[i]="optimum_lorentzian_calc_a1etaAlma3";
+			struc.func_name[i]="optimum_lorentzian_calc_ajAlm";
 		}		
-		struc.params_names[i]="H_l,  fc_l,  f_s, eta0, epsilon_nl, theta0, delta, a3, asym, gamma_l, inclination, l";
+		struc.params_names[i]="H_l,  fc_l,  a1,  a3, a5, eta0, epsilon_nl, [theta0, delta], asym, gamma_l,  inclination, l";
 		struc.Nparams[i]=12;
-		struc.error=true;
+		struc.error=false;
 		i=i+1;
 	}	
 	if (func_name == "optimum_lorentzian_calc_aj" || func_name == "get_all"){
