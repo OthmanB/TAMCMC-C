@@ -687,6 +687,17 @@ long double priors_Harvey_Gaussian(const VectorXd& params, const VectorXi& param
 return f;
 } 
 
+long double priors_ajfit(const VectorXd& params, const VectorXi& params_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch){
+	const double theta0=params[1];
+	const double delta=params[2];
+	long double f=0;
+	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
+	// In the case of a 'gate' prior, We have to exclude theta0 < delta/2 by design because theta_min = theta0 - delta/2  must be in [0,Pi/2]	
+	if (theta0 < delta/2){
+		f=-INFINITY;
+	}
+	return f;
+}
 
 long double apply_generic_priors(const VectorXd& params, const MatrixXd& priors_params, const VectorXi& priors_names_switch){
 /*

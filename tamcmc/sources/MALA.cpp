@@ -254,14 +254,18 @@ void MALA::init_proposal(const VectorXd vars, const std::vector<std::string> var
 		for(int j=0; j<s_inerror.size();j++){
 			if(var_names[i] == s_inerror[j]){
 				error[i]=vars[i]*fracerr[j] + offseterr[j];
+				//std::cout << "   -----     Found! ------" << std::endl;
+				//std::cout << "      vars[" << i << "]=" << vars[i] << "  fracerr[" << j << "] =" << fracerr[j] <<  "  offseterr[" << j << "]=" << offseterr[j] << std::endl;
+				//std::cout << "   -----------------------" << std::endl;
 			}
 		}
 	}
+	std::cout << " -- " << std::endl;
     for(long i=0; i<vars.size(); i++){
         std::cout << " var[" << i << "]=" << vars[i] <<"   ===> err[" << i << "]=" << error[i]  <<  std::endl;
     }
 
-	std::cout << " ---------------------------------------------------------------" << std::endl;
+   std::cout << " ---------------------------------------------------------------" << std::endl;
 	std::cout << " Initializing the matrix of covariance and the scaling factor..." << std::endl;
         error=error.array().square();
 	cov0=error.asDiagonal();

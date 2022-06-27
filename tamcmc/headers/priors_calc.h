@@ -24,3 +24,4 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 long double priors_Test_Gaussian(const VectorXd& params, const VectorXi& param_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch);
 long double apply_generic_priors(const VectorXd& params, const MatrixXd& priors_params, const VectorXi& priors_names_switch);
 long double priors_Harvey_Gaussian(const VectorXd& params, const VectorXi& param_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch);
+long double priors_ajfit(const VectorXd& params, const VectorXi& param_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch);

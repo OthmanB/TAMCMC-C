@@ -5994,6 +5994,110 @@ VectorXd model_Test_Gaussian(const VectorXd& params, const VectorXi& params_leng
 }
 
 
+VectorXd model_ajfit(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
+    // Model to fit the aj terms. It is a simplified version of the python code within fit_a2sig.py::do_stats_ongrid_for_observations()
+    // It handles mean values aj coefficients
+    outparams=true;
+    //
+    const int Nrows=1000, Ncols=10; // Number of parameters for each mode
+    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
+    int Line=0; // will be used to trim the mode_params table where suited
+    //
+    const int lmax=3;
+    const std::string data_type="mean_nu_l"; 
+    const std::string filter_type="gate";
+    const bool do_a2=params[params_length.segment(0, 4).sum()];
+    const bool do_a4=params[params_length.segment(0, 4).sum()+1];
+    const bool do_a6=params[params_length.segment(0, 4).sum()+2];
+    int i;
+    long double a2_mod_data=-9999;
+    long double a4_mod_data=-9999;
+    long double a6_mod_data=-9999;
+    VectorXi posl, pos;
+    VectorXd model_final(x.size());
+    VectorXd acoefs;
+    VectorXd a2_nl_mod(params_length[2]), a4_nl_mod(params_length[2]), a6_nl_mod(params_length[2]);
+    VectorXd thetas(2), els, nu_nl_obs;
+    long double epsilon_nl0, eta0, a1_obs, Dnu_obs;
+    
+    // Deploying the parameters
+    epsilon_nl0 = params[0];
+    thetas << params[1]*M_PI/180., params[2]*M_PI/180.;
+    Dnu_obs= params[3];
+    a1_obs=params[4];
+    els = params.segment(5, params_length[2]);
+    nu_nl_obs = params.segment(5+params_length[2], params_length[3]);
+    eta0=eta0_fct(Dnu_obs);
+    //std::cout << params_length.transpose() << std::endl;
+    //std::cout << els << std::endl;
+    //std::cout << "--" << std::endl;
+    //std::cout << nu_nl_obs << std::endl;
+    // a2_mod_data
+    // Given the variables of the model, get aj of the model aj_mod at the observed frequencies nu_nl_obs of each l and m modes
+    //std::cout << "els[i]  / nu_nl_obs    / eta0   /  a1_obs    / epsilon_nl0   / thetas[0]    / thetas[1]    / filter_type" << std::endl;
+    for (int i=0; i<params_length[2];i++){
+        //std::cout << els[i]  << "  "  << nu_nl_obs[i] << "   " <<  eta0  <<  "   " << a1_obs   << "  " << epsilon_nl0  <<  "  "  << thetas[0] << "  " << thetas[1]  << "  " << filter_type << std::endl;
+        acoefs=decompose_Alm_fct(els[i], nu_nl_obs[i], eta0, a1_obs, epsilon_nl0, thetas, filter_type); // eta0 will be used only if a1_obs != 0 (case where CF was not removed from data)
+        a2_nl_mod[i]=acoefs[1]*1e3; //  convert a2 in nHz, because we assume here that nu_nl is in microHz
+        a4_nl_mod[i]=acoefs[3]*1e3; //  convert a4 in nHz, because we assume here that nu_nl is in microHz
+        a6_nl_mod[i]=acoefs[5]*1e3; //  convert a6 in nHz, because we assume here that nu_nl is in microHz
+        //std::cout << els[i]  << "  "  << nu_nl_obs[i] << "   " <<  eta0  <<  "   " << a1_obs   << "  " << epsilon_nl0  <<  "  "  << thetas[0] << "  " << thetas[1]  << "  " << filter_type << std::endl;
+        //std::cout << "             "  << acoefs.transpose() << std::endl;       
+        if (outparams){
+            mode_params.row(Line) << els[i], nu_nl_obs[i], epsilon_nl0 , thetas[0], thetas[1], eta0*1e-6,  a1_obs, a2_nl_mod[i], a4_nl_mod[i], a6_nl_mod[i];// mode_vec;
+            Line=Line+1;
+        }      }
+        // Calculate the mean over nu and l of the a-coefficients
+    if (data_type == "mean_nu_l"){ // Here, all of the data we use for the posterior are the results of the mean of <aj>_ln = cte
+        if (do_a2 == true){
+            a2_mod_data=a2_nl_mod.mean();
+            pos=where_dbl(x, 2, 1e-3); // Locate where the a2 coefficient is in the x-vector
+            model_final[pos[0]]=a2_mod_data;    
+        }
+        if (do_a4 == true){
+            posl=where_in_range(els, 2, lmax, 0); // a4 makes sense only for l>=2, we need to filter out the values to select only l>=2 before the fit
+            if (posl[0] != -1){
+                //std::cout << " posl.size() = " << posl.size() << std::endl;
+                //std::cout << " --- " << std::endl;
+                a4_mod_data=0;
+                for (int k=0;k<posl.size(); k++){
+                    a4_mod_data=a4_mod_data + a4_nl_mod[posl[k]]/posl.size();
+                    //std::cout << "[" << k << "]" << "  posl[k]=" << posl[k] << "  a4=" << a4_nl_mod[posl[k]] << std::endl;
+                }
+            }
+            //std::cout << "a4_mod_data =" << a4_mod_data << std::endl;
+            pos=where_dbl(x, 4, 1e-3); // Locate where the a4 coefficient is in the x-vector
+            model_final[pos[0]]=a4_mod_data;
+        }
+        if (do_a6 == true){
+            posl=where_in_range(els, 3, lmax, 0); // a4 makes sense only for l>=2, we need to filter out the values to select only l>=2 before the fit
+            if (posl[0] != -1){
+                a6_mod_data=0;
+                for (int k=0;k<posl.size(); k++){
+                    a6_mod_data=a6_mod_data + a6_nl_mod[posl[k]]/posl.size();
+                }
+            }
+            pos=where_dbl(x, 6, 1e-3); // Locate where the a2 coefficient is in the x-vector
+            model_final[pos[0]]=a6_mod_data;
+        }
+    }
+    //std::cout << "x = " << x.transpose() << std::endl;
+    //std::cout << "model_final = " << model_final.transpose() << std::endl;
+    //std::cout << " Test in model_ajfit..." << std::endl;
+    if(outparams){
+        std::string file_out="params.model";
+        std::string modelname = __func__;
+        std::string name_params = "# Input aj model parameters. l / nu_nl_obs  / epsilon_nl0 / theta0 / delta /  eta0   / a1_obs  / a2_nl   / a4_nl  /  a6_nl";
+        VectorXd do_aj(3);
+        do_aj << do_a2 , do_a4, do_a6;
+        MatrixXd noise(1, 3);
+        noise(0,0)=a2_mod_data; noise(0,1)=a4_mod_data; noise(0,2)=a6_mod_data;
+        write_star_params(do_aj, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
+    }
+    //exit(EXIT_FAILURE);
+    return model_final;
+}
+
 
 
 ///// ----------- FOR ASCII OUTPUTS  ------------ //////
@@ -6150,6 +6254,7 @@ bool debug_solver(const VectorXd& x, const VectorXd& fl1_all, const VectorXd& fl
 
 
 // ------ Common ------
+/*
 double eta0_fct(const VectorXd& fl0_all){
     const double G=6.667e-8;
     const double Dnu_sun=135.1;
@@ -6165,7 +6270,26 @@ double eta0_fct(const VectorXd& fl0_all){
     eta0=3.*M_PI/(rho*G);
     return eta0;
 }
+*/
+double eta0_fct(const VectorXd& fl0_all){
+    VectorXd xfit, rfit;
+    xfit=linspace(0, fl0_all.size()-1, fl0_all.size());
+    rfit=linfit(xfit, fl0_all); // rfit[0] = Dnu 
+    return eta0_fct(rfit[0]);
+}
 
+double eta0_fct(const double Dnu_obs){
+    const double G=6.667e-8;
+    const double Dnu_sun=135.1;
+    const double R_sun=6.96342e5; //in km
+    const double M_sun=1.98855e30; //in kg
+    const double rho_sun=M_sun*1e3/(4*M_PI*std::pow(R_sun*1e5,3)/3); //in g.cm-3
+    double rho, eta0;
+    rho=pow(Dnu_obs/Dnu_sun,2.) * rho_sun;
+    //eta0=3./(4.*M_PI*rho*G); WRONG DUE TO WRONG ASSUMPTION OMEGA ~ a1. It SHOULD BE OMEGA ~ 2.pi.a1
+    eta0=3.*M_PI/(rho*G);
+    return eta0;
+}
 /*
     This function takes for argument elements necessary for:
         - accounting of the centrifugal effects: eta0, a1
@@ -6181,8 +6305,10 @@ VectorXd decompose_Alm_fct(const int l, const long double fc_l, const long doubl
         if (eta0 > 0){
             nu_nlm[m+l] = nu_nlm[m+l] + fc_l*eta0*Qlm(l,m)*pow(a1*1e-6,2);
         } 
-        nu_nlm[m+l]=nu_nlm[m+l] + epsilon_nl*Alm(l, m, thetas[0], thetas[1], filter_type);
+        nu_nlm[m+l]=nu_nlm[m+l] + fc_l*epsilon_nl*Alm(l, m, thetas[0], thetas[1], filter_type);
     }
+    //std::cout << " Alm(l, m, thetas[0], thetas[1], filter_type) = " << Alm(l, m, thetas[0], thetas[1], filter_type) << std::endl;
+    //std::cout << " epsilon_nl = " << epsilon_nl << std::endl;
     //std::cout << "fc_l= " << fc_l << "  nu_nlm =" << nu_nlm.transpose() << std::endl;
     aj=eval_acoefs(l, nu_nlm);
     return aj;

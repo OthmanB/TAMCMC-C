@@ -18,6 +18,7 @@
 #include "io_ms_global.h"
 #include "io_local.h"
 #include "io_asymptotic.h"
+#include "io_ajfit.h"
 
 //using namespace std;
 
@@ -218,6 +219,7 @@ class Config{
 		void read_inputs_priors_MS_Global(); // For reading a MCMC and setting the modeling.inputs structure of global models
 		void read_inputs_priors_local(); // For reading a MCMC and setting the modeling inputs structure of local models
 		void read_inputs_priors_asymptotic(); // For read a MCMC and setting the modeling inputs structure for asymptotic models (mixed modes)
+		void read_inputs_ajfit(); // Read the inputs in the ajfit format
 		int msg_handler(const std::string file, const std::string error_type, const std::string fct_name, const std::string arguments, const short int fatal);
 };
 

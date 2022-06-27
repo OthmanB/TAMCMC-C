@@ -301,6 +301,9 @@ VectorXd Model_def::call_model(Data *data_struc, int m, bool outparams){
 		case 25: // Same as model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3 but with a spline for describing the intrinsic bias of the asymptotic model
 			return model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(params.row(m), plength, (*data_struc).x, outparams);
 			break;
+		case 26:
+			return model_ajfit(params.row(m), plength, (*data_struc).x, outparams); // Model that handle fitting Gaussian data for a2, a4, a6 using activity model from Alm
+			break;
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
 		  std::cout << " model_fct_names_switch = " << model_fct_name_switch << std::endl;
@@ -393,6 +396,9 @@ long double Model_def::call_prior(Data *data_struc, const int m){
 		case 4: // model_local
 		  return priors_asymptotic(params.row(m), plength, priors_params, priors_params_names_switch, extra_priors);
 		  break;
+		 case 5:
+		  return priors_ajfit(params.row(m), plength, priors_params, priors_params_names_switch);		 
+		  break;
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
 		  std::cout << " prior_fct_name_switch = " << prior_fct_name_switch << std::endl;
@@ -403,6 +409,8 @@ long double Model_def::call_prior(Data *data_struc, const int m){
 		  std::cout << "    - 'io_MS_Global'" << std::endl;
 		  std::cout << "    - 'io_local'" << std::endl;
 		  std::cout << "    - 'io_asymptotic'" << std::endl;
+		  std::cout << "    - 'io_asy'" << std::endl;
+		  
 		  std::cout << " The program will exit now" << std::endl;
 		  exit(EXIT_FAILURE);
 	}

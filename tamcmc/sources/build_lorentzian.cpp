@@ -171,7 +171,7 @@ VectorXd build_l_mode_ajAlm(const VectorXd& x_l, const double H_l, const double 
             if (eta0 > 0){
                 nu_nlm = nu_nlm + fc_l*eta0*Qlm(l,m)*pow(a1*1e-6,2);
             } 
-            nu_nlm=nu_nlm + epsilon_nl*Alm(l, m, thetas[0], thetas[1], filter_type); // Adding the Activity terms
+            nu_nlm=nu_nlm + fc_l*epsilon_nl*Alm(l, m, thetas[0], thetas[1], filter_type); // Adding the Activity terms
             profile=(x_l - tmp.setConstant(nu_nlm)).array().square();
             profile=4*profile/pow(gamma_l,2);
         } else{

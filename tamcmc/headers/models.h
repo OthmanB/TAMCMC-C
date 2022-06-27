@@ -11,7 +11,10 @@ using Eigen::VectorXi;
 using Eigen::VectorXd;
 
 double eta0_fct(const VectorXd& fl0_all);
+double eta0_fct(const double Dnu_obs);
 VectorXd decompose_Alm_fct(const int l, const long double fc_l, const long double eta0, const long double a1, const long double epsilon_nl, const VectorXd& thetas, const std::string filter_type);
+
+VectorXd model_ajfit(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams=false);
 
 VectorXd model_MS_Global_a1nl_etaa3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams=false);
 VectorXd model_MS_Global_a1n_etaa3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams=false);

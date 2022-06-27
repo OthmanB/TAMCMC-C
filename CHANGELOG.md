@@ -1,5 +1,11 @@
 # Version history #
 
+### v1.82 New Model ###
+	- Adding a model 'model_ajfit' that allows you to fit data for a2, a4, a6 using Alm in order to determine latitudes of active regions
+	- Warning: In order to get compatibility with ajfit models, a critical change was made in the config.cpp::setup : I Made direct use of the (global) data.data_all instead of the (temporary local) data_in. If a subroutine within read_inputs_files() changes data_all, this may have impact on the routines set prior model_ajfit. A close monitoring of the situation is required in the future, to see any unusual behavior in e.g the ranges of the data
+	- Bug Fix: 
+		 * Corrected the missing nu_cl in the function 'decompose_Alm_fct()' and in 'build_l_mode_ajAlm()'. This affected models 'model_MS_Global_ajAlm_HarveyLike' (direct or indirect)
+		 
 ### v1.81 Improvment ###
 		- Adding in the model with activity  'model_MS_Global_ajAlm_HarveyLike' the possibility of not using Alm directly: Using decompose_Alm option we can now converts it to a2,a4,a6 terms. The user can then choose which terms are used and wich ones are not. It allows to
 			  control the fit accuracy, in line with the simulations involving aj coefficients

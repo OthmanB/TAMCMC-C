@@ -434,6 +434,17 @@ def dostar_aj(rootdir, fileout='Results'):
 	#			write_aj_samples(rootdir+"Files/a2samples_n"+str(l)+"_"+str(i)+".txt", l, nu[i], a2_s[i,:])
 
 
+def convert_ajraw2data(aj_file, outfile=None):
+	'''
+		A function that generates a .data file with the 
+		indexes j as x-axis, aj coefficients as y-axis and 
+		uncertainties as z-axis
+		It also creates a .model file with the rest of the inputs
+		that can be directly read using the matrix function from TAMCMC
+	'''
+
+
+
 def dostar_a1a2a3(rootdir, fileout='Results'):
 # Going to be obselete and replaced by aj models
 

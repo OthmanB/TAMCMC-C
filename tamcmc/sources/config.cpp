@@ -81,7 +81,6 @@ void Config::setup(const int slice_ind){
 	
 	long imin, imax;
 
-
     // ---- Read the data ----
     std::string delimiter=" ";
     std::cout << "Data file: " << data.data_file << std::endl;
@@ -105,26 +104,30 @@ void Config::setup(const int slice_ind){
     // ----- Define which columns are containing the x values, the y values and ysig_ind ----
 	if(data.data.xrange[0] == -9999 && data.data.xrange[1] == -9999){ // Case where no range was given in the cfg file ==> Take all
 		imin=0;
-		imax=data_in.data.rows();
+		//imax=data_in.data.rows();
+		imax=data.data_all.data.rows();
 	} else{ // Case where a range was set ==> select the appropriate data range
 		imin=0;
-		while(imin<data_in.data.rows() && data_in.data(imin, data.x_col) <data.data.xrange[0]){
+		//while(imin<data_in.data.rows() && data_in.data(imin, data.x_col) <data.data.xrange[0]){
+		while(imin<data.data_all.data.rows() && data.data_all.data(imin, data.x_col) <data.data.xrange[0]){
 			imin=imin+1.;
-			//std::cout << "imin=" << imin << "   data_in.data(imin, data.x_col)= " << data_in.data(imin, data.x_col) << std::endl;
         }
-		if(imin >= data_in.data.rows()){
+		//if(imin >= data_in.data.rows()){
+        if(imin >= data.data_all.data.rows()){
 			std::cout << "Warning: Found that xmin > max(data.x)" << std::endl;
 			std::cout << "         The requested xrange[0] is inconsistent with the given data" << std::endl;
 			std::cout << "         Cannot proceed further. Check the configuration file and the data file " << std::endl;				std::cout << "         The program will stop now" << std::endl;
 			exit(EXIT_FAILURE);
 		}
-		//std::cout << "imin=" << imin << std::endl;
 		imax=imin;
-		while(imax<data_in.data.rows() && data_in.data(imax, data.x_col)<data.data.xrange[1]){
+		//while(imax<data_in.data.rows() && data_in.data(imax, data.x_col)<data.data.xrange[1]){
+		while(imax<data.data_all.data.rows() && data.data_all.data(imax, data.x_col)<data.data.xrange[1]){
 			imax=imax+1.;
 		}
-		if(imax > data_in.data.rows()){
-			imax=data_in.data.rows();
+		//if(imax > data_in.data.rows()){
+		if(imax > data.data_all.data.rows()){
+			//imax=data_in.data.rows();
+			imax=data.data_all.data.rows();
 			std::cout << "Warning: Found that xmax > max(data.x) OR xmax < xmin" << std::endl;
 			std::cout << "         ==> xmax fixed to max(data.x)" << std::endl;
 			std::cout << " Stop for debug purpose" <<std::endl;
@@ -134,24 +137,32 @@ void Config::setup(const int slice_ind){
 	}
 
 	if(data.x_col >=0){
-		data.data.x=data_in.data.col(data.x_col).segment(imin, imax-imin);
-		data.data.xlabel=data_in.labels[data.x_col];
-		data.data.xunit=data_in.units[data.x_col];		
+		//data.data.x=data_in.data.col(data.x_col).segment(imin, imax-imin);
+		data.data.x=data.data_all.data.col(data.x_col).segment(imin, imax-imin);
+		//data.data.xlabel=data_in.labels[data.x_col];
+		data.data.xlabel=data.data_all.labels[data.x_col];
+		//data.data.xunit=data_in.units[data.x_col];
+		data.data.xunit=data.data_all.units[data.x_col];		
 	}
 	//std::cout << "data.data.x.minCoeff()=" << data.data.x.minCoeff() << std::endl;
 	//std::cout << "data.data.x.maxCoeff()=" << data.data.x.maxCoeff() << std::endl;
 	
 	if(data.y_col >=0){
 		std::cout << "Importing data...";
-		if(data_in.data.cols() > data.y_col){
-			data.data.y=data_in.data.col(data.y_col).segment(imin, imax-imin);
+		//if(data_in.data.cols() > data.y_col){
+		if(data.data_all.data.cols() > data.y_col){
+			//data.data.y=data_in.data.col(data.y_col).segment(imin, imax-imin);
+			data.data.y=data.data_all.data.col(data.y_col).segment(imin, imax-imin);
 			std::cout << "labels...";
-			data.data.ylabel=data_in.labels[data.y_col];
+			//data.data.ylabel=data_in.labels[data.y_col];
+			data.data.ylabel=data.data_all.labels[data.y_col];
 			std::cout << "units";
-			data.data.yunit=data_in.units[data.y_col];
+			//data.data.yunit=data_in.units[data.y_col];
+			data.data.yunit=data.data_all.units[data.y_col];
 			std::cout << "...Done" << std::endl;
 		}else{
-			std::cout << "Fatal Error: The data file has only " << data_in.data.cols() << " columns but you specified that y-data are in column " << data.y_col+1 << " (y_col=" << data.y_col << ")" << std::endl;
+			//std::cout << "Fatal Error: The data file has only " << data_in.data.cols() << " columns but you specified that y-data are in column " << data.y_col+1 << " (y_col=" << data.y_col << ")" << std::endl;
+			std::cout << "Fatal Error: The data file has only " << data.data_all.data.cols() << " columns but you specified that y-data are in column " << data.y_col+1 << " (y_col=" << data.y_col << ")" << std::endl;
 			std::cout << "             Cannot proceed. The program will exit now" << std::endl;
 			exit(EXIT_FAILURE);
 		}
@@ -161,7 +172,8 @@ void Config::setup(const int slice_ind){
 		exit(EXIT_FAILURE);
 	}
 	if(data.ysig_col >= 0){
-		data.data.sigma_y=data_in.data.col(data.ysig_col).segment(imin, imax-imin);
+		//data.data.sigma_y=data_in.data.col(data.ysig_col).segment(imin, imax-imin);
+		data.data.sigma_y=data.data_all.data.col(data.ysig_col).segment(imin, imax-imin);
 	} else {
 		std::cout << "Warning: Config::Config.data.data.sigma_y was not specified in the data file" << std::endl;
 		std::cout << "         In case of a chi_square fit, this variable is required" << std::endl;
@@ -170,7 +182,8 @@ void Config::setup(const int slice_ind){
 		VectorXd tmp(data.data.x.size());
 		data.data.sigma_y=tmp.setConstant(1);
 	}
-	data.data.header=data_in.header;
+	//data.data.header=data_in.header;
+	data.data.header=data.data_all.header;
 	data.data.Nx=data.data.x.size();
 
 
@@ -189,7 +202,6 @@ void Config::setup(const int slice_ind){
 	} else {
 		restored_vals.iteration=0;
 	}
-	
 	std::cout << "Initial configuration done" << std::endl;
 }
 
@@ -381,6 +393,28 @@ void Config::read_inputs_priors_local(){
 	modeling.inputs=in_vals;
 	modeling.model_fct_name=in_vals.model_fullname;
 	std::cout << "Setup according to the MCMC configuration file finished" << std::endl;
+}
+
+void Config::read_inputs_ajfit(){
+	double a1_obs;
+	VectorXi pos_j1;
+	aj_files i_ajfit;
+	Input_Data in_vals;
+		
+	std::cout << "  - Reading the aj file: " << modeling.cfg_model_file << "..." << std::endl;
+	i_ajfit=read_ajfile(modeling.cfg_model_file); // Read the  file, with verbose=0 here
+	
+	std::cout << "   - Preparing input and priors parameters..." << std::endl;
+	pos_j1=where_dbl(data.data_all.data.col(data.x_col), 1, 1e-3); // Look for the position of j=1 associated to a1
+	a1_obs=data.data_all.data(pos_j1[0], data.y_col); // Retrieve a1
+	data.data_all=set_observables_ajfit(i_ajfit, data.data_all, data.x_col, data.y_col, data.ysig_col);
+    in_vals=build_init_ajfit(i_ajfit, a1_obs); // Interpret the aj file and format it as an input structure
+	in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
+	modeling.inputs=in_vals;
+	modeling.model_fct_name=in_vals.model_fullname;
+	diags.data_scoef1=0; // a2, a4, a6 are independent parameters... WE MUST NOT smooth over x={a2,a4,a6}
+	diags.data_scoef2=0;
+	std::cout << "Setup according to the model and data configuration file finished" << std::endl;
 }
 
 
@@ -1604,8 +1638,7 @@ void Config::read_restore_files(){
 void Config::read_inputs_files(){
 
     bool passed=0; 
-
-	if(modeling.prior_fct_name == "prior_Test_Gaussian"){ // The structure of such a file is quite simple: Comments (#), Params names (!), Params Inputs, Priors names (!), Priors Inputs
+ 	if(modeling.prior_fct_name == "prior_Test_Gaussian"){ // The structure of such a file is quite simple: Comments (#), Params names (!), Params Inputs, Priors names (!), Priors Inputs
 		read_inputs_prior_Simple_Matrix();
 		passed=1;
 	}
@@ -1623,6 +1656,10 @@ void Config::read_inputs_files(){
 	}
 	if((modeling.prior_fct_name == "io_asymptotic")){
 		read_inputs_priors_asymptotic();
+		passed=1;
+	}
+	if((modeling.prior_fct_name == "io_ajfit")){
+		read_inputs_ajfit();
 		passed=1;
 	}
 	if(passed == 0){
@@ -1682,16 +1719,16 @@ void Config::read_defautlerrors(bool verbose){
     MALA.offset_errors.resize(MALA.var_names_errors.size());
 
     for(int i=0; i<MALA.var_names_errors.size(); i++){
-	MALA.fraction_errors[i]=frac_errors[i];
-	MALA.offset_errors[i]=abs_errors[i];
+		MALA.fraction_errors[i]=frac_errors[i];
+		MALA.offset_errors[i]=abs_errors[i];
     }
 
     // ------ Verbose if requested -------
     if (verbose == 1){
-	std::cout << " ------------ Setup for the initial covariance matrix  ---------------------" << std::endl;
-	std::cout << "  Configuration File: " << errordefault_file << std::endl;
-	std::cout << " ----------------------------  Values   ------------------------------------" << std::endl;
-	std::cout << "   Variable name		A			B" << std::endl;
+		std::cout << " ------------ Setup for the initial covariance matrix  ---------------------" << std::endl;
+		std::cout << "  Configuration File: " << errordefault_file << std::endl;
+		std::cout << " ----------------------------  Values   ------------------------------------" << std::endl;
+		std::cout << "   Variable name		A			B" << std::endl;
 	for(int i=0; i<MALA.var_names_errors.size(); i++){
 		std::cout << "  " << MALA.var_names_errors[i]  << "	" << MALA.fraction_errors[i] << "		" << MALA.offset_errors[i] << std::endl;
 	}
