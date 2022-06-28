@@ -13,6 +13,7 @@ using Eigen::VectorXd;
 double eta0_fct(const VectorXd& fl0_all);
 double eta0_fct(const double Dnu_obs);
 VectorXd decompose_Alm_fct(const int l, const long double fc_l, const long double eta0, const long double a1, const long double epsilon_nl, const VectorXd& thetas, const std::string filter_type);
+VectorXd decompose_CFonly(const int l, const long double fc_l, const long double eta0, const long double a1);
 
 VectorXd model_ajfit(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams=false);
 

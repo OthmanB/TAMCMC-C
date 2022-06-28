@@ -74,6 +74,10 @@ aj_files read_ajfile(const std::string cfg_model_file){
 		std::cout << "          - do_a2 = " << i_ajfit.do_a2 << std::endl;
 		std::cout << "          - do_a4 = " << i_ajfit.do_a4 << std::endl;
 		std::cout << "          - do_a6 = " << i_ajfit.do_a6 << std::endl;
+		std::getline(cfg_session, line0); // do_CFonly
+		words=strsplit(line0, " \t");
+		i_ajfit.do_CFonly=str_to_bool(words[1]);
+		std::cout << "          - do_CFonly = " << i_ajfit.do_CFonly << std::endl;
    		cfg_session.close();
    } else {
    		std::cout << "Unable to open the file: " << cfg_model_file << std::endl;
@@ -150,11 +154,6 @@ Data_Nd set_observables_ajfit(const aj_files i_ajfit, const Data_Nd data, const 
 			j=j+1;
 		}
 	}	
-	//std::cout << "x_out = " << data_out.data.col(x_col).transpose() << std::endl;
-	//std::cout << "y_out = " << data_out.data.col(y_col).transpose() << std::endl;
-	//std::cout << "sigma_y_out = " << data_out.data.col(ysig_col).transpose() << std::endl;
-	//std::cout << " Test in set_observables_ajfit " << std::endl;
-	//exit(EXIT_SUCCESS);
 	return data_out;
 }
 
@@ -187,7 +186,7 @@ Input_Data build_init_ajfit(const aj_files i_ajfit, const double a1_obs){
 		plength[1]=2; // Second Dnu and a1 for the centrifugal term
 		plength[2]=i_ajfit.els.size();
 		plength[3]=i_ajfit.nu_nl.size();
-		plength[4]=3;
+		plength[4]=4;
 		if(plength[2] != plength[3]){
 			std::cout << " ERROR: The number of els and the number of nu_nl do not match inside the model file!" << std::endl;
 			std::cout << "        Please check your model file " << std::endl;
@@ -223,6 +222,8 @@ Input_Data build_init_ajfit(const aj_files i_ajfit, const double a1_obs){
 		io_calls.fill_param(&all_in, "do_a4", "Fix", i_ajfit.do_a4, tmpXd, p0, 0);
 		p0= 5 + 2*i_ajfit.els.size() + 2;
 		io_calls.fill_param(&all_in, "do_a6", "Fix", i_ajfit.do_a6, tmpXd, p0, 0);
+		p0= 5 + 2*i_ajfit.els.size() + 3;
+		io_calls.fill_param(&all_in, "do_CFonly", "Fix", i_ajfit.do_CFonly, tmpXd, p0, 0);
 	 	std::cout << " ----------------- Configuration summary -------------------" << std::endl;
 		std::cout << " Model Name = " << all_in.model_fullname << std::endl;		
 		std::cout << " -----------------------------------------------------------" << std::endl;

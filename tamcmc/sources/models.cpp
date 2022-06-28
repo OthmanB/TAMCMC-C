@@ -6009,6 +6009,7 @@ VectorXd model_ajfit(const VectorXd& params, const VectorXi& params_length, cons
     const bool do_a2=params[params_length.segment(0, 4).sum()];
     const bool do_a4=params[params_length.segment(0, 4).sum()+1];
     const bool do_a6=params[params_length.segment(0, 4).sum()+2];
+    const bool do_CFonly=params[params_length.segment(0,4).sum()+3];
     int i;
     long double a2_mod_data=-9999;
     long double a4_mod_data=-9999;
@@ -6028,21 +6029,17 @@ VectorXd model_ajfit(const VectorXd& params, const VectorXi& params_length, cons
     els = params.segment(5, params_length[2]);
     nu_nl_obs = params.segment(5+params_length[2], params_length[3]);
     eta0=eta0_fct(Dnu_obs);
-    //std::cout << params_length.transpose() << std::endl;
-    //std::cout << els << std::endl;
-    //std::cout << "--" << std::endl;
-    //std::cout << nu_nl_obs << std::endl;
-    // a2_mod_data
-    // Given the variables of the model, get aj of the model aj_mod at the observed frequencies nu_nl_obs of each l and m modes
     //std::cout << "els[i]  / nu_nl_obs    / eta0   /  a1_obs    / epsilon_nl0   / thetas[0]    / thetas[1]    / filter_type" << std::endl;
     for (int i=0; i<params_length[2];i++){
         //std::cout << els[i]  << "  "  << nu_nl_obs[i] << "   " <<  eta0  <<  "   " << a1_obs   << "  " << epsilon_nl0  <<  "  "  << thetas[0] << "  " << thetas[1]  << "  " << filter_type << std::endl;
-        acoefs=decompose_Alm_fct(els[i], nu_nl_obs[i], eta0, a1_obs, epsilon_nl0, thetas, filter_type); // eta0 will be used only if a1_obs != 0 (case where CF was not removed from data)
+        if(do_CFonly == false){
+            acoefs=decompose_Alm_fct(els[i], nu_nl_obs[i], eta0, a1_obs, epsilon_nl0, thetas, filter_type); // eta0 will be used only if a1_obs != 0 (case where CF was not removed from data)
+        } else{
+            acoefs=decompose_CFonly(els[i],  nu_nl_obs[i], eta0, a1_obs); // basically returns only a2_CF. The rest is set to by definition
+        }
         a2_nl_mod[i]=acoefs[1]*1e3; //  convert a2 in nHz, because we assume here that nu_nl is in microHz
         a4_nl_mod[i]=acoefs[3]*1e3; //  convert a4 in nHz, because we assume here that nu_nl is in microHz
         a6_nl_mod[i]=acoefs[5]*1e3; //  convert a6 in nHz, because we assume here that nu_nl is in microHz
-        //std::cout << els[i]  << "  "  << nu_nl_obs[i] << "   " <<  eta0  <<  "   " << a1_obs   << "  " << epsilon_nl0  <<  "  "  << thetas[0] << "  " << thetas[1]  << "  " << filter_type << std::endl;
-        //std::cout << "             "  << acoefs.transpose() << std::endl;       
         if (outparams){
             mode_params.row(Line) << els[i], nu_nl_obs[i], epsilon_nl0 , thetas[0], thetas[1], eta0*1e-6,  a1_obs, a2_nl_mod[i], a4_nl_mod[i], a6_nl_mod[i];// mode_vec;
             Line=Line+1;
@@ -6057,12 +6054,9 @@ VectorXd model_ajfit(const VectorXd& params, const VectorXi& params_length, cons
         if (do_a4 == true){
             posl=where_in_range(els, 2, lmax, 0); // a4 makes sense only for l>=2, we need to filter out the values to select only l>=2 before the fit
             if (posl[0] != -1){
-                //std::cout << " posl.size() = " << posl.size() << std::endl;
-                //std::cout << " --- " << std::endl;
                 a4_mod_data=0;
                 for (int k=0;k<posl.size(); k++){
                     a4_mod_data=a4_mod_data + a4_nl_mod[posl[k]]/posl.size();
-                    //std::cout << "[" << k << "]" << "  posl[k]=" << posl[k] << "  a4=" << a4_nl_mod[posl[k]] << std::endl;
                 }
             }
             //std::cout << "a4_mod_data =" << a4_mod_data << std::endl;
@@ -6081,9 +6075,6 @@ VectorXd model_ajfit(const VectorXd& params, const VectorXi& params_length, cons
             model_final[pos[0]]=a6_mod_data;
         }
     }
-    //std::cout << "x = " << x.transpose() << std::endl;
-    //std::cout << "model_final = " << model_final.transpose() << std::endl;
-    //std::cout << " Test in model_ajfit..." << std::endl;
     if(outparams){
         std::string file_out="params.model";
         std::string modelname = __func__;
@@ -6094,7 +6085,6 @@ VectorXd model_ajfit(const VectorXd& params, const VectorXi& params_length, cons
         noise(0,0)=a2_mod_data; noise(0,1)=a4_mod_data; noise(0,2)=a6_mod_data;
         write_star_params(do_aj, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
     }
-    //exit(EXIT_FAILURE);
     return model_final;
 }
 
@@ -6310,6 +6300,23 @@ VectorXd decompose_Alm_fct(const int l, const long double fc_l, const long doubl
     //std::cout << " Alm(l, m, thetas[0], thetas[1], filter_type) = " << Alm(l, m, thetas[0], thetas[1], filter_type) << std::endl;
     //std::cout << " epsilon_nl = " << epsilon_nl << std::endl;
     //std::cout << "fc_l= " << fc_l << "  nu_nlm =" << nu_nlm.transpose() << std::endl;
+    aj=eval_acoefs(l, nu_nlm);
+    return aj;
+}
+
+VectorXd decompose_CFonly(const int l, const long double fc_l, const long double eta0, const long double a1){
+    /*
+        This is for models that seek to evaluate only the Centrifugal force effect on a2
+        Basically, this is mostly usefull if one wants to evaluate the global likelihood of 
+        a result being consistent with a centrifugal distorsion only
+    */
+    VectorXd aj, nu_nlm(2*l+1);
+    for (int m=-l; m<=l; m++){
+        nu_nlm[m+l]=fc_l;
+        if (eta0 > 0){
+            nu_nlm[m+l] = nu_nlm[m+l] + fc_l*eta0*Qlm(l,m)*pow(a1*1e-6,2);
+        }
+    }
     aj=eval_acoefs(l, nu_nlm);
     return aj;
 }

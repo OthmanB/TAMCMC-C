@@ -101,6 +101,7 @@ struct aj_files{
 	bool do_a2;
 	bool do_a4;
 	bool do_a6;
+	bool do_CFonly;
 };
 
 // Structure that keep information of the derivatives
