@@ -172,6 +172,9 @@ void Config::setup(const int slice_ind){
 		exit(EXIT_FAILURE);
 	}
 	if(data.ysig_col >= 0){
+		std::cout << " Warning : ysig_col >= 0 is set (ysig_col ="  << data.ysig_col << ")" << std::endl;
+		std::cout << "           This WILL fail if you fit a power spectrum" << std::endl;
+		std::cout << "            Use it only in conjunction with a Gaussian likelihood " << std::endl;
 		//data.data.sigma_y=data_in.data.col(data.ysig_col).segment(imin, imax-imin);
 		data.data.sigma_y=data.data_all.data.col(data.ysig_col).segment(imin, imax-imin);
 	} else {
@@ -185,7 +188,6 @@ void Config::setup(const int slice_ind){
 	//data.data.header=data_in.header;
 	data.data.header=data.data_all.header;
 	data.data.Nx=data.data.x.size();
-
 
     // --- Finishing the Setup ---
 	if(outputs.do_restore_last_index == 1 && outputs.do_restore_proposal == 0){
