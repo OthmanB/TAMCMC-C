@@ -398,7 +398,7 @@ def dostar_aj(rootdir, fileout='Results'):
 		xerr=make_error_from_stats(nu_l1_stats)
 		axs[j].errorbar(nu_l1_stats[:,2], aj_l1_stats[j][:, 2], xerr=xerr, yerr=yerr)
 	plt.savefig(rootdir+'/'+fileout+'.png')
-	print("     - average aj...")
+	print("     - median aj...")
 	fig, axs = plt.subplots(Nj)
 	for j in range(0,Nj):
 		print('a{}_mean_stats = {}'.format(j+1, aj_mean_stats[j]))
@@ -412,6 +412,7 @@ def dostar_aj(rootdir, fileout='Results'):
 	#exit()
 	print("7. Writing data on aj...")
 	print("     - Table of aj raw parameters with gaussian representation...")
+	print("           Note: This uses the mean and stddev operator and will give results different from median and confidence intervals")
 	write_aj_raw_stats(rootdir+"/aj_raw.txt", nu_l1_stats[:,2], nu_l2_stats[:,2], nu_l3_stats[:,2], aj_mean_samples, Nf_el, rootdir)
 	#print("    - Table with all frequencies and individual samples")
 	#for j in range(0,Nj):
