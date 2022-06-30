@@ -146,12 +146,15 @@ def write_aj_raw_stats(fileout, nu_nl1, nu_nl2, nu_nl3, aj_mean_samples, Nf_el, 
 			f.write(" {0:1d}".format(el))
 	f.write("\n")
 	f.write("! nu_nl_obs = ")
-	for nu in nu_nl1:
-		f.write(" {0:10.6f}".format(nu))
-	for nu in nu_nl2:
-		f.write(" {0:10.6f}".format(nu))
-	for nu in nu_nl3:
-		f.write(" {0:10.6f}".format(nu))
+	if Nf_el[1] !=0:
+		for nu in nu_nl1:
+			f.write(" {0:10.6f}".format(nu))
+	if Nf_el[2] !=0:
+		for nu in nu_nl2:
+			f.write(" {0:10.6f}".format(nu))
+	if Nf_el[3] !=0:
+		for nu in nu_nl3:
+			f.write(" {0:10.6f}".format(nu))
 	f.write("\n")
 	f.write('# Mean and standard deviation of fitted parameters\n')
 	f.write("# Col(0):a1, Col(1):a2, Col(2):a3, Col(3):a4, Col(4):a5, Col(5):a6, Col(6):err_a1, Col(7):err_a2, Col(8):err_a3, Col(8):err_a4, Col(8):err_a5, Col(8):err_a6\n")		
@@ -278,15 +281,15 @@ def compute_confidence_intervals(l1_samples, l2_samples, l3_samples, Nf_el):
 	if Nf_el[1] != 0:
 		l1_stats=np.zeros((Nf_el[1], len(conf_intervals)))
 	else:
-		l1_stats=np.zeros((1,1))
+		l1_stats=np.zeros((1,len(conf_intervals)))
 	if Nf_el[2] != 0:
 		l2_stats=np.zeros((Nf_el[2], len(conf_intervals)))
 	else:
-		l2_stats=np.zeros((1,1))
+		l2_stats=np.zeros((1,len(conf_intervals)))
 	if Nf_el[3] != 0:
 		l3_stats=np.zeros((Nf_el[3], len(conf_intervals)))
 	else:
-		l3_stats=np.zeros((1,1))
+		l3_stats=np.zeros((1,len(conf_intervals)))
 
 	for en in range(Nf_el[1]):
 		r=make_stats(l1_samples[en,:], confidence=conf_intervals) # Get the confidence intervals by making a cdf
@@ -297,7 +300,6 @@ def compute_confidence_intervals(l1_samples, l2_samples, l3_samples, Nf_el):
 	for en in range(Nf_el[3]):
 		r=make_stats(l3_samples[en,:], confidence=conf_intervals) # Get the confidence intervals by making a cdf
 		l3_stats[en,:]=r
-
 	return l1_stats, l2_stats, l3_stats
 
 def make_stats(samples, confidence=[2.25,16,50,84,97.75]):
