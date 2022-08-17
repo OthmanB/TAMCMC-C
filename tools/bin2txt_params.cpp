@@ -11,6 +11,7 @@
 #include "data.h"
 #include "string_handler.h"
 #include "version.h"
+#include "quick_samples_stats.h"
 
 void showversion();
 int options(int argc, char* argv[]);
@@ -23,9 +24,9 @@ int main(int argc, char* argv[]){
 		long cpt, lcpt;
 		Eigen::MatrixXd data_array, data_out;
 		std::string rootname, filename_params, filename_params_hdr, dir_out, file;
-		std::ofstream fileout_stream;
+		std::ofstream fileout_stream, fileout_stream_synthese;
 		std::string cpath=getcwd(NULL, 0);
-		
+		Eigen::VectorXd median, mean, stddev;
 		Diagnostics diags;
 		Params_hdr hdr;
 
@@ -66,7 +67,10 @@ int main(int argc, char* argv[]){
 		std::cout << "  1. Reading the binary output files..." << std::endl;
 		hdr=diags.read_params_header(filename_params_hdr); // Get the metadata from the header file 
 		data_array=diags.read_bin_matrix_dbl(filename_params, hdr.Nvars, hdr.Nsamples, "dbl");
-		
+		median.resize(hdr.Nvars);
+		mean.resize(hdr.Nvars);
+		stddev.resize(hdr.Nvars);
+		//
 		// ---- Selecting only 1 sample out every Sample_period samples -----
 		std::cout << "  2. Applying the selection rule..." << std::endl;
 		if(Samples_period <= 1){ // Case where we return all samples
@@ -89,18 +93,38 @@ int main(int argc, char* argv[]){
 		std::cout << "  3. Writing outputs into text files... " << std::endl;
 		ind_var=0;
 		ind_cons=0;
+    	fileout_stream_synthese.open((dir_out + "SUMMARY.STATS").c_str());
+    	if(fileout_stream_synthese.is_open()){
+    		fileout_stream_synthese << "# Statistical Summary of the MCMC analysis" << std::endl;
+//    		fileout_stream_synthese << "# ";
+//   		for(int ind_param=0; ind_param < hdr.Nvars+hdr.Ncons; ind_param++){
+//    			fileout_stream_synthese << hdr.variable_names[ind_var] << "   ";
+//    		}
+//    		fileout_stream_synthese << std::endl;
+    		fileout_stream_synthese << "#"  << std::setw(18) << "Variable_Name" << std::setw(18) << "Mean" << std::setw(18) << "Median" << std::setw(18) << "Stddev" << std::endl;
+    	} else{
+			std::cout << " Unable to open the binary data file " << dir_out.c_str() << "SUMMARY.STATS" << std::endl;	
+			std::cout << " Check that the full path exists" << std::endl;
+			std::cout << " The program will exit now" << std::endl;
+			exit(EXIT_FAILURE);    			
+    	}
     	for(int ind_param=0; ind_param < hdr.Nvars+hdr.Ncons; ind_param++){
     		file=diags.formated_int_to_str(ind_param);
     		fileout_stream.open((dir_out + file + ".ASCII").c_str());
     		if(fileout_stream.is_open()){
 				if(hdr.relax[ind_param] == 1){
 					fileout_stream << "! variable_name= " << hdr.variable_names[ind_var] << std::endl;
-					std::cout << "    - File: " << file + ".ASCII" << "   " << std::endl;
 					fileout_stream << std::setprecision(12) << data_out.col(ind_var) << std::endl;
+					mean[ind_var]=mean_fct(data_out.col(ind_var));
+					median[ind_var]=median_fct(data_out.col(ind_var));
+					stddev[ind_var]=stddev_fct(data_out.col(ind_var));
+					fileout_stream_synthese << " " << std::setw(18) <<  hdr.variable_names[ind_var] << std::setw(18) << std::setprecision(12) << mean[ind_var] <<  std::setw(18) << std::setprecision(12) << median[ind_var] << std::setw(18) << std::setprecision(12) << stddev[ind_var] <<  std::endl;
+					std::cout << "    - File: " << file + ".ASCII" << "    variable: " << hdr.variable_names[ind_var] << "   median: " << median[ind_var] << "   stddev: " << stddev[ind_var] << std::endl;
 					ind_var=ind_var+1;
     			} else{
 					fileout_stream << "! constant_name= " << hdr.constant_names[ind_cons] << std::endl;
-					std::cout << "    - File: " << file + ".ASCII" << "  (Constant value)" << std::endl;
+					fileout_stream_synthese << " " << std::setw(18) << hdr.constant_names[ind_cons] << std::setw(18) << std::setprecision(12) << hdr.constant_values[ind_cons] << std::setw(18) << std::setprecision(12) << hdr.constant_values[ind_cons] << std::setw(18) << "0"<<  std::endl;
+					std::cout << "    - File: " << file + ".ASCII" << "  (Constant value)" << "    variable: " << hdr.constant_names[ind_cons] << "   value: " << hdr.constant_values[ind_cons] << std::endl;
 					if(replicate_cte == 1){
 						for(long repeat=0; repeat<data_array.rows(); repeat++){
 							fileout_stream << hdr.constant_values[ind_cons] << std::endl;    
@@ -125,14 +149,45 @@ int main(int argc, char* argv[]){
 		if(fileout_stream.is_open()){
 				fileout_stream << hdr.plength << std::endl;
    		} else{
-			std::cout << " Unable to open the binary data file " << dir_out.c_str() + file + ".ASCII" << std::endl;	
+			std::cout << " Unable to open the binary data file " << dir_out.c_str() + file  << std::endl;	
 			std::cout << " Check that the full path exists" << std::endl;
 			std::cout << " The program will exit now" << std::endl;
 			exit(EXIT_FAILURE);
     	}
     	fileout_stream.close();
-		
-	std::cout << "All done" << std::endl;
+	
+		// --- Show a summary of all the values in a list format that can be easily taken to python ---
+    	std::cout << "  4. Statistics of outputs in simple format (variable names, mean, median, standard deviation) " << std::endl;
+    	std::cout << "      ";
+    	for (int i=0; i<hdr.Nvars;i++){
+    		std::cout << hdr.variable_names[i] <<" , " ;
+    	}
+    	std::cout << std::endl;
+    	std::cout << "      ";
+    	for (int i=0; i<hdr.Nvars;i++){
+    		std::cout << mean[i];
+    		if (i != hdr.Nvars-1){
+				std::cout <<" , " ;
+			} 
+    	}
+    	std::cout << std::endl;
+    	std::cout << "      ";
+    	for (int i=0; i<hdr.Nvars;i++){
+    		std::cout << median[i] ;
+    		if (i != hdr.Nvars-1){
+				std::cout <<" , " ;
+			}     	
+    	}
+    	std::cout << std::endl;
+    	std::cout << "      ";
+    	for (int i=0; i<hdr.Nvars;i++){
+    		std::cout << stddev[i] ;
+    		if (i != hdr.Nvars-1){
+				std::cout <<" , " ;
+			} 
+    	}
+    	std::cout << std::endl;
+//	std::cout << "All done" << std::endl;
 }
 
 

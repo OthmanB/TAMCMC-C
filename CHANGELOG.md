@@ -1,5 +1,11 @@
 # Version history #
 
+### v1.83 New tool and improvments ###
+	- Adding a quick_samples_stats.cpp and quick_samples_stats.h in tools/ that contains functions to compute the mean, median and stddev from a VectorXd
+	- Using quick_samples_stats in bin2txt_params.cpp in order to show the median and the stddev while unpacking the binary files. This is for example useful in small models such as the Gaussian model
+  - Models with AppWidth now require that numax (and optionaly its error) is provided by the user. Previously if this was not provided, the code was calculating it. But this is highly instable due the usally limited number of modes in RGB stars
+  - Appourchaux Gaussian priors have been revised so that these are using 5% numax if err_numax is not provided in the model file. And use err_numax otherwise.
+
 ### v1.82 New Model ###
 	- Adding a model 'model_ajfit' that allows you to fit data for a2, a4, a6 using Alm in order to determine latitudes of active regions
 	- Warning: In order to get compatibility with ajfit models, a critical change was made in the config.cpp::setup : I Made direct use of the (global) data.data_all instead of the (temporary local) data_in. If a subroutine within read_inputs_files() changes data_all, this may have impact on the routines set prior model_ajfit. A close monitoring of the situation is required in the future, to see any unusual behavior in e.g the ranges of the data

@@ -161,17 +161,17 @@ def inital_param_S0(numax, Amp, freq, spec_reg, fmin, fmax):
 	# LONG CADENCE
 	if stype == 'LC':
 		increment=2 # The incremental step to evaluate the noise background must be small for long cadence
-	nu2=np.min(f_smooth) + increment # second sample taken 50 microHz apart from 
-	#pos=np.where(np.bitwise_and(f_smooth >= nu2 , f_smooth <= nu2 + dnu_win))
-	pos, dnu_win_new=robust_where(f_smooth, nu2, dnu_win)
-	H2_2=np.mean(s_smooth[pos]) - B0
-	while (H2_2/H2 <= 0.5) or H2_2 <=0:
 		nu2=np.min(f_smooth) + increment # second sample taken 50 microHz apart from 
 		#pos=np.where(np.bitwise_and(f_smooth >= nu2 , f_smooth <= nu2 + dnu_win))
 		pos, dnu_win_new=robust_where(f_smooth, nu2, dnu_win)
 		H2_2=np.mean(s_smooth[pos]) - B0
-		increment=increment*2
-	increment=increment/2	
+		while (H2_2/H2 <= 0.5) or H2_2 <=0:
+			nu2=np.min(f_smooth) + increment # second sample taken 50 microHz apart from 
+			#pos=np.where(np.bitwise_and(f_smooth >= nu2 , f_smooth <= nu2 + dnu_win))
+			pos, dnu_win_new=robust_where(f_smooth, nu2, dnu_win)
+			H2_2=np.mean(s_smooth[pos]) - B0
+			increment=increment*2
+		increment=increment/2	
 	cpt=0.
 	force_exit=0 # Boolean switch that turns into 1 if Fnyquist is passed
 	while (H2_2/H2 >= 0.5) and cpt < 40 and (force_exit == 0): # as soon as the intensity has not decreased by at least half...
@@ -436,7 +436,6 @@ def mode_initial_setup(spec_file, KIC_number, numax_guess, numax_uncertainty_gue
 		d=readsav(spec_file)
 		freq=d['freq']
 		spec_reg=d['spec_reg']
-		extended=False
 	if datatype == 'data':
 		freq, spec_reg, models, extended, true_xmin=read_data_file(spec_file, extend_to_0=True)
 
@@ -615,20 +614,12 @@ def fast_test():
 	#KIC_number='10528917'
 	#outdir='/Users/obenomar/tmp/'
 	#
-	#spec_file='/Users/obenomar/tmp/Siddarth_2022/data/inputs/005696036_fast_v4_div1000.data'
-	#numax_guess=40
-	#numax_uncertainty_guess=40
-	#Amax_guess=5
-	#KIC_number='005696036'
-	#outdir='/Users/obenomar/tmp/Siddarth_2022/data/inputs/Gaussfit/'
-	
-	spec_file='/Users/obenomar/tmp/P1.11/data/25Jul2022-concat/397587084_TF.sav'
-	numax_guess=1780.01
-	numax_uncertainty_guess=253.69
-	Amax_guess=16.68
-	KIC_number='397587084'
-	outdir='/Users/obenomar/tmp/P1.11/data/25Jul2022-concat/'
-
+	spec_file='/Users/obenomar/tmp/Siddarth_2022/data/inputs/005696036_fast_v4_div1000.data'
+	numax_guess=40
+	numax_uncertainty_guess=40
+	Amax_guess=5
+	KIC_number='005696036'
+	outdir='/Users/obenomar/tmp/Siddarth_2022/data/inputs/Gaussfit/'
 	rebin=4
 	extension=spec_file.split('.')[-1]
 	if extension == 'sav':

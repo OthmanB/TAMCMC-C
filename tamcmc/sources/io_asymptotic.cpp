@@ -11,8 +11,6 @@
 #include <Eigen/Dense>
 #include <vector>
 #include <string>
-//#include "data.h" // contains the structure Data
-//#include "string_handler.h"
 #include "io_asymptotic.h"
 #include "io_models.h"
 #include "function_rot.h"
@@ -47,7 +45,8 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	double rho=pow(inputs_MS_global.Dnu/Dnu_sun,2.) * rho_sun;
 	double Dnl=0.75, trunc_c=-1;
 	double numax=inputs_MS_global.numax;
-	
+	double err_numax=inputs_MS_global.err_numax;
+
 	// All Default booleans
 	bool do_a11_eq_a12=1, do_avg_a1n=1, do_amp=0;
 	bool bool_a1sini=0, bool_a1cosi=0;
@@ -85,16 +84,16 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
             	do_a11_eq_a12=1;
             	do_avg_a1n=1;
             	do_width_Appourchaux=2;
-            	if(numax != -9999){ 
-            		if (numax <= 0){ // Check that if there is a value, this one is a valid input for numax
-            			std::cout << "    The model: " << all_in.model_fullname << " is supposed to have numax for (optional) argument" << std::endl;
-            			std::cout << "    However, you provided a negative input. Please either:" << std::endl;
-            			std::cout << "           [1] Not specify any numax or set !n -9999 in the .model file. In that case, the code will calculate a numax using weighted average of frequencies using Heights as weights" << std::endl;
-            			std::cout << "           [2] Specify a valid (positive) numax." << std::endl;
-            			std::cout << "    The program will exit now. " << std::endl;
-            			exit(EXIT_SUCCESS);
-            		}
-            	}	
+//            	if(numax != -9999){ 
+            	if (numax <= 0){ // Check that if there is a value, this one is a valid input for numax
+            		std::cout << "    The model: " << all_in.model_fullname << " is supposed to have numax for argument" << std::endl;
+            		std::cout << "    However, you provided a negative input. Please:" << std::endl;
+//            		std::cout << "           [1] Not specify any numax or set !n -9999 in the .model file. In that case, the code will calculate a numax using weighted average of frequencies using Heights as weights" << std::endl;
+            		std::cout << "           Specify a valid (positive) numax." << std::endl;
+            		std::cout << "    The program will exit now. " << std::endl;
+            		exit(EXIT_SUCCESS);
+            	}
+//            	}	
             }
             if(all_in.model_fullname == "model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3"){
             	do_a11_eq_a12=1;
@@ -376,34 +375,24 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	if(numax <=0){
 		std::cout << "numax not provided. Input numax may be required by some models... Calculating numax ASSUMING PURE l=0 P MODES ONLY..." << std::endl;
 		std::cout << "         ---- DUE TO MIXED MODES WE RECOMMEND YOU TO PROVIDE NUMAX AS AN ARGUMENT ---" << std::endl;
-		//tmpXd.segment(cpt , Nf_el[0])=height_in.inputs;  // ALLWAY Nf_el[0] here because assuming p modes (the number of total modes listed does not matter)	
-		tmpXd=height_in.inputs;  // ALLWAY Nf_el[0] here because assuming p modes (the number of total modes listed does not matter)
-/*
-		for(int el=0; el<=3; el++){
-			if( Nf_el[el] != 0){
-				if(el == 0){
-					tmpXd.segment(cpt , Nf_el[el])=height_in.inputs;  // ALLWAY Nf_el[0] here because assuming p modes (the number of total modes listed does not matter)
-				}
-				if(el == 1){
-					tmpXd.segment(cpt , Nf_el[el])=height_in.inputs*1.5; ; //using default visibilities as weights 
-				}
-				if(el == 2){
-					tmpXd.segment(cpt , Nf_el[el])=height_in.inputs*0.53; //using default visibilities as weights
-				}
-				if(el == 3){
-					tmpXd.segment(cpt , Nf_el[el])=height_in.inputs*0.08; //using default visibilities as weights
-				}
-			cpt=cpt+Nf_el[el];
-			//std::cout << "cpt[" << el <<	 "]" << cpt << std::endl;
-			}
+		if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3" ||
+			all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike"){
+			std::cout << "     Test showed high risk of wrong estimates of the widths if numax is not provided because the number of modes in evolved stars can be small" << std::endl;
+			std::cout << "     It is therefore now enforced that the user provide it in the case of models with AppWidth" << std::endl;
+			std::cout << "     Please add numax in your model file following this syntax:" << std::endl;
+			exit(EXIT_SUCCESS);
 		}
-*/
-		//std::cout << "getting in getnumax..." << std::endl;
-		//numax=getnumax(freq_in.inputs , tmpXd); // We had to flatten the Height vector and put visibilities
+		tmpXd=height_in.inputs;  // ALLWAY Nf_el[0] here because assuming p modes (the number of total modes listed does not matter)
 		numax=getnumax(freq_in.inputs.segment(0, Nf_el[0]) , height_in.inputs); // We had to flatten the Height vector and put visibilities
 		std::cout << "     numax: " << numax << std::endl;
 	} else {	
 		std::cout << " Using provided numax: " << numax << std::endl;
+		if (err_numax <= 0){
+			err_numax=0.05*numax;
+			std::cout << " err_numax not provided. It will be set to 5% of numax: " << std::endl;
+		} else{
+			std::cout << " Using provided err_numax: " << err_numax << std::endl;
+		}
 	}
 	std::cout << " ------------------" << std::endl;
 
@@ -982,7 +971,7 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 		io_calls.add_param(&all_in, &width_in, p0);
 	} 
 	if(do_width_Appourchaux == 2){// Case of: model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1
-		width_in=set_width_App2016_params_v2(numax, width_in);
+		width_in=set_width_App2016_params_v2(numax, err_numax, width_in);
 		io_calls.add_param(&all_in, &width_in, p0);
 	}
 	// --- Put the Noise ---

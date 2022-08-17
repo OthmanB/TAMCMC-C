@@ -80,6 +80,7 @@ set(HEADERS  #_COMMON
     external/ARMM/linfit.h
     external/integrate/activity.h
     external/spline/src/spline.h
+    tools/quick_samples_stats.h
     )
 
 #Bring the core program sources into the project
@@ -122,6 +123,7 @@ set(SOURCES_MAIN  #_COMMON
 #Define the sources for the bin2txt program
 set(SOURCES_TOOLS_BIN2TXT
 	tools/bin2txt_params.cpp
+	tools/quick_samples_stats.cpp
 	tamcmc/sources/interpol.cpp
 	tamcmc/sources/diagnostics.cpp
 	tamcmc/sources/string_handler.cpp

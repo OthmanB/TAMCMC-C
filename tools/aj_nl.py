@@ -146,15 +146,12 @@ def write_aj_raw_stats(fileout, nu_nl1, nu_nl2, nu_nl3, aj_mean_samples, Nf_el, 
 			f.write(" {0:1d}".format(el))
 	f.write("\n")
 	f.write("! nu_nl_obs = ")
-	if Nf_el[1] !=0:
-		for nu in nu_nl1:
-			f.write(" {0:10.6f}".format(nu))
-	if Nf_el[2] !=0:
-		for nu in nu_nl2:
-			f.write(" {0:10.6f}".format(nu))
-	if Nf_el[3] !=0:
-		for nu in nu_nl3:
-			f.write(" {0:10.6f}".format(nu))
+	for nu in nu_nl1:
+		f.write(" {0:10.6f}".format(nu))
+	for nu in nu_nl2:
+		f.write(" {0:10.6f}".format(nu))
+	for nu in nu_nl3:
+		f.write(" {0:10.6f}".format(nu))
 	f.write("\n")
 	f.write('# Mean and standard deviation of fitted parameters\n')
 	f.write("# Col(0):a1, Col(1):a2, Col(2):a3, Col(3):a4, Col(4):a5, Col(5):a6, Col(6):err_a1, Col(7):err_a2, Col(8):err_a3, Col(8):err_a4, Col(8):err_a5, Col(8):err_a6\n")		
@@ -281,15 +278,15 @@ def compute_confidence_intervals(l1_samples, l2_samples, l3_samples, Nf_el):
 	if Nf_el[1] != 0:
 		l1_stats=np.zeros((Nf_el[1], len(conf_intervals)))
 	else:
-		l1_stats=np.zeros((1,len(conf_intervals)))
+		l1_stats=np.zeros((1,1))
 	if Nf_el[2] != 0:
 		l2_stats=np.zeros((Nf_el[2], len(conf_intervals)))
 	else:
-		l2_stats=np.zeros((1,len(conf_intervals)))
+		l2_stats=np.zeros((1,1))
 	if Nf_el[3] != 0:
 		l3_stats=np.zeros((Nf_el[3], len(conf_intervals)))
 	else:
-		l3_stats=np.zeros((1,len(conf_intervals)))
+		l3_stats=np.zeros((1,1))
 
 	for en in range(Nf_el[1]):
 		r=make_stats(l1_samples[en,:], confidence=conf_intervals) # Get the confidence intervals by making a cdf
@@ -300,6 +297,7 @@ def compute_confidence_intervals(l1_samples, l2_samples, l3_samples, Nf_el):
 	for en in range(Nf_el[3]):
 		r=make_stats(l3_samples[en,:], confidence=conf_intervals) # Get the confidence intervals by making a cdf
 		l3_stats[en,:]=r
+
 	return l1_stats, l2_stats, l3_stats
 
 def make_stats(samples, confidence=[2.25,16,50,84,97.75]):
@@ -398,7 +396,7 @@ def dostar_aj(rootdir, fileout='Results'):
 		xerr=make_error_from_stats(nu_l1_stats)
 		axs[j].errorbar(nu_l1_stats[:,2], aj_l1_stats[j][:, 2], xerr=xerr, yerr=yerr)
 	plt.savefig(rootdir+'/'+fileout+'.png')
-	print("     - median aj...")
+	print("     - average aj...")
 	fig, axs = plt.subplots(Nj)
 	for j in range(0,Nj):
 		print('a{}_mean_stats = {}'.format(j+1, aj_mean_stats[j]))
@@ -412,7 +410,6 @@ def dostar_aj(rootdir, fileout='Results'):
 	#exit()
 	print("7. Writing data on aj...")
 	print("     - Table of aj raw parameters with gaussian representation...")
-	print("           Note: This uses the mean and stddev operator and will give results different from median and confidence intervals")
 	write_aj_raw_stats(rootdir+"/aj_raw.txt", nu_l1_stats[:,2], nu_l2_stats[:,2], nu_l3_stats[:,2], aj_mean_samples, Nf_el, rootdir)
 	#print("    - Table with all frequencies and individual samples")
 	#for j in range(0,Nj):

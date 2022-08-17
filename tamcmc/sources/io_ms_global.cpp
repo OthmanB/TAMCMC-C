@@ -36,7 +36,7 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 	MCMC_files iMS_global;
 
 	iMS_global.numax=-9999; // Initialize the optional variable numax
-	
+	iMS_global.err_numax=-9999; // Initialize the optional variable err_numax
     cpt=0;
     i=0;
     out=0;
@@ -66,6 +66,12 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 			word=strsplit(line0, " ");
 			iMS_global.numax=str_to_dbl(word[1]);
 			if(verbose == 1) {std::cout << "           numax =" << iMS_global.numax << std::endl;}		
+			if (word.size() == 3){
+				iMS_global.err_numax=str_to_dbl(word[2]);
+				if(verbose == 1){
+					std::cout << "           err_numax =" << iMS_global.err_numax << std::endl;
+				}	
+			}
 		}
 		if (char0 == "!" && char1 != "!" && char1 != "n"){
 			word=strsplit(line0, " ");
@@ -323,6 +329,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 	double rho=pow(inputs_MS_global.Dnu/Dnu_sun,2.) * rho_sun;
 	double Dnl=0.75, trunc_c=-1;
 	double numax=inputs_MS_global.numax;
+	double err_numax=inputs_MS_global.err_numax;
 	
 
 	// All Default booleans
@@ -637,6 +644,12 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 		std::cout << "     numax: " << numax << std::endl;
 	} else {
 		std::cout << " Using provided numax: " << numax << std::endl;
+		if (err_numax <= 0){
+			err_numax=0.05*numax;
+			std::cout << " err_numax not provided. It will be set to 5% of numax: " << std::endl;
+		} else{
+			std::cout << " Using provided err_numax: " << err_numax << std::endl;
+		}
 	}
 	std::cout << " ------------------" << std::endl;
 
@@ -1271,11 +1284,11 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 		io_calls.add_param(&all_in, &width_in, p0);
 	} 
 	if(do_width_Appourchaux == 1){// Case of: model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1
-		width_in=set_width_App2016_params_v1(numax, width_in);
+		width_in=set_width_App2016_params_v1(numax, err_numax, width_in);
 		io_calls.add_param(&all_in, &width_in, p0);
 	}
 	if(do_width_Appourchaux == 2){// Case of: model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1
-		width_in=set_width_App2016_params_v2(numax, width_in);
+		width_in=set_width_App2016_params_v2(numax, err_numax, width_in);
 		io_calls.add_param(&all_in, &width_in, p0);
 	}
 	// --- Put the Noise ---
@@ -1478,7 +1491,7 @@ double getnumax(const VectorXd& fl, const VectorXd& Hl){
 	return numax;
 }
 
-Input_Data set_width_App2016_params_v1(const double numax, Input_Data width_in){
+Input_Data set_width_App2016_params_v1(const double numax, const double err_numax, Input_Data width_in){
 /* 
  * Function that calculates the initial guesses for the widths using numax and the linear fit reported in Appourchaux+2016
  * Note that these values are taken by hand from the graphs
@@ -1504,7 +1517,7 @@ Input_Data set_width_App2016_params_v1(const double numax, Input_Data width_in){
  		
  	// Priors on the parameters... most of those are put completely wildely: Would need to plot the graphs from App2016 to put proper gaussians
  	priors(0,0)=out[0];
- 	priors(0,1)=out[0]*0.1; // 10% of numax on nudip
+ 	priors(0,1)=err_numax; // 10% of numax on nudip
  	priors(1,0)=out[1];
  	priors(1,1)=out[1]*0.2; // 20% of alpha
  	priors(2,0)=out[2];
@@ -1527,7 +1540,7 @@ Input_Data set_width_App2016_params_v1(const double numax, Input_Data width_in){
 	return width_in;
 }
 
-Input_Data set_width_App2016_params_v2(const double numax, Input_Data width_in){
+Input_Data set_width_App2016_params_v2(const double numax, const double err_numax, Input_Data width_in){
 /* 
  * Function that calculates the initial guesses for the widths using numax and the linear fit reported in Appourchaux+2016
  * Note that these values are taken by hand from the graphs
@@ -1585,9 +1598,9 @@ Input_Data set_width_App2016_params_v2(const double numax, Input_Data width_in){
 	// POSITION PARAMETERS WITH GAUSSIAN PRIORS AND INTENSIVE PARAMETERS AS UNIFORM
  	
     priors(0,0)=out[0];
- 	priors(0,1)=out[0]*0.1; // 10% of numax on numax
+ 	priors(0,1)=err_numax; // 10% of numax on numax
  	priors(1,0)=out[1];
- 	priors(1,1)=out[1]*0.1; // 10% of numax on nudip
+ 	priors(1,1)=err_numax; // 10% of numax on nudip
  	priors(2,0)=0;
  	priors(2,1)=6; // min/max of the plot in Appourchaux 2016
  	priors(3,0)=0; //

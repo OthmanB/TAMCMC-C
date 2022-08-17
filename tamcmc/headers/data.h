@@ -74,6 +74,7 @@ struct MCMC_files{
 	std::string ID;
 	double Dnu;
 	double numax;
+	double err_numax;
 	double C_l;
 	VectorXi els;
 	VectorXd freq_range;
