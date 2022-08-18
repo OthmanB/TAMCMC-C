@@ -84,7 +84,8 @@ struct MCMC_files{
 	std::vector<bool> relax_freq, relax_gamma, relax_H;
 
 	//std::vector<double> hyper_priors;
-	VectorXd hyper_priors;
+	MatrixXd hyper_priors; // Col 0 is the fref_bias, Col 1-5 Are for the prior parameters
+	std::vector<std::string> hyper_priors_names; // This gets the prior name (U, GU, G, etc..). Check io_ms_global to see how this is read
 	MatrixXd eigen_params;
 	VectorXd noise_params;
 	MatrixXd noise_s2;

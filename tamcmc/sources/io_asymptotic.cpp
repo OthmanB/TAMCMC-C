@@ -252,20 +252,30 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4"){
 		// Generate initial set of ferr and fref. fref is basically a grid of nodes for the x-axis of the bias splines		
 		// We use the hyper-prior section of the .model file in order to get the list of fref. It is up to the user to provide that after examination of the spectrum
-		if (inputs_MS_global.hyper_priors.size() > 3){
-			for (int i=0; i<inputs_MS_global.hyper_priors.size()-1;i++){ // Check that we have values that are monotonically increasing
-				if (inputs_MS_global.hyper_priors[i+1] < inputs_MS_global.hyper_priors[i]){
+		if (inputs_MS_global.hyper_priors.rows() > 3){
+			for (int i=0; i<inputs_MS_global.hyper_priors.rows()-1;i++){ // Check that we have values that are monotonically increasing
+				if (inputs_MS_global.hyper_priors(i+1,0) < inputs_MS_global.hyper_priors(i,0)){
 					std::cout << "Error in io_asymptotic, model " << all_in.model_fullname << std::endl;
 					std::cout << " You must ensure that values in the hyper prior section are non-zero and are monotonically increasing" << std::endl;
 				} 
 			}
-			fref=inputs_MS_global.hyper_priors;
+			fref.resize(inputs_MS_global.hyper_priors.rows());
+			for(int i=0; i<inputs_MS_global.hyper_priors.rows(); i++){
+				fref[i]=inputs_MS_global.hyper_priors(i,0);
+			}
 		} else{
 			std::cout << "Error in io_asymptotic, model " << all_in.model_fullname << std::endl;
 			std::cout << " You must have at least 4 non-zero data points in the hyper_priors section in order to describe the bias frequencies used as hanchors" << std::endl;
 			exit(EXIT_FAILURE);
 		}
-		ferr.resize(fref.size()); ferr.setZero(); // The initial bias vector is set to 0
+		ferr.resize(fref.size()); 
+		if (inputs_MS_global.hyper_priors.rows() ==1){
+			ferr.setZero(); // The initial bias vector is set to 0
+		} else{
+			for(int i=0; i<inputs_MS_global.hyper_priors.rows(); i++){
+				ferr[i]=inputs_MS_global.hyper_priors(i,1);
+			}
+		}
 		Nmixedmodes_params=Nmixedmodes_g_params + 2*fref.size() + 1; // Adding the fref and ferr modes in the parameter list + Hfactor : BEWARE: WHEN WRITTING THIS, I REALIZE THAT the +1 MAY BE MISSING IN v3 models... 
 		status_model=true;
 	} 
@@ -341,32 +351,46 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			io_calls.fill_param(&freq_in, "fref_bias", "Fix",  fref[i], tmpXd, cpt, 0);
 			cpt=cpt+1;
 		}
-		// Add the ferr into the frequency parameters
-		// The FIRST frequency (lower edge) is allowed to have larger excursion to the low frequency range
-		tmpXd << -inputs_MS_global.Dnu/2 , inputs_MS_global.Dnu/20, -9999, -9999; // default parameters for a Uniform prior
-		io_calls.fill_param(&freq_in, "ferr_bias", "Uniform",  ferr[0], tmpXd, cpt, 0);
-		cpt=cpt+1;
-		// Core
-		tmpXd << -inputs_MS_global.Dnu/20 , inputs_MS_global.Dnu/20, -9999, -9999; // default parameters for a Uniform prior
-		for(int i=1; i<ferr.size()-1;i++){
-			//tmpXd << fref[i-1] , fref[i+1], -9999, -9999; // default parameters for a Uniform prior
-			io_calls.fill_param(&freq_in, "ferr_bias", "Uniform",  ferr[i], tmpXd, cpt, 0);
-			cpt=cpt+1;
-		}
-		// The LAST frequency (upper edge) is allowed to have larger excursion to the high frequency range
-		//tmpXd << fref[ferr.size()-2] , ferr[ferr.size()-1] + inputs_MS_global.Dnu/2, -9999, -9999; // default parameters for a Uniform prior
-		tmpXd << -inputs_MS_global.Dnu/20 , inputs_MS_global.Dnu/2, -9999, -9999; // default parameters for a Uniform prior
-		io_calls.fill_param(&freq_in, "ferr_bias", "Uniform",  ferr[ferr.size()-1], tmpXd, cpt, 0);
-		cpt=cpt+1;
-		status_model=true;
+		// Use the default prior configuration if the user did specify only the fref frequencies (1 column)
+		if (inputs_MS_global.hyper_priors.cols() == 1){
+			std::cout << "HERE COLS = 1 " << std::endl;
 
+			// Add the ferr into the frequency parameters
+			// The FIRST frequency (lower edge) is allowed to have larger excursion to the low frequency range
+			tmpXd << -inputs_MS_global.Dnu/2 , inputs_MS_global.Dnu/20, -9999, -9999; // default parameters for a Uniform prior
+			io_calls.fill_param(&freq_in, "ferr_bias", "Uniform",  ferr[0], tmpXd, cpt, 0);
+			cpt=cpt+1;
+			// Core
+			tmpXd << -inputs_MS_global.Dnu/20 , inputs_MS_global.Dnu/20, -9999, -9999; // default parameters for a Uniform prior
+			for(int i=1; i<ferr.size()-1;i++){
+				//tmpXd << fref[i-1] , fref[i+1], -9999, -9999; // default parameters for a Uniform prior
+				io_calls.fill_param(&freq_in, "ferr_bias", "Uniform",  ferr[i], tmpXd, cpt, 0);
+				cpt=cpt+1;
+			}
+			// The LAST frequency (upper edge) is allowed to have larger excursion to the high frequency range
+			//tmpXd << fref[ferr.size()-2] , ferr[ferr.size()-1] + inputs_MS_global.Dnu/2, -9999, -9999; // default parameters for a Uniform prior
+			tmpXd << -inputs_MS_global.Dnu/20 , inputs_MS_global.Dnu/2, -9999, -9999; // default parameters for a Uniform prior
+			io_calls.fill_param(&freq_in, "ferr_bias", "Uniform",  ferr[ferr.size()-1], tmpXd, cpt, 0);
+			cpt=cpt+1;
+			status_model=true;
+		} else{
+			//tmpXd << -inputs_MS_global.Dnu/20 , inputs_MS_global.Dnu/20, -9999, -9999; // default parameters for a Uniform prior
+			tmpXd.resize(4);	tmpXd.setConstant(-9999);
+			for(int i=0; i<ferr.size();i++){
+				for(int k=0; k<inputs_MS_global.hyper_priors.cols()-2;k++){
+ 					tmpXd[k]=inputs_MS_global.hyper_priors(i,2+k);
+				}
+				io_calls.fill_param(&freq_in, "ferr_bias", inputs_MS_global.hyper_priors_names[i], ferr[i], tmpXd, cpt, 0);	
+				cpt=cpt+1;
+			}
+			status_model=true;
+		}
 	}
 	if (status_model == false) {// status_model checks whether we already got a model defined. If not, it set the parameters to the default value
 		std::cout << " Something went wrong in io_asymptotic: The model " << all_in.model_fullname << " did not pass an expected checkpoint " << std::endl;
 		std::cout << " Please check the code and/or the model name" << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	
 	// ----------- Calculate numax -----------
 	// Flated the output vector
 	//tmpXd.resize(Nf_el.sum());
@@ -588,7 +612,6 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			p0=Nf_el[0]+7;
 			io_calls.fill_param(&freq_in, "Hfactor", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 		}
-
 		if(inputs_MS_global.common_names[i] == "sigma_fl1m_0"){
 			//std::cout << "sigma_fl1m_0" << std::endl;
 			if (extra_priors[4] == 2){ // Deal with this parameters only for specific models as per defined by extra_priors[4] value
@@ -1046,8 +1069,8 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 		std::cout << " -----------------------------------------------------------" << std::endl;
 	}
 	
-	//std::cout << "Exiting test " << std::endl;
-	//exit(EXIT_SUCCESS);
+//	std::cout << "Exiting test " << std::endl;
+//	exit(EXIT_SUCCESS);
 
 return all_in;
 }

@@ -145,27 +145,53 @@ MCMC_files read_MCMC_file_local(const std::string cfg_model_file, const int slic
 	}
     
 	// -------------------------------------
-	
+// Modified on 18 Aug 2022 to handle an array of values for the hyper priors
+// This was specifically redesigned to handle spline fitting with hyper parameters
+// The assumed structure is: 
+//   value for x-axis, prior type, prior_parameters
 	i=0;
 	cpt=0;
-	i_local.hyper_priors.resize(10);
 	if(verbose == 1) {std::cout << " - Hyper priors:" << std::endl;}
 	while ((out < 4) && !cfg_session.eof()){ // the priors, until we reach the next # symbol
 			std::getline(cfg_session, line0);
 			line0=strtrim(line0);
 			char0=strtrim(line0.substr(0, 1));
 			if (char0 != "#"){
-				i_local.hyper_priors[i]=str_to_dbl(line0);
+				word=strsplit(line0, " \t");
+				if (cpt == 0){ // We need to detect the number of columns of the hyper_priors
+					if(word.size() == 1){ // Case where no prior information is actually. It is more a compatibility mode with old code.				
+						i_local.hyper_priors.resize(50,1);
+					}
+					if(word.size() ==2){
+						std::cout << "  Error in the definition of the hyper priors" << std::endl;
+						std::cout << "  only two columns detected while it should be either one column" << std::endl;
+						std::cout << "  or at least columns (for a Fix hyper prior)" << std::endl;
+						std::cout << "  Check your model file" << std::endl;
+						exit(EXIT_FAILURE);
+					}
+					if(word.size() >2){ // We have at least 3 elements: The hyper_prior value in the x-axis, prior_type and then a hyper_prior parameter
+						i_local.hyper_priors.resize(50,word.size()-1);
+					}
+				}
+				// Gather all numerical values in hyper_priors
+				i_local.hyper_priors(i,0)=str_to_dbl(word[0]); 
+				for(int j=2; j<word.size();j++){
+					i_local.hyper_priors(i,j-1)=str_to_dbl(word[j]);
+				}
+				// Gather all the prior types on hyper_priors_type
+				i_local.hyper_priors_names.push_back(word[1]);
+				//i_local.hyper_priors.row(i)=str_to_Xdarr(line0, " \t");
 				cpt=cpt+1;
 			} else{
 				 out=out+1;
 			}
 			i=i+1;
 	  }
-	  i_local.hyper_priors.conservativeResize(cpt);
+	  i_local.hyper_priors.conservativeResize(cpt, word.size());
 	  if(verbose == 1) {
 		std::cout << i_local.hyper_priors.transpose() << std::endl;
 	  }
+
 
 	i=0;
 	cpt=0;

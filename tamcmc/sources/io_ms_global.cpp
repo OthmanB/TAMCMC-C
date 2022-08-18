@@ -156,6 +156,7 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
     
 	// -------------------------------------
 	
+/*
 	i=0;
 	cpt=0;
 	iMS_global.hyper_priors.resize(50);
@@ -176,6 +177,56 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 	  if(verbose == 1) {
 		std::cout << iMS_global.hyper_priors.transpose() << std::endl;
 	  }
+*/
+// Modified on 18 Aug 2022 to handle an array of values for the hyper priors
+// This was specifically redesigned to handle spline fitting with hyper parameters
+// The assumed structure is: 
+//   value for x-axis, prior type, prior_parameters
+	i=0;
+	cpt=0;
+	if(verbose == 1) {std::cout << " - Hyper priors:" << std::endl;}
+	while ((out < 4) && !cfg_session.eof()){ // the priors, until we reach the next # symbol
+			std::getline(cfg_session, line0);
+			line0=strtrim(line0);
+			char0=strtrim(line0.substr(0, 1));
+			if (char0 != "#"){
+				word=strsplit(line0, " \t");
+				if (cpt == 0){ // We need to detect the number of columns of the hyper_priors
+					if(word.size() == 1){ // Case where no prior information is actually. It is more a compatibility mode with old code.				
+						iMS_global.hyper_priors.resize(50,1);
+					}
+					if(word.size() ==2){
+						std::cout << "  Error in the definition of the hyper priors" << std::endl;
+						std::cout << "  only two columns detected while it should be either one column" << std::endl;
+						std::cout << "  or at least columns (for a Fix hyper prior)" << std::endl;
+						std::cout << "  Check your model file" << std::endl;
+						exit(EXIT_FAILURE);
+					}
+					if(word.size() >2){ // We have at least 3 elements: The hyper_prior value in the x-axis, prior_type and then a hyper_prior parameter
+						iMS_global.hyper_priors.resize(50,word.size()-1);
+					}
+				}
+				// Gather all numerical values in hyper_priors
+//				std::cout << "Gather all numerical values in hyper_priors" << std::endl;
+				iMS_global.hyper_priors(i,0)=str_to_dbl(word[0]);
+				for(int j=2; j<word.size();j++){
+					iMS_global.hyper_priors(i,j-1)=str_to_dbl(word[j]);
+				}
+//				std::cout << "Gather all the prior types on hyper_priors_type" << std::endl;
+				// Gather all the prior types on hyper_priors_type
+				iMS_global.hyper_priors_names.push_back(word[1]);
+				//iMS_global.hyper_priors.row(i)=str_to_Xdarr(line0, " \t");
+				cpt=cpt+1;
+			} else{
+				 out=out+1;
+			}
+			i=i+1;
+	  }
+//	  std::cout << " Conservative resize" << std::endl;
+	  iMS_global.hyper_priors.conservativeResize(cpt, word.size()-1);
+	  if(verbose == 1) {
+		std::cout << iMS_global.hyper_priors.transpose() << std::endl;
+	  }
 
 	i=0;
 	cpt=0;
@@ -186,7 +237,7 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 			line0=strtrim(line0);
 			char0=strtrim(line0.substr(0, 1));
 			if (char0 != "#"){
-				word=strsplit(line0, " \t");
+				//word=strsplit(line0, " \t");
 				iMS_global.eigen_params.row(i)=str_to_Xdarr(line0, " \t");
 				cpt=cpt+1;
 		 	} else{
