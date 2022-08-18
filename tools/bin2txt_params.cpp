@@ -20,7 +20,7 @@ void usage(int argc, char* argv[]);
 int main(int argc, char* argv[]){
 
 		bool replicate_cte;
-		int ind0, ind_param, ind_var, ind_cons, ind_chain, Nsamples, Samples_period, Newsize, val; // The Samples_period defines out of all samples, how many we keep.
+		int ind0, indmax, ind_param, ind_var, ind_cons, ind_chain, Nsamples, Samples_period, Newsize, val; // The Samples_period defines out of all samples, how many we keep.
 		long cpt, lcpt;
 		Eigen::MatrixXd data_array, data_out;
 		std::string rootname, filename_params, filename_params_hdr, dir_out, file;
@@ -35,14 +35,15 @@ int main(int argc, char* argv[]){
 		std::istringstream(argv[2]) >> ind_chain; 
 		dir_out=argv[3];
 		std::istringstream(argv[4]) >> ind0;
-		std::istringstream(argv[5]) >> Samples_period;
+		std::istringstream(argv[5]) >> indmax;
+		std::istringstream(argv[6]) >> Samples_period;
 		if(Samples_period < 1){
 			std::cout << "Warning: The given periodicity value is smaller than 1... The program will use the default value instead (Period =1)" << std::endl;
 			std::cout << "          ===> All samples will be returned" << std::endl;
 			Samples_period=1;
 		}
 		if (val == 11){
-			std::istringstream(argv[6]) >> replicate_cte;
+			std::istringstream(argv[7]) >> replicate_cte;
 		} else{
 			std::cout << " Binary variable set to default: 0 ==> Constant values are written once" << std::endl;
 			replicate_cte=0;
@@ -54,8 +55,10 @@ int main(int argc, char* argv[]){
 		std::cout << "  0. Configuration: " << std::endl;
 		std::cout << "      - Binary file: " << filename_params << std::endl;
 		std::cout << "      - Header file: " << filename_params_hdr << std::endl;
+		std::cout << "      - Chain index number: " << ind_chain << std::endl;
 		std::cout << "      - Output directory: " << dir_out << std::endl;
 		std::cout << "      - Index of the first kept sample: " << ind0 << std::endl;
+		std::cout << "      - Index of the last kept sample: " << indmax << std::endl;
 		std::cout << "      - Samples_period: " << Samples_period << " ==> ";
 		if(Samples_period >1){
 			std::cout << " Keep 1 sample every " << Samples_period << " samples" << std::endl;
@@ -71,12 +74,26 @@ int main(int argc, char* argv[]){
 		mean.resize(hdr.Nvars);
 		stddev.resize(hdr.Nvars);
 		//
+		if (indmax < 0){
+			std::cout << "    Warning: Negative indmax provided ==> the last sample is going to be the last sample of the chain" << std::endl;
+			indmax=data_array.rows();
+		}
+		if (indmax < ind0+Samples_period){
+			std::cout << "    Error: The last index must be greater than the first sample + Periodicity " << std::endl;
+			std::cout << "           The program will exit" << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		if (Samples_period <=0){
+			std::cout << "    Warning: Negative sampling period provided ==> sampling period will be fixed to 1 " << std::endl; 
+			Samples_period=1;
+		}
 		// ---- Selecting only 1 sample out every Sample_period samples -----
 		std::cout << "  2. Applying the selection rule..." << std::endl;
 		if(Samples_period <= 1){ // Case where we return all samples
-			data_out = data_array.block(ind0, 0, data_array.rows()-ind0, data_array.cols()) ;
+			//data_out = data_array.block(ind0, 0, data_array.rows()-ind0, data_array.cols()) ;
+			data_out = data_array.block(ind0, 0, indmax-ind0, data_array.cols()) ;
 		} else{ // Case where we keep one row out of Sample_period;
-			Newsize=(data_array.rows() -ind0)/Samples_period;
+			Newsize=(indmax -ind0)/Samples_period;
 			data_out.resize(Newsize, data_array.cols());
 			cpt=ind0; lcpt=0;
 			while(lcpt<data_out.rows()){
@@ -96,11 +113,6 @@ int main(int argc, char* argv[]){
     	fileout_stream_synthese.open((dir_out + "SUMMARY.STATS").c_str());
     	if(fileout_stream_synthese.is_open()){
     		fileout_stream_synthese << "# Statistical Summary of the MCMC analysis" << std::endl;
-//    		fileout_stream_synthese << "# ";
-//   		for(int ind_param=0; ind_param < hdr.Nvars+hdr.Ncons; ind_param++){
-//    			fileout_stream_synthese << hdr.variable_names[ind_var] << "   ";
-//    		}
-//    		fileout_stream_synthese << std::endl;
     		fileout_stream_synthese << "#"  << std::setw(18) << "Variable_Name" << std::setw(18) << "Mean" << std::setw(18) << "Median" << std::setw(18) << "Stddev" << std::endl;
     	} else{
 			std::cout << " Unable to open the binary data file " << dir_out.c_str() << "SUMMARY.STATS" << std::endl;	
@@ -231,10 +243,10 @@ int options(int argc, char* argv[]){
 			 val=0;
 		} 
 	}
-	if(argc == 6){
+	if(argc == 7){
 		val=10;
 	}
-	if(argc == 7){
+	if(argc == 8){
 		val=11;
 	}
 
@@ -259,12 +271,14 @@ void usage(int argc, char* argv[]){
 			std::cout << "     [2] The chain index (e.g. 0 for the coldest chain)" << std::endl;
 			std::cout << "     [3] The output directory (must already exist)" << std::endl;
 			std::cout << "     [4] Index of the first element which we keep. All index below that will be discarded" << std::endl;
-			std::cout << "     [5] The Periodicity at which we keep samples. If <1 then all samples are returned" << std::endl;	
-			std::cout << "     [6] [Optional] Binary variable. If 1, then constant values will be written Nsamples/Nperiod times in the ASCII file (For IDL code compatibility)" << std::endl;
+			std::cout << "     [5] Index of the last element which we keep. All index below that will be discarded" << std::endl;
+			std::cout << "     [6] The Periodicity at which we keep samples. If <1 then all samples are returned" << std::endl;	
+			std::cout << "     [7] [Optional] Binary variable. If 1, then constant values will be written Nsamples/Nperiod times in the ASCII file (For IDL code compatibility)" << std::endl;
 			std::cout << "                                     If 0, then constant values will be written once in the ASCII file" << std::endl;
 			std::cout << "                                     Default is 0" << std::endl;
+			std::cout << "      WARNING: Since 1.83.2, [Last kept element] was added as an argument. Any code that calls bin2txt need to be upgraded accordingly" << std::endl;
 			std::cout << " Call sequence: " << std::endl;
-			std::cout << "     " << argv[0] << " [rootname] [chain index] [output directory] [First kept element] [Periodicity] [IDL compatibility]" << std::endl;
+			std::cout << "     " << argv[0] << " [rootname] [chain index] [output directory] [First kept element] [Last kept element] [Periodicity] [IDL compatibility]" << std::endl;
 			exit(EXIT_FAILURE);
 
 }
