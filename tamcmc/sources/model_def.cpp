@@ -304,6 +304,9 @@ VectorXd Model_def::call_model(Data *data_struc, int m, bool outparams){
 		case 26:
 			return model_ajfit(params.row(m), plength, (*data_struc).x, outparams); // Model that handle fitting Gaussian data for a2, a4, a6 using activity model from Alm
 			break;
+		case 27: // Same as model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3 but with a spline for describing the intrinsic bias of the asymptotic model
+			return model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4(params.row(m), plength, (*data_struc).x, outparams);
+			break;
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
 		  std::cout << " model_fct_names_switch = " << model_fct_name_switch << std::endl;

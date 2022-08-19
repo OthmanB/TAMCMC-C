@@ -126,6 +126,18 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
             	}	
             }
         }
+        if(all_in.model_fullname == "model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4"){
+           	do_a11_eq_a12=1;
+           	do_avg_a1n=1;
+           	do_width_Appourchaux=1;
+           	if (numax <= 0){ // Check that if there is a value, this one is a valid input for numax
+           		std::cout << "    The model: " << all_in.model_fullname << " is supposed to have numax for argument" << std::endl;
+           		std::cout << "    However, you provided a negative input. Please:" << std::endl;
+           		std::cout << "           Specify a valid (positive) numax." << std::endl;
+           		std::cout << "    The program will exit now. " << std::endl;
+           		exit(EXIT_SUCCESS);
+          	}
+        }
         if(inputs_MS_global.common_names[i] == "fit_squareAmplitude_instead_Height" ){ 
         		do_amp=1;
         	if(inputs_MS_global.common_names_priors[i] != "bool"){
@@ -249,7 +261,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		Nmixedmodes_params=Nmixedmodes_g_params + fl1p_all.size(); // Adding the fl1p modes in the parameter list 
 		status_model=true;
 	}
-	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4"){
+	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4" || all_in.model_fullname =="model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4"){
 		// Generate initial set of ferr and fref. fref is basically a grid of nodes for the x-axis of the bias splines		
 		// We use the hyper-prior section of the .model file in order to get the list of fref. It is up to the user to provide that after examination of the spectrum
 		if (inputs_MS_global.hyper_priors.rows() > 3){
@@ -318,7 +330,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	for(int i=0; i<f_inputs.size(); i++){
 		if ( (i<Nf_el[0]) || (i>=Nf_el[0] + Nf_el[1]) ){ // We put frequencies of the model file only if those are not l=1
 			if(f_relax[i]) {
-				tmpXd << f_priors_min[i], f_priors_max[i], 0.005*inputs_MS_global.Dnu, 0.005*inputs_MS_global.Dnu; // default parameters for a GUG prior on frequencies
+				tmpXd << f_priors_min[i], f_priors_max[i], 0.0025*inputs_MS_global.Dnu, 0.0025*inputs_MS_global.Dnu; // default parameters for a GUG prior on frequencies
 				io_calls.fill_param(&freq_in, "Frequency_RGB_l", "GUG", f_inputs[i], tmpXd, cpt, 0);	
 			} else{
 				io_calls.fill_param(&freq_in, "Frequency_RGB_l", "Fix", f_inputs[i], tmpXd, cpt, 0);			
@@ -343,7 +355,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		status_model=true;
 	}
 
-	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4"){
+	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4" || all_in.model_fullname =="model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4"){
 		// Add the fref into the frequency parameters 
 		cpt=Nf_el[0] + Nmixedmodes_g_params + 1; // The +1 is due to Hfactor here...
 		for(int i=0; i<fref.size();i++){
@@ -353,8 +365,6 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		}
 		// Use the default prior configuration if the user did specify only the fref frequencies (1 column)
 		if (inputs_MS_global.hyper_priors.cols() == 1){
-			std::cout << "HERE COLS = 1 " << std::endl;
-
 			// Add the ferr into the frequency parameters
 			// The FIRST frequency (lower edge) is allowed to have larger excursion to the low frequency range
 			tmpXd << -inputs_MS_global.Dnu/2 , inputs_MS_global.Dnu/20, -9999, -9999; // default parameters for a Uniform prior
@@ -400,7 +410,8 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		std::cout << "numax not provided. Input numax may be required by some models... Calculating numax ASSUMING PURE l=0 P MODES ONLY..." << std::endl;
 		std::cout << "         ---- DUE TO MIXED MODES WE RECOMMEND YOU TO PROVIDE NUMAX AS AN ARGUMENT ---" << std::endl;
 		if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3" ||
-			all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike"){
+			all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike"    || 
+			all_in.model_fullname == "model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3"){
 			std::cout << "     Test showed high risk of wrong estimates of the widths if numax is not provided because the number of modes in evolved stars can be small" << std::endl;
 			std::cout << "     It is therefore now enforced that the user provide it in the case of models with AppWidth" << std::endl;
 			std::cout << "     Please add numax in your model file following this syntax:" << std::endl;
@@ -588,7 +599,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			}
 			//std::cout << "		DONE" << std::endl;
 		}
-		if(inputs_MS_global.common_names[i] == "sigma_fl1m" && all_in.model_fullname != "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4" ){
+		if(inputs_MS_global.common_names[i] == "sigma_fl1m" && all_in.model_fullname != "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4" && all_in.model_fullname != "model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4"){
 			//std::cout << "sigma_fl1m" << std::endl;
 			if (extra_priors[4] == 1){ // Deal with this parameters only for specific models as per defined by extra_priors[4] value			
 				if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){

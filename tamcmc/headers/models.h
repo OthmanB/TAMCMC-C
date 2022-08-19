@@ -43,6 +43,7 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3(const VectorXd& params,
 VectorXd model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams=false);
 VectorXd model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams=false);
 VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams=false);
+VectorXd model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams=false);
 
 VectorXd model_MS_Global_a1n_a2a3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams=false); // Added on 18 Jan 2021: Handles the a2 coefficient with n free
 VectorXd model_MS_Global_a1nl_a2a3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams=false); // Added on 18 Jan 2021: Handles the a2 coefficient with n,l free (but only n dependence accounted for)
