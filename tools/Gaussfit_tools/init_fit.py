@@ -161,17 +161,17 @@ def inital_param_S0(numax, Amp, freq, spec_reg, fmin, fmax):
 	# LONG CADENCE
 	if stype == 'LC':
 		increment=2 # The incremental step to evaluate the noise background must be small for long cadence
+	nu2=np.min(f_smooth) + increment # second sample taken 50 microHz apart from 
+	#pos=np.where(np.bitwise_and(f_smooth >= nu2 , f_smooth <= nu2 + dnu_win))
+	pos, dnu_win_new=robust_where(f_smooth, nu2, dnu_win)
+	H2_2=np.mean(s_smooth[pos]) - B0
+	while (H2_2/H2 <= 0.5) or H2_2 <=0:
 		nu2=np.min(f_smooth) + increment # second sample taken 50 microHz apart from 
 		#pos=np.where(np.bitwise_and(f_smooth >= nu2 , f_smooth <= nu2 + dnu_win))
 		pos, dnu_win_new=robust_where(f_smooth, nu2, dnu_win)
 		H2_2=np.mean(s_smooth[pos]) - B0
-		while (H2_2/H2 <= 0.5) or H2_2 <=0:
-			nu2=np.min(f_smooth) + increment # second sample taken 50 microHz apart from 
-			#pos=np.where(np.bitwise_and(f_smooth >= nu2 , f_smooth <= nu2 + dnu_win))
-			pos, dnu_win_new=robust_where(f_smooth, nu2, dnu_win)
-			H2_2=np.mean(s_smooth[pos]) - B0
-			increment=increment*2
-		increment=increment/2	
+		increment=increment*2
+	increment=increment/2	
 	cpt=0.
 	force_exit=0 # Boolean switch that turns into 1 if Fnyquist is passed
 	while (H2_2/H2 >= 0.5) and cpt < 40 and (force_exit == 0): # as soon as the intensity has not decreased by at least half...
@@ -614,16 +614,50 @@ def fast_test():
 	#KIC_number='10528917'
 	#outdir='/Users/obenomar/tmp/'
 	#
-	spec_file='/Users/obenomar/tmp/Siddarth_2022/data/inputs/005696036_fast_v4_div1000.data'
-	numax_guess=40
-	numax_uncertainty_guess=40
-	Amax_guess=5
-	KIC_number='005696036'
-	outdir='/Users/obenomar/tmp/Siddarth_2022/data/inputs/Gaussfit/'
+	#2006.5-2010.5_incfix_fast.data
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/2006.5-2010.5_incfix_fast.data' # Not working due to cut in data
+	spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/RAW/spec_green_2006.51-2010.51.sav'
+	KIC_number='2006.5-2010.5'
+	
+	#2006.5-2011.5_incfix_fast
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/2006.5-2011.5_incfix_fast.data' # Not working due to cut in data
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/RAW/spec_green_2006.51-2011.51.sav'
+	#KIC_number='2006.5-2011.5'
+	
+	#20062011_incfix_fast
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/20062011_incfix_fast.data' # Not working due to cut in data
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/RAW/spec_green_2006.01-2011.01.sav'
+	#KIC_number='2006-2011'
+	
+	#2007-2011_incfix_fast
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/2007-2011_incfix_fast.data' # Not working due to cut in data
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/RAW/spec_green_2007.01-2011.01.sav'
+	#KIC_number='2007-2011'
+	
+	#2007-2012_incfix_fast
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/2007-2012_incfix_fast.data' # Not working due to cut in data
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/RAW/spec_green_2007.01-2012.01.sav'
+	#KIC_number='2007.5-2011.5'
+	
+	#2007.5-2011.5_incfix_fast
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/2007.5-2011.5_incfix_fast.data' # Not working due to cut in data
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/RAW/spec_green_2007.51-2011.51.sav'
+	#KIC_number='2007.5-2011.5'
+
+	#2007.5-2012_incfix_fast
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/2007.5-2012_incfix_fast.data' # Not working due to cut in data
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/RAW/spec_green_2007.51-2012.01.sav'
+	#KIC_number='2007.5-2012'
+	
+	numax_guess=3150.
+	numax_uncertainty_guess=60
+	Amax_guess=3
+	
+	outdir='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/model/'
 	rebin=4
 	extension=spec_file.split('.')[-1]
 	if extension == 'sav':
 		datatype='sav'
 	if extension == 'data':
 		datatype='data'
-	mode_initial_setup(spec_file, KIC_number, numax_guess, numax_uncertainty_guess, Amax_guess, outdir, fmin=0, fmax=5000, rebin=rebin, datatype=datatype)
+	mode_initial_setup(spec_file, KIC_number, numax_guess, numax_uncertainty_guess, Amax_guess, outdir, fmin=0, fmax=10000, rebin=rebin, datatype=datatype)
