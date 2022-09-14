@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.io import readsav
-
+import os
+    
 def sav2data(savfile_in, datafile_out, fmin=None, fmax=None):
     '''
         Small program to convert sav file into data files
@@ -29,3 +30,15 @@ def sav2data(savfile_in, datafile_out, fmin=None, fmax=None):
         f.write(chain)
     f.close()
     print('      sav file was converted into a .data file : ' , datafile_out)
+
+def do_all(dir_savfiles='', dir_out='', fmin=2330.0, fmax=3660.0):
+    #dir_savfiles='/Users/obenomar/Work/tmp/Sun-data/VIRGO-SPM-SoHo/TESTS/Spec/'
+    #dir_out='/Users/obenomar/Work/tmp/Sun-analysis/Pre-fit-outputs/final_setup/'
+
+    files=os.listdir(dir_savfiles)
+    for fin in files:
+        if fin.endswith(".sav"):
+            print('fin : ', fin)
+            fout=os.path.join(dir_out, fin + '.data')
+            print('      --> fout :', fout)
+            sav2data(os.path.join(dir_savfiles, fin), fout, fmin=fmin, fmax=fmax)
