@@ -1,8 +1,10 @@
 # Version history #
 
-### v1.83.1 Tweaks ###
-	- Adding the possibility of settting priors values for ferr in the hyper prior section. The syntax is the same as the one used for the common part, except that the first column must be the fref frequency (as before)
-
+### v1.83.X Tweaks ###
+	- 1.83.1: Adding the possibility of settting priors values for ferr in the hyper prior section. The syntax is the same as the one used for the common part, except that the first column must be the fref frequency (as before)
+    - 1.83.2: In bin2txt, adding as argument the last sample to be exctracted. Warning: This may break codes that call bin2txt
+    - 1.83.3: Adding A constant model of Width for AppWidth_v4
+	
 ### v1.83 New tool and improvments ###
 	- Adding a quick_samples_stats.cpp and quick_samples_stats.h in tools/ that contains functions to compute the mean, median and stddev from a VectorXd
 	- Using quick_samples_stats in bin2txt_params.cpp in order to show the median and the stddev while unpacking the binary files. This is for example useful in small models such as the Gaussian model
