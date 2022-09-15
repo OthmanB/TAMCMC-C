@@ -26,7 +26,7 @@ def print_s2noise(s2_file, limit_noise=None, exit_after=False):
             print('{0:18.7f} {1:18.7f} {2:18.7f}'.format(noise_param[i], noise_param_err[i,0], noise_param_err[i,1]))
             #print('      ', noise_param[i], '  ', noise_param_err[i,0], '  ', noise_param_err[i,1])
         else:
-            if noise_param_err[i,0] < limit_noise or noise_param_err[i,1] < limit_noise or np.isfinite(noise_param_err[i,0]==False or np.isfinite(noise_param_err[i,1])==False):
+            if noise_param_err[i,0]/noise_param[i] < limit_noise/100 or noise_param_err[i,1]/noise_param[i] < limit_noise/100 or np.isfinite(noise_param_err[i,0]==False or np.isfinite(noise_param_err[i,1])==False):
                 print('{0:18.7f} {1:18.7f} {2:18.7f}'.format(noise_param[i], limit_noise*noise_param[i]/100, limit_noise*noise_param[i]/100)) 
                 passed=True
             else:  
