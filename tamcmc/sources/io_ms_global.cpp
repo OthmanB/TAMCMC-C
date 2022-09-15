@@ -214,7 +214,9 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 				}
 //				std::cout << "Gather all the prior types on hyper_priors_type" << std::endl;
 				// Gather all the prior types on hyper_priors_type
-				iMS_global.hyper_priors_names.push_back(word[1]);
+				if(word.size() >1){
+					iMS_global.hyper_priors_names.push_back(word[1]);
+				}
 				//iMS_global.hyper_priors.row(i)=str_to_Xdarr(line0, " \t");
 				cpt=cpt+1;
 			} else{
