@@ -169,6 +169,10 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 							f=-INFINITY;
 							goto end;
 						}
+						if(a1 < 0){
+							f=-INFINITY;
+							goto end;							
+						}
 					}
 				}
 				for (int n=0; n<Nfl[el]; n++){ // Positivity of the activity intensity 
@@ -202,6 +206,10 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 							f=-INFINITY;
 							goto end;
 						}
+						if(a1 < 0){
+							f=-INFINITY;
+							goto end;							
+						}						
 					}
 				}
 				i0=i0+Nfl[el];
