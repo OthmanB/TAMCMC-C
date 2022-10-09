@@ -15,45 +15,41 @@ pro showbestfit
 	b=byte(c[0])
 	p=max(where(b eq 47))
 	cpath=strtrim(b[0:p-1],2)
-
     ;dir_OS=cpath + '/../../' ; USE TO GET RESULTS DIRECTLY INTO THE PRODUCTS DIRECTORY INSIDE THE TAMCMC PROGRAM
-    ;dir_OS='/Users/obenomar/tmp/TRASH/TAMCMC-C-1.56-Siddarth-001867706_deepinvest/'
+	dir_OS='/Users/obenomar/Work/trash/'
     
-    ;dir_outputs=dir_OS + '/outputs/Siddarth_Mail-Dec20-INCOMPLETED/'
-    ;dir_inputs=dir_OS + '/inputs/Siddarth_Mail-Dec20-INCOMPLETED/'
-    ;dir_out=dir_OS + '/products/'
-
-    ;dir_outputs='/Users/obenomar/tmp/TRASH/Siddarth_Mail-Dec20-INCOMPLETED-freeWidth/'
-    ;dir_inputs='/Users/obenomar/tmp/TRASH/Siddarth_Mail-Dec20-INCOMPLETED-freeWidth_inputs/Siddarth_Mail-Dec20-INCOMPLETED/'
-    ;dir_out='/Users/obenomar/tmp/TRASH/Siddarth_Mail-Dec20-INCOMPLETED-freeWidth_products/'
-
+    dir_outputs=dir_OS + '/outputs_3900X/Powell_fit_shortrange/'
+    dir_inputs=dir_OS + '/inputs/Powell_fit_shortrange/'
+    dir_out=dir_OS + '/products_3900X/Powell_fit_shortrange/'
+	modelname='model_MS_Global_aj_HarveyLike'
+	phase_list='A*'
+	index0_list=0;
+	last_index=-1;
     ;modelname='model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3' ; MODEL FOR DEEPINVEST
     ;modelname='model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3'
 
-    dir_OS='/Users/obenomar/tmp/Simulator/'
-    dir_outputs=dir_OS + 'data/output_gaussfit/'
-    dir_inputs=dir_OS + 'data/input_gaussfit/'
-    dir_out=dir_OS + 'data/products_gaussfit/'
-    phase_list='L*'
-    index0_list=10000
-    modelname='model_Harvey_Gaussian'
+;    dir_OS='/Users/obenomar/tmp/Simulator/'
+;    dir_outputs=dir_OS + 'data/output_gaussfit/'
+;    dir_inputs=dir_OS + 'data/input_gaussfit/'
+;    dir_out=dir_OS + 'data/products_gaussfit/'
+;    phase_list='L*'
+;    index0_list=10000
+;    modelname='model_Harvey_Gaussian'
+;
+;    dir_outputs=dir_OS + 'data/output_gaussfit_S1/'
+;    dir_inputs=dir_OS + 'data/input_gaussfit_S1/'
+;    dir_out=dir_OS + 'data/products_gaussfit_S1/'
 
-    dir_outputs=dir_OS + 'data/output_gaussfit_S1/'
-    dir_inputs=dir_OS + 'data/input_gaussfit_S1/'
-    dir_out=dir_OS + 'data/products_gaussfit_S1/'
+;	dir_outputs=dir_OS + 'data/output_gaussfit_30-Jun-2021/'
+;    dir_inputs=dir_OS + 'data/input_gaussfit_30-Jun-2021/'
+;    dir_out=dir_OS + 'data/products_gaussfit_30-Jun-2021/'
+;	dir_outputs=dir_OS + 'data/output_gaussfit_30-Jun-2021_fulldata/'
+;    dir_inputs=dir_OS + 'data/input_gaussfit_30-Jun-2021_fulldata/'
+;    dir_out=dir_OS + 'data/products_gaussfit_30-Jun-2021_fulldata/'
 
-
-	dir_outputs=dir_OS + 'data/output_gaussfit_30-Jun-2021/'
-    dir_inputs=dir_OS + 'data/input_gaussfit_30-Jun-2021/'
-    dir_out=dir_OS + 'data/products_gaussfit_30-Jun-2021/'
-
-	dir_outputs=dir_OS + 'data/output_gaussfit_30-Jun-2021_fulldata/'
-    dir_inputs=dir_OS + 'data/input_gaussfit_30-Jun-2021_fulldata/'
-    dir_out=dir_OS + 'data/products_gaussfit_30-Jun-2021_fulldata/'
-
-	dir_outputs=dir_OS + 'data/output_gaussfit_01-Jul-2021/'
-    dir_inputs=dir_OS + 'data/input_gaussfit_01-Jul-2021/'
-    dir_out=dir_OS + 'data/products_gaussfit_01-Jul-2021/'
+;	dir_outputs=dir_OS + 'data/output_gaussfit_01-Jul-2021/'
+;    dir_inputs=dir_OS + 'data/input_gaussfit_01-Jul-2021/'
+;    dir_out=dir_OS + 'data/products_gaussfit_01-Jul-2021/'
 
     ;modelname='model_RGB_asympt_a1etaa3_AppWidth_HarveyLike'
     ;dir_OS='/Volumes/home/' ; On the mac 
@@ -99,13 +95,14 @@ pro showbestfit
 
     Nb_classes=100.;
     ;index0=70000. ; index of the first entry that is kept
-    keep_period=1. ; Keep 1 out of keep_period
+    keep_period=2. ; Keep 1 out of keep_period
  	
     dirs=file_search(dir_outputs + dir_filter) ; lists the directories
     Ndirs=n_elements(dirs)
     Ok=intarr(Ndirs)
     
     i0=0
+	imax=Ndirs-1
     for i=long(0), Ndirs-1 do begin
     	print, '[' + strtrim(i,2) + '] ' + dirs[i]
     endfor
@@ -113,7 +110,7 @@ pro showbestfit
     stop
     if n_elements(phase_list) eq 1 then phase_list=replicate(phase_list[0], Ndirs)
   	if n_elements(index0_list) eq 1 then index0_list=replicate(index0_list[0], Ndirs)  
-    for i=long(i0), Ndirs-1 do begin
+    for i=long(i0), long(imax) do begin
     	phase=phase_list[i]
     	index0=index0_list[i]
     	print, '    ------- Processing ' + dirs[i] + ' --------'    
@@ -148,10 +145,10 @@ function PostMCMC_showbestfit, root_outputs, root_inputs, dir_out, modelname, st
 	done=1
 
 	subdir=''	
-	dir_bin2txt='../' ; directory where the function that converts binaries into ascii is.
-	dir_getmodel='../' ; directory where the function that generate the models is
-	;dir_bin2txt='cpp_prg/' ; directory where the function that converts binaries into ascii is.
-	;dir_getmodel='cpp_prg/' ; directory where the function that generate the models is
+	;dir_bin2txt='../' ; directory where the function that converts binaries into ascii is.
+	;dir_getmodel='../' ; directory where the function that generate the models is
+	dir_bin2txt='cpp_prg/' ; directory where the function that converts binaries into ascii is.
+	dir_getmodel='cpp_prg/' ; directory where the function that generate the models is
 
 	; --- Defining the directory/files using the strict rule for managing inputs/outputs ----
 	dir_IDL_out=dir_out + starID +'/'
@@ -245,6 +242,7 @@ function PostMCMC_showbestfit, root_outputs, root_inputs, dir_out, modelname, st
 		;printf, 3, str
 	close, 3
 	; Use the in-built function of TAMCMC to get the median model
+	print,' Executing: ./getmodel ' + data_file + ' ' +  params_cfg + ' ' + modelname + ' ' + file_out
 	spawn, dir_getmodel +'./getmodel ' + data_file + ' ' +  params_cfg + ' ' + modelname + ' ' + file_out
 	f=file_search('params*.model') ; File generated by getmodel into the execution directory since v1.61 ==> Allow to have a direct output formated table of the modes
 	if f[0] ne '' then begin
