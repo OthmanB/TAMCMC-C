@@ -214,7 +214,7 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 				}
 //				std::cout << "Gather all the prior types on hyper_priors_type" << std::endl;
 				// Gather all the prior types on hyper_priors_type
-				if(word.size() >1){
+				if (word.size()>1){
 					iMS_global.hyper_priors_names.push_back(word[1]);
 				}
 				//iMS_global.hyper_priors.row(i)=str_to_Xdarr(line0, " \t");
@@ -225,11 +225,14 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 			i=i+1;
 	  }
 //	  std::cout << " Conservative resize" << std::endl;
-	  iMS_global.hyper_priors.conservativeResize(cpt, word.size()-1);
+	  if (word.size() != 1){
+		iMS_global.hyper_priors.conservativeResize(cpt, word.size()-1);
+	  } else{
+		iMS_global.hyper_priors.conservativeResize(cpt, 1);
+	  }
 	  if(verbose == 1) {
 		std::cout << iMS_global.hyper_priors.transpose() << std::endl;
 	  }
-
 	i=0;
 	cpt=0;
 	iMS_global.eigen_params.resize(200,6);

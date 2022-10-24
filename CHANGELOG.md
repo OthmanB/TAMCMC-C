@@ -4,6 +4,7 @@
 	- 1.83.1: Adding the possibility of settting priors values for ferr in the hyper prior section. The syntax is the same as the one used for the common part, except that the first column must be the fref frequency (as before)
     - 1.83.2: In bin2txt, adding as argument the last sample to be exctracted. Warning: This may break codes that call bin2txt
     - 1.83.3: Adding A constant model of Width for AppWidth_v4
+	- 1.83.4: Bug Fix in reading model files when there is only one spline column (extra priors) instead of 1 for the initial guess + 1 for the prior name + N for the parameters of the prior. Another bug fix concerns the fact that the RGB v4 model was not using the spline! It has been commented by mistake at some point
 	
 ### v1.83 New tool and improvments ###
 	- Adding a quick_samples_stats.cpp and quick_samples_stats.h in tools/ that contains functions to compute the mean, median and stddev from a VectorXd

@@ -156,7 +156,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
  	
  	io_calls.initialise_param(&Vis_in, lmax, Nmax_prior_params, -1, -1);
 	io_calls.initialise_param(&Inc_in, 1, Nmax_prior_params, -1, -1);
-	
+		
 	// -----------------------------------------------------------------
 	// ------------ Handling Frequencies/Widths/Heights ----------------
 	// -----------------------------------------------------------------
@@ -262,26 +262,40 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		status_model=true;
 	}
 	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4" || all_in.model_fullname =="model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4"){
+		ferr.resize(inputs_MS_global.hyper_priors.rows()); 
+		fref.resize(inputs_MS_global.hyper_priors.rows());		
 		// Generate initial set of ferr and fref. fref is basically a grid of nodes for the x-axis of the bias splines		
 		// We use the hyper-prior section of the .model file in order to get the list of fref. It is up to the user to provide that after examination of the spectrum
-		if (inputs_MS_global.hyper_priors.rows() > 3){
+//		if (inputs_MS_global.hyper_priors.cols() > 3){
+//			for (int i=0; i<inputs_MS_global.hyper_priors.rows()-1;i++){ // Check that we have values that are monotonically increasing
+//				if (inputs_MS_global.hyper_priors(i+1,0) < inputs_MS_global.hyper_priors(i,0)){
+//					std::cout << "Error in io_asymptotic, model " << all_in.model_fullname << std::endl;
+//					std::cout << " You must ensure that values in the hyper prior section are non-zero and are monotonically increasing" << std::endl;
+//				} 
+//			}
+//			for(int i=0; i<inputs_MS_global.hyper_priors.rows(); i++){
+//				fref[i]=inputs_MS_global.hyper_priors(i,0);
+//			}
+//		} else{
+		// MOD ON 24 OCT 2022: Check that it works for both scenario of extra params
 			for (int i=0; i<inputs_MS_global.hyper_priors.rows()-1;i++){ // Check that we have values that are monotonically increasing
 				if (inputs_MS_global.hyper_priors(i+1,0) < inputs_MS_global.hyper_priors(i,0)){
 					std::cout << "Error in io_asymptotic, model " << all_in.model_fullname << std::endl;
 					std::cout << " You must ensure that values in the hyper prior section are non-zero and are monotonically increasing" << std::endl;
 				} 
 			}
-			fref.resize(inputs_MS_global.hyper_priors.rows());
 			for(int i=0; i<inputs_MS_global.hyper_priors.rows(); i++){
 				fref[i]=inputs_MS_global.hyper_priors(i,0);
 			}
-		} else{
-			std::cout << "Error in io_asymptotic, model " << all_in.model_fullname << std::endl;
-			std::cout << " You must have at least 4 non-zero data points in the hyper_priors section in order to describe the bias frequencies used as hanchors" << std::endl;
-			exit(EXIT_FAILURE);
-		}
-		ferr.resize(fref.size()); 
-		if (inputs_MS_global.hyper_priors.rows() ==1){
+
+			if (inputs_MS_global.hyper_priors.cols() !=1 ){ // If there is not all of the prior information, we expect a single column
+				std::cout << "Error in io_asymptotic, model " << all_in.model_fullname << std::endl;
+				std::cout << " You must have at least 4 non-zero data points in the hyper_priors section in order to describe the bias frequencies used as hanchors" << std::endl;
+				std::cout << " Or you just specify the anchor points and default prior will be set" << std::endl;
+				exit(EXIT_FAILURE);
+			}
+//		}
+		if (inputs_MS_global.hyper_priors.cols() ==1){
 			ferr.setZero(); // The initial bias vector is set to 0
 		} else{
 			for(int i=0; i<inputs_MS_global.hyper_priors.rows(); i++){
@@ -293,8 +307,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	} 
 	if (status_model == false) {// status_model checks whether we already got a model defined. If not, it set the parameters to the default value
 		Nmixedmodes_params=Nmixedmodes_g_params;
-	}
-
+	}	
 	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike"){
 		// delta0l=params[Nmax + lmax + Nfl0];
 		//DPl=std::abs(params[Nmax + lmax + Nfl0 + 1])
@@ -324,7 +337,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			io_calls.fill_param(&height_in, tmpstr_h, "Fix", h_inputs[i], tmpXd, i, 0);			
 		}
 	}
-	
+		
 	// --- Default setup for frequencies ---
 	cpt=0;
 	for(int i=0; i<f_inputs.size(); i++){
@@ -367,6 +380,9 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		if (inputs_MS_global.hyper_priors.cols() == 1){
 			// Add the ferr into the frequency parameters
 			// The FIRST frequency (lower edge) is allowed to have larger excursion to the low frequency range
+			std::cout << " inputs_MS_global.Dnu =" <<  inputs_MS_global.Dnu << std::endl;
+			std::cout << " cpt =" << cpt << std::endl;
+			std::cout << " ferr[0] =" << ferr[0] << std::endl;
 			tmpXd << -inputs_MS_global.Dnu/2 , inputs_MS_global.Dnu/20, -9999, -9999; // default parameters for a Uniform prior
 			io_calls.fill_param(&freq_in, "ferr_bias", "Uniform",  ferr[0], tmpXd, cpt, 0);
 			cpt=cpt+1;
@@ -377,6 +393,8 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 				io_calls.fill_param(&freq_in, "ferr_bias", "Uniform",  ferr[i], tmpXd, cpt, 0);
 				cpt=cpt+1;
 			}
+			std::cout << "[4.3]" << std::endl;
+
 			// The LAST frequency (upper edge) is allowed to have larger excursion to the high frequency range
 			//tmpXd << fref[ferr.size()-2] , ferr[ferr.size()-1] + inputs_MS_global.Dnu/2, -9999, -9999; // default parameters for a Uniform prior
 			tmpXd << -inputs_MS_global.Dnu/20 , inputs_MS_global.Dnu/2, -9999, -9999; // default parameters for a Uniform prior
@@ -400,7 +418,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		std::cout << " Something went wrong in io_asymptotic: The model " << all_in.model_fullname << " did not pass an expected checkpoint " << std::endl;
 		std::cout << " Please check the code and/or the model name" << std::endl;
 		exit(EXIT_FAILURE);
-	}
+	}	
 	// ----------- Calculate numax -----------
 	// Flated the output vector
 	//tmpXd.resize(Nf_el.sum());

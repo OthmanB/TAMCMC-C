@@ -5366,16 +5366,21 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
     const double rot_env=std::abs(params[Nmax + lmax + Nf]);
     const double rot_core=std::abs(params[Nmax + lmax + Nf+1]);
     VectorXd ksi_pg, h1_h0_ratio,f_interp, h_interp;
- 
+ //   std::cout << params << std::endl;
+ //   std::cout << " " << std::endl;
+ //   std::cout << " i0=" << Nmax+ lmax + Nfl0 + 8 << std::endl;
+ //   std::cout << " Nferr = " << Nferr << std::endl;
     for (int i=0;i<Nferr; i++){
         fref_all[i]=params[Nmax+ lmax + Nfl0 + 8 + i];        
         ferr_all[i]=params[Nmax+ lmax + Nfl0 + 8 + Nferr + i];
+ //       std::cout << fref_all[i]  << "   " << ferr_all[i] << std::endl;
     }
     //unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     //std::default_random_engine gen_m(seed);    
     //std::normal_distribution<double> distrib_fl1m(0.,sigma_m_l1);
     //std::normal_distribution<double> distrib_Hl1m(0.,sigma_H_l1);
     
+ //   exit(EXIT_SUCCESS);
     // bias type setup
     tk::spline bias; // declare a bias
     //tk::spline bias(fref_all, ferr_all);
@@ -5469,14 +5474,14 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
     fl1_all=freqs_l1.nu_m;
 
     // Adding the bias function to the vector fl1_all
-    /*
-    std::cout << " fl1     /   bias     /   Total " << std::endl;
+
+//  std::cout << " fl1     /   bias     /   Total " << std::endl;
     for (int i=0; i< fl1_all.size(); i++){
-        std::cout << fl1_all[i] << "  ";
+        //std::cout << fl1_all[i] << "  ";
         fl1_all[i] = fl1_all[i] + bias(fl1_all[i]);
-        std::cout << bias(fl1_all[i]) << "  "  << fl1_all[i] << std::endl;
+        //std::cout << bias(fl1_all[i]) << "  "  << fl1_all[i] << std::endl;
     }
-    */
+    
     //exit(EXIT_SUCCESS);
     //if (sigma_m_l1 != 0){
     //   for (int en=0; en<fl1_all.size(); en++)
