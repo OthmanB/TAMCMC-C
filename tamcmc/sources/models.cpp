@@ -5043,7 +5043,10 @@ VectorXd model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4(const VectorXd& params,
     fl1_all=freqs_l1.nu_m;
 
     // Adding the bias function to the vector fl1_all
-    /*
+     for (int i=0; i< fl1_all.size(); i++){
+        fl1_all[i] = fl1_all[i] + bias(fl1_all[i]);
+    }
+   /*
     std::cout << " fl1     /   bias     /   Total " << std::endl;
     for (int i=0; i< fl1_all.size(); i++){
         std::cout << fl1_all[i] << "  ";
