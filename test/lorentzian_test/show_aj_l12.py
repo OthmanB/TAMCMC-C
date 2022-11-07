@@ -2,7 +2,6 @@ from main import eta0_fct
 from main import lorentzian_cpp
 from main import set_expectations
 from acoefs import Snlm
-#from function_rot import amplitude_ratio
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -50,8 +49,10 @@ def nice_show(freq, power, l, aj_inputs, xlines,ylines, xnames, ynames, text_ind
 	ax.plot(f, power)
 	ax.set_ylim([0, max(power)*1.2])
 	ax.set_xlim([min(f), max(f)])
-	ax.set_xlabel(r'$\nu_{nlm}-\nu_{0}$ (nHz)', fontsize=16)
-	ax.set_ylabel("Power", fontsize=16)
+	ax.set_xlabel(r'$\nu_{nlm}-\nu_{nl}$ (nHz)', fontsize=20)
+	ax.set_ylabel("Power", fontsize=20)
+	ax.tick_params(axis='x', labelsize=20)
+	ax.tick_params(axis='y', labelsize=20)
 	if text_index != None:
 		ax.annotate(text_index, xy=(0.05, 0.92), xycoords=ax.transAxes, fontsize=22)
 
@@ -75,19 +76,23 @@ def nice_show(freq, power, l, aj_inputs, xlines,ylines, xnames, ynames, text_ind
 			else:
 				fix_x=0
 			col='blue'	
-			ax.plot([x-f0,x-f0], [0, px], color=col, linestyle='--')
-			ax.annotate('m=' + str(m), xy=((x-f0)*propx-fix_x, px*propy), fontsize=12, color=col)
+			if  m==-l or m==l:
+				px0=max(power)*1.1
+			else:
+				px0=power[posOK[0][0]]
+			ax.plot([x-f0,x-f0], [0, px0], color=col, linestyle='--')
+			ax.annotate('m=' + str(m), xy=((x-f0)*propx-fix_x, px*propy), fontsize=16, color=col)
 			m=m+1
 	#
 	if l==1:
 		ax.text(0.025, 0.80, r"$a_1 =$ {0:0.0f} nHz".format(aj_inputs[0]), fontsize=16, transform=ax.transAxes)
 		ax.text(0.025, 0.75, r"$a_2 =$ {0:0.0f} nHz".format(aj_inputs[1]), fontsize=16, transform=ax.transAxes)
 		ytext=max(power)*1.1
-		ax.annotate(r"$2 a_1$", xy=((xlines[1]+xlines[3])/2 -f0, ytext+0.01), fontsize=16, ha="center")
-		ax.annotate("", xy=(xlines[1]-f0, ytext), xytext=(xlines[3]-f0, ytext), va="center", ha="center", arrowprops={"arrowstyle": "<|-|>", "facecolor":"black"}, fontsize=16)
+		ax.annotate(r"$2 a_1$", xy=((xlines[1]+xlines[3])/2 -f0, ytext+0.015), fontsize=18, ha="center")
+		ax.annotate("", xy=(xlines[1]-f0, ytext), xytext=(xlines[3]-f0, ytext), va="center", ha="center", arrowprops={"arrowstyle": "<|-|>", "facecolor":"black"}, fontsize=18)
 		ytext=max(power)*0.9
-		ax.annotate(r"$2 a_2$", xy=((xlines[2]-f0)/2, ytext+0.01), fontsize=16, ha="center")
-		ax.annotate("", xy=(xlines[2]-f0, ytext), xytext=(0, ytext), va="center", ha="center", arrowprops={"arrowstyle": "<|-|>", "facecolor":"black"}, fontsize=16)	
+		ax.annotate(r"$2 a_2$", xy=((xlines[2]-f0)/2, ytext+0.015), fontsize=18, ha="center")
+		ax.annotate("", xy=(xlines[2]-f0, ytext), xytext=(0, ytext), va="center", ha="center", arrowprops={"arrowstyle": "<|-|>", "facecolor":"black"}, fontsize=18)	
 	if l==2: 
 		ax.text(0.025, 0.80, r"$a_1 =$ {0:0.0f} nHz".format(aj_inputs[0]), fontsize=16 , transform=ax.transAxes)
 		ax.text(0.025, 0.75, r"$a_2 =$ {0:0.0f} nHz".format(aj_inputs[1]), fontsize=16 , transform=ax.transAxes)
@@ -95,19 +100,20 @@ def nice_show(freq, power, l, aj_inputs, xlines,ylines, xnames, ynames, text_ind
 		ax.text(0.025, 0.65, r"$a_4 =$ {0:0.0f} nHz".format(aj_inputs[3]), fontsize=16 , transform=ax.transAxes)
 		S=Snlm(xlines[1:], l) 
 		ytext=max(power)*1.1
-		ax.annotate(r"$4 (a_1+a_3)$", xy=((xlines[1]+xlines[5])/2 -f0, ytext+0.01), fontsize=16, ha="center")
-		ax.annotate("", xy=(xlines[1]-f0, ytext), xytext=(xlines[5]-f0, ytext), va="center", ha="center", arrowprops={"arrowstyle": "<|-|>", "facecolor":"black"}, fontsize=16)
+		ax.annotate(r"$4 (a_1+a_3)$", xy=((xlines[1]+xlines[5])/2 -f0, ytext+0.01), fontsize=18, ha="center")
+		ax.annotate("", xy=(xlines[1]-f0, ytext), xytext=(xlines[5]-f0, ytext), va="center", ha="center", arrowprops={"arrowstyle": "<|-|>", "facecolor":"black"}, fontsize=18)
 		ax.plot([S[1],S[1]], [ytext*1.01, max(power)*0.9*0.925], color='orange') # S22 indicator
 		#
 		ytext=max(power)*0.9
-		ax.annotate(r"$2 (a_1- 4a_3)$", xy=((xlines[2]+xlines[4])/2 -f0, ytext+0.01), fontsize=16, ha="center")
-		ax.annotate("", xy=(xlines[2]-f0, ytext), xytext=(xlines[4]-f0, ytext), va="center", ha="center", arrowprops={"arrowstyle": "<|-|>", "facecolor":"black"}, fontsize=16)
+		ax.annotate(r"$2 (a_1- 4a_3)$", xy=((xlines[2]+xlines[4])/2 -f0, ytext+0.01), fontsize=18, ha="center")
+		ax.annotate("", xy=(xlines[2]-f0, ytext), xytext=(xlines[4]-f0, ytext), va="center", ha="center", arrowprops={"arrowstyle": "<|-|>", "facecolor":"black"}, fontsize=18)
 		ax.plot([S[0],S[0]], [ytext*1.01, ytext*0.925], color='orange') # S21 indicator
 		# 10a4 + 3a2 = S22 - S21
-		ax.annotate("", xy=(S[0], max(power)*0.9*0.925), xytext=(S[1], max(power)*0.9*0.925), va="center", ha="center", arrowprops={"arrowstyle": "<|-|>", "facecolor":"orange"}, fontsize=16)
-		ax.annotate(r"$10a_4 + 3a_2$", xy=((S[0]+S[1])/2, max(power)*0.9*0.925*0.98), va="top", ha="center", fontsize=16, color='orange')		
+		ax.annotate("", xy=(S[0], max(power)*0.9*0.925), xytext=(S[1], max(power)*0.9*0.925), va="center", ha="center", arrowprops={"arrowstyle": "<|-|>", "facecolor":"orange"}, fontsize=18)
+		ax.annotate(r"$10a_4 + 3a_2$", xy=((S[0]+S[1])/2, max(power)*0.9*0.925*0.98), va="top", ha="center", fontsize=18, color='orange')		
 
 	#ax.axhline(y=0, color='black', linestyle='--')
+	fig.tight_layout()
 	fig.savefig(file_out + '.jpg', dpi=300)
 	#plt.show()
 
@@ -117,8 +123,12 @@ def do_l(l, file_out):
 	func_name='optimum_lorentzian_calc_aj'
 	# -----  Initial setup -----
 	# Frequency range on which we will draw the result
-	xmin=996
-	xmax=1004
+	if l==1:
+		xmin=997
+		xmax=1003
+	if l==2:
+		xmin=997.7
+		xmax=1003.5
 	# Degrees that we want to test:
 	# --------------------------
 	text_index=None
