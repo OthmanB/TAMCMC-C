@@ -102,7 +102,7 @@ Diagnostics::Diagnostics(){
 
 }
 
-void Diagnostics::gnuplt_chains_diags(int i, VectorXd Tcoefs){
+void Diagnostics::gnuplt_chains_diags(int i, const VectorXd& Tcoefs){
 /* 
  * Simple function that handle the plots of the likelihood and of the acceptance rate.
  * Here the data are read in two files. These are assumed to exist a priori.
@@ -242,7 +242,7 @@ Diagnostics::~Diagnostics(){ // The Destructor
 //------------------
 
 
-void Diagnostics::gnuplt_model_diags(Data *data_struc, VectorXd model, std::string phase){
+void Diagnostics::gnuplt_model_diags(Data *data_struc, const VectorXd& model, std::string phase){
 /*
  * Used to plot the model on the top of the data using directly the
  * C++ variables that contain the above-mentionned quantities.
@@ -265,7 +265,7 @@ void Diagnostics::gnuplt_model_diags(Data *data_struc, VectorXd model, std::stri
 	}
 }
 
-void Diagnostics::gnuplt_model_core(Data *data_struc, VectorXd model, std::string phase){
+void Diagnostics::gnuplt_model_core(Data *data_struc, const VectorXd& model, std::string phase){
 /* 
  * Simple function that handle the plots of the model.
  * Here the data are read in a temporary file that is created here. It will contain:
@@ -324,7 +324,7 @@ void Diagnostics::gnuplt_model_core(Data *data_struc, VectorXd model, std::strin
 
 }
 
-void Diagnostics::write_data_tmp(VectorXd x, VectorXd y, VectorXd z){
+void Diagnostics::write_data_tmp(const VectorXd& x, const VectorXd& y, const VectorXd& z){
 /* 
  * Write on a file the data, smooth(data, scoef1), smooth(data,scoef2) and the model.
  *
@@ -359,7 +359,7 @@ void Diagnostics::write_data_tmp(VectorXd x, VectorXd y, VectorXd z){
 }
 
 
-void Diagnostics::write_txt_matrix_dbl(const MatrixXd Mat, const std::string file_out){
+void Diagnostics::write_txt_matrix_dbl(const MatrixXd& Mat, const std::string file_out){
 /* 
  * Write on a file a MatrixXd
  *
@@ -379,7 +379,7 @@ void Diagnostics::write_txt_matrix_dbl(const MatrixXd Mat, const std::string fil
 
 }
 
-std::vector<double> Diagnostics::vectXd_to_vec(VectorXd vecXd_in){
+std::vector<double> Diagnostics::vectXd_to_vec(const VectorXd& vecXd_in){
 
    std::vector<double> vec;
    vec.resize(vecXd_in.size());
@@ -389,7 +389,7 @@ std::vector<double> Diagnostics::vectXd_to_vec(VectorXd vecXd_in){
 
 
 
-VectorXd Diagnostics::smooth(VectorXd xin, VectorXd in, double scoef){
+VectorXd Diagnostics::smooth(const VectorXd& xin, const VectorXd& in, const double scoef){
 /* 
  * Return a boxcar smooth of a vector. The smooth coeficient
  * is in natural unit of the vector (ie, microHz not in bins)
@@ -674,7 +674,7 @@ void Diagnostics::gnuplt_pdfs_diags_main(const int i){
 // -----------------------------------------------------------------------------------
 // ------------------------ READING FUNCTIONS FOR THE OUTPUTS ------------------------
 // -----------------------------------------------------------------------------------
-Eigen::MatrixXd Diagnostics::read_bin_matrix_dbl(std::string binfile, long Ncols, long Nrows, std::string type){
+Eigen::MatrixXd Diagnostics::read_bin_matrix_dbl(const std::string binfile, const long Ncols, const long Nrows, const std::string type){
 /*
  * Function that read the outputs file that contains inputs in double and in Matricial format (Columns - Rows).
  * It requires as input:
@@ -767,7 +767,7 @@ return ptemp_read;
 }
 
 
-Moves_out Diagnostics::read_bin_moves(std::string binfile, long Nchains, long Nrows){
+Moves_out Diagnostics::read_bin_moves(const std::string binfile, const long Nchains, const long Nrows){
 /*
  * Function that read the outputs file that contains inputs as writen in the file that contains
  * the information about the moves. Return a structure of type Buffer_parallel_tempering
@@ -921,7 +921,7 @@ return hdr;
 }
 
 
-Evidence_out Diagnostics::evidence_calc(const VectorXd Tcoefs, const MatrixXd Likelihoods){
+Evidence_out Diagnostics::evidence_calc(const VectorXd& Tcoefs, const MatrixXd& Likelihoods){
 /*
  * Function that use the temperatures and the likelihoods in order to compute de evidence of the model.
  * Returns all values in a structure of type Evidence_out
@@ -955,7 +955,7 @@ Evidence_out Diagnostics::evidence_calc(const VectorXd Tcoefs, const MatrixXd Li
    return results;
 }
 
-void Diagnostics::write_evidence(Evidence_out evidence, int i){
+void Diagnostics::write_evidence(const Evidence_out& evidence, const int i){
 
      std::ostringstream strg;
      std::ofstream outfile_evidence;

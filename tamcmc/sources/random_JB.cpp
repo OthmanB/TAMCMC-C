@@ -16,10 +16,10 @@
 
 using namespace std;
 
-double *r8vec_normal_01 ( int n, int *seed );
-double *uniform_01 ( int n, int *seed );
+double *r8vec_normal_01 (const int n, int *seed );
+double *uniform_01 (const int n, int *seed );
 
-double *r8vec_normal_01 ( int n, int *seed )
+double *r8vec_normal_01 (const int n, int *seed )
 
 //****************************************************************************80
 //
@@ -216,7 +216,7 @@ double *r8vec_normal_01 ( int n, int *seed )
 //****************************************************************************80
 
 
-double *uniform_01 ( int n, int *seed )
+double *uniform_01 (const int n, int *seed )
 
 //****************************************************************************80
 //

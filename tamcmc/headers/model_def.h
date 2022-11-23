@@ -58,7 +58,9 @@ class Model_def{
 		MatrixXd params; // could be 2D because could varies over Nmodels
 		MatrixXd vars; // could be 2D because could varies over Nmodels
 		MatrixXd model; // The model calculated using call_model(). 2D as it varies with Nmodels
+		MatrixXd init_model; // INITIAL model calculated using call_model(). 2D as it varies with Nmodels
 		VectorXd logLikelihood; // calculated using call_likelihood()
+		VectorXd init_logLikelihood; // Added on 7 Dec 2021: Use of the initial loglikelihood in replacement of loglikelihood when logPrior is Infinity ==> Improve performance
 		VectorXd logPrior; // calculated using call_prior()
 		VectorXd logPosterior; // calculated using generate_model()... This also calls call_model(), call_likelihood() and call_prior()
 		VectorXd Pmove; // probability of move... usefull for diagnostics
@@ -70,14 +72,14 @@ class Model_def{
 		//VectorXd Pswap;
 		//vector<bool> swaped; // Tells us if we have swaped two chains. The two swaped chains (of index ind_A and ind_A+1) will be at true if swaping happened
 		
-		Model_def(Config *config, VectorXd Tcoefs, bool verbose); // The constructor
+		Model_def(Config *config, const VectorXd& Tcoefs, const bool verbose); // The constructor
 		Model_def(); // Empty constructor (to use only to call functions that do not use internal public/private variables
 		~Model_def(); // The destructor		
 
-		VectorXd call_model(Data *data_struc, int m); // call a model using its name. 
-		VectorXd call_model_explicit(Data *data_struc, const VectorXi plength0, const VectorXd params0, const int model_case); // same as call_model(Data *data_struc, int m) but can be called explicitly
-		void update_params_with_vars(long m); // simple loop that refresh values of params(m, *) with vars(m,*)
-		inline long double call_likelihood(Data *data_struc, int m, VectorXd Tcoefs); // call the likelihood using its name. Before returning the log(Likelihood), it saves it into 'logLikelihood[m]'
-		inline long double call_prior(Data *data_struc, int m); // call the prior using its name. Before returning the log(prior), we save it into 'logPrior[m]'
-		long double generate_model(Data *data_struc, long m, VectorXd Tcoefs); // call successively call_model, call_likelihood and call_prior and then calculates 'model[m,*]', 'logLikelihood[m]', 'logPrior[m]' logPosterior[m]. This is also returned.
+		VectorXd call_model(Data *data_struc, const int m, bool outparams=false); // call a model using its name. 
+		VectorXd call_model_explicit(Data *data_struc, const VectorXi& plength0, const VectorXd& params0, const int model_case, bool outparams=true); // same as call_model(Data *data_struc, int m) but can be called explicitly
+		void update_params_with_vars(const long m); // simple loop that refresh values of params(m, *) with vars(m,*)
+		inline long double call_likelihood(Data *data_struc, const int m, const VectorXd& Tcoefs); // call the likelihood using its name. Before returning the log(Likelihood), it saves it into 'logLikelihood[m]'
+		inline long double call_prior(Data *data_struc, const int m); // call the prior using its name. Before returning the log(prior), we save it into 'logPrior[m]'
+		long double generate_model(Data *data_struc, const long m, const VectorXd& Tcoefs); // call successively call_model, call_likelihood and call_prior and then calculates 'model[m,*]', 'logLikelihood[m]', 'logPrior[m]' logPosterior[m]. This is also returned.
 };

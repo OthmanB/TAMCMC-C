@@ -154,48 +154,48 @@ class Outputs{
 			MatrixXd vars_mean;
 		};
 
-		Outputs(Config *cfg, VectorXd Tchains); // The constructor
+		Outputs(Config *cfg, const VectorXd& Tchains); // The constructor
 		~Outputs(); // The destructor
 		void destroy_3dMatrix(MatrixXd** m3d, const int depth);
-		void destroy_4dMatrix(MatrixXd*** m4d, int depth, int Nch);
+		void destroy_4dMatrix(MatrixXd*** m4d, const int depth, const int Nch);
 
 		// ---- Procedure that write the buffer in plain ASCII ----
-		void write_txt_prop_params(long, bool); // writes the class Buffer_proposal into a file
-		void write_txt_params(long, bool); // writes the class Buffer_params into a file
-		void write_txt_parallel_temp_params(long, bool); // writes the class Buffer_parallel_tempering into a file
-		void write_txt_models(long, bool);
-		void write_txt_stat_criteria(long, bool);
+		void write_txt_prop_params(const long, const bool); // writes the class Buffer_proposal into a file
+		void write_txt_params(const long, const bool); // writes the class Buffer_params into a file
+		void write_txt_parallel_temp_params(const long, const bool); // writes the class Buffer_parallel_tempering into a file
+		void write_txt_models(const long, const bool);
+		void write_txt_stat_criteria(const long, const bool);
 		void write_txt_acceptance();
 		void write_buffer_restore();
 		// ---- Procedure that write the buffer in binary ----
-		void write_bin_prop_params(long Nrest);
-		void write_bin_params(long Nrest);
-		void write_bin_parallel_temp_params(long Nrest);
-		void write_bin_models(long Nrest);
-		void write_bin_stat_criteria(long Nrest);
+		void write_bin_prop_params(const long Nrest);
+		void write_bin_params(const long Nrest);
+		void write_bin_parallel_temp_params(const long Nrest);
+		void write_bin_models(const long Nrest);
+		void write_bin_stat_criteria(const long Nrest);
 
 		// ---- Procedures for deciding when the buffer should be written ----
-		void update_buffer_stat_criteria(VectorXd logLikelihood, VectorXd logPrior, VectorXd logPosterior); 	
-		void update_buffer_models(MatrixXd models_in);
+		void update_buffer_stat_criteria(const VectorXd& logLikelihood, const VectorXd& logPrior, const VectorXd& logPosterior); 	
+		void update_buffer_models(const MatrixXd& models_in);
 		//void update_buffer_acceptance(std::vector<bool>);  // There is not need for such a function because the acceptance is written when the 'proposal' buffer is full
-		void update_buffer_params(MatrixXd params_in);
-		void update_buffer_ptempering(bool tempted_mixing, int chain_A, long double Probaswitch, bool bool_switched);
-		void update_buffer_proposals(VectorXd sigma_chains, MatrixXd mu_chains, VectorXd Pmove_chains, 
-					     std::vector<bool>, MatrixXd **covarmat_chains);
-		void update_buffer_restore(VectorXd sigma_chains, MatrixXd mu_chains, MatrixXd **covarmat_chains, MatrixXd params_in);
+		void update_buffer_params(const MatrixXd& params_in);
+		void update_buffer_ptempering(const bool tempted_mixing, const int chain_A, const long double Probaswitch, const bool bool_switched);
+		void update_buffer_proposals(const VectorXd& sigma_chains, const MatrixXd& mu_chains, const VectorXd& Pmove_chains, 
+					     const std::vector<bool>, MatrixXd **covarmat_chains);
+		void update_buffer_restore(const VectorXd& sigma_chains, const MatrixXd& mu_chains, MatrixXd **covarmat_chains, const MatrixXd& params_in);
 
 		void init_buffer_stat_criteria();
 		void init_buffer_models();
 		void init_buffer_acceptance();
-		void init_buffer_params(VectorXd cons_in, std::vector<std::string> vars_names,
-					std::vector<std::string> cons_names, std::vector<std::string> params_names, VectorXi relax, VectorXi plength);
-		void init_buffer_parallel_tempering(VectorXd Tchains);
-		void init_buffer_proposals(std::vector<std::string> vars_names);
-		void init_buffer_restore(long init_i);
+		void init_buffer_params(const VectorXd& cons_in, const std::vector<std::string> vars_names,
+					const std::vector<std::string> cons_names, const std::vector<std::string> params_names, const VectorXi& relax, const VectorXi& plength);
+		void init_buffer_parallel_tempering(const VectorXd& Tchains);
+		void init_buffer_proposals(const std::vector<std::string> vars_names);
+		void init_buffer_restore(const long init_i);
 
 		bool file_exists (const std::string& name); // Test whether a file exist or not
-		long count_accepted_vals(std::vector< std::vector<bool> > moves_chain, long m, long Nbuffer); // count the number of accepted positions
-		MatrixXd reject_rate(std::vector< std::vector<bool> > moveds, long Nbuffer, long Ncopy, int Nchains, long Nsamples_init);  // Determine the rejection rate for the chains. line 0 has a x-axis. line 1 the rejection rate
+		long count_accepted_vals(const std::vector< std::vector<bool> > moves_chain, const long m, const long Nbuffer); // count the number of accepted positions
+		MatrixXd reject_rate(const std::vector< std::vector<bool> > moveds, const long Nbuffer, const long Ncopy, const int Nchains, const long Nsamples_init);  // Determine the rejection rate for the chains. line 0 has a x-axis. line 1 the rejection rate
 		int get_Nbuffer();
 
 		Buffer_proposals buf_proposal;

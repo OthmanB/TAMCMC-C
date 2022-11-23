@@ -20,8 +20,11 @@ IO_models::~IO_models(){ // Destructor
 
 }
 
+//int IO_models::size(*data){
+//	return (*data).priors.rows()
+//}
 
-short int IO_models::fill_param(Input_Data *data, const std::string input_name, const std::string prior_name, const double in_val, const VectorXd prior_vals, const int pos, const int i0_prior){
+short int IO_models::fill_param(Input_Data *data, const std::string input_name, const std::string prior_name, const double in_val, const VectorXd& prior_vals, const int pos, const int i0_prior){
 /*
  * 
  * This function stores the minimum-required values of an Input_Data type structure
@@ -61,7 +64,7 @@ short int IO_models::fill_param(Input_Data *data, const std::string input_name, 
 
 short int IO_models::fill_param_vect(Input_Data *data, const std::vector<double> vec_inputs, 
 				const std::vector<bool> vec_relax, const std::string input_name, const std::string prior_name, 
-				const VectorXd prior_vals, const int pos, const int i0_prior_if, const int i0_prior_else){ 	
+				const VectorXd& prior_vals, const int pos, const int i0_prior_if, const int i0_prior_else){ 	
 /* 
 	This function takes a vector of inputs and fill an initialized Input_Data structure starting from pos
 	All fields are filled with the same parameter name and the same prior definition
@@ -79,9 +82,11 @@ short int IO_models::fill_param_vect(Input_Data *data, const std::vector<double>
 	return 0;
 }
 
+
+
 short int IO_models::fill_param_vect2(Input_Data *data, const std::vector<double> vec_inputs, 
 				const std::vector<bool> vec_relax, const std::string input_name, const std::string prior_name, 
-				const MatrixXd prior_vals, const int pos, const int i0_prior_if, const int i0_prior_else){ 	
+				const MatrixXd& prior_vals, const int pos, const int i0_prior_if, const int i0_prior_else){ 	
 /* 
 	This function takes a vector of inputs and fill an initialized Input_Data structure starting from pos
 	All fields are filled with the same parameter name and the same prior definition
@@ -101,7 +106,7 @@ short int IO_models::fill_param_vect2(Input_Data *data, const std::vector<double
 	return 0;
 }
 
-short int IO_models::add_param(Input_Data *data, const Input_Data *data_param, const int pos){//, const int Nparams){
+short int IO_models::add_param(Input_Data *data, Input_Data *data_param, const int pos){//, const int Nparams){
 /* 
  *
  * This function adds at the position pos0 of data_all a new block of parameters
@@ -126,7 +131,7 @@ short int IO_models::add_param(Input_Data *data, const Input_Data *data_param, c
 }
 
 	
-short int IO_models::add_extra_priors(Input_Data *data, const VectorXd extra, const int pos0){
+short int IO_models::add_extra_priors(Input_Data *data, const VectorXd& extra, const int pos0){
 	
 	std::cout << "Yet to be written" << std::endl;
 	exit(EXIT_SUCCESS);
@@ -134,7 +139,7 @@ short int IO_models::add_extra_priors(Input_Data *data, const VectorXd extra, co
 	return 0;
 }
 
-short int IO_models::append_param(Input_Data *data, const Input_Data *data_param, const int Nparams){
+short int IO_models::append_param(Input_Data *data, Input_Data *data_param, const int Nparams){
 /* 
  *
  * This function append an existing data set 'data' with 'data_param', a new block of parameters
@@ -148,7 +153,7 @@ short int IO_models::append_param(Input_Data *data, const Input_Data *data_param
 }
 
 
-short int IO_models::initialise_param(Input_Data *data, const int size_vec, const int Nrows, const VectorXi plength, const int Nextra_priors){
+short int IO_models::initialise_param(Input_Data *data, const int size_vec, const int Nrows, const VectorXi& plength, const int Nextra_priors){
 /* 
  * Define sizes of vectors/matrixes and set the provided plength vector. Other parameters are set to safe default values 
 */	
@@ -157,7 +162,7 @@ short int IO_models::initialise_param(Input_Data *data, const int size_vec, cons
 	return 0;
 }
 
-short int IO_models::initialise_param(Input_Data *data, const int size_vec, const int Nrows, const int Nplength, const VectorXd extra_priors){
+short int IO_models::initialise_param(Input_Data *data, const int size_vec, const int Nrows, const int Nplength, const VectorXd& extra_priors){
 /* 
  * Define sizes of vectors/matrixes and set the provided extra_priors vector. Other parameters are set to safe default values 
 */	
@@ -167,7 +172,7 @@ short int IO_models::initialise_param(Input_Data *data, const int size_vec, cons
 }
 
 
-short int IO_models::initialise_param(Input_Data *data, const int size_vec, const int Nrows, const VectorXi plength, const VectorXd extra_priors){
+short int IO_models::initialise_param(Input_Data *data, const int size_vec, const int Nrows, const VectorXi& plength, const VectorXd& extra_priors){
 /* 
  * Define sizes of vectors/matrixes and set the provided plength and extra_priors vector. Other parameters are set to safe default values 
 */	
@@ -177,7 +182,7 @@ short int IO_models::initialise_param(Input_Data *data, const int size_vec, cons
 	return 0;
 }
 
-short int IO_models::show_param(Input_Data data, const bool show_metadata){
+short int IO_models::show_param(const Input_Data& data, const bool show_metadata){
 /* 
  *
  * Function that shows the content of a Input_Data structure in a structured maner
@@ -216,7 +221,7 @@ short int IO_models::show_param(Input_Data data, const bool show_metadata){
 	return 0;
 }
 
-short int IO_models::show_param(Input_Data data){
+short int IO_models::show_param(const Input_Data& data){
 /*
  * An alias of show_param that do not show the metadata
  *

@@ -54,17 +54,17 @@ class MALA{
 		MALA(Config *cfg); // the constructor
 		~MALA();
 		void destroy_3dMatrix(MatrixXd** m3d, const int depth);
-		long double multinormal_logpdf(VectorXd Deltavars, VectorXd drift1, MatrixXd covmat1);
+		long double multinormal_logpdf(const VectorXd& Deltavars, const VectorXd& drift1, const MatrixXd& covmat1);
 		long random_int_vals(int Nmin, int Nmax); // Generate a random number between Nmin and Nmax
 		void init_proposal(const VectorXd, const std::vector<std::string> s, const std::vector<std::string> s_inerror, const VectorXd fracerr, const VectorXd offseterr);
-		void restore_proposal(const VectorXd vars, Config *cfg_class); // Restore the proposal parameters from a previous file
-		void update_proposal(VectorXd vars, long double acceptance, int m); // generate a new proposal and update the class variables
+		void restore_proposal(const VectorXd& vars, Config *cfg_class); // Restore the proposal parameters from a previous file
+		void update_proposal(const VectorXd& vars, long double acceptance, int m); // generate a new proposal and update the class variables
 		int parallel_tempering(Model_def *model);
-		VectorXd new_prop_values(VectorXd vars, int m);
+		VectorXd new_prop_values(const VectorXd& vars, int m);
 		VectorXd D_MALA();
 		long double p1_fct(long double x);
-		MatrixXd p2_fct(MatrixXd x);
-		VectorXd p3_fct(VectorXd x);
+		MatrixXd p2_fct(const MatrixXd& x);
+		VectorXd p3_fct(const VectorXd& x);
 		void read_proposal(std::string readwhat, int m); // Used to read either current values (readwhat="current") of previous values (readwhat="previous") of mu, sigma and covarmat
 		void update_position_MH(Model_def *model_class, Model_def *model_propos, Data *data_struc, Config *cfg_class, int m);
 		void execute(Model_def *model_current, Model_def *model_propose, Data *data_struc, Config *cfg_class, Outputs *out, Diagnostics *diags); // main function of the class. Execute a MALA MCMC process.

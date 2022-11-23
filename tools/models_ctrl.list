@@ -1,0 +1,23 @@
+# DO NOT EDIT UNLESS YOU KNOW WHAT YOU ARE DOING
+# Case index , model function name, # comment
+0 Test_Gaussian 			
+1 model_Harvey_Gaussian				
+2 model_MS_Global_a1etaa3_HarveyLike		
+3 model_MS_Global_a1etaa3_HarveyLike_Classic	
+4 model_MS_Global_a1etaa3_Harvey1985		
+5 model_MS_Global_a1acta3_Harvey1985		 # obselete
+6 model_MS_Global_a1l_etaa3_HarveyLike		
+7 model_MS_Global_a1n_etaa3_HarveyLike		
+8 model_MS_Global_a1nl_etaa3_HarveyLike		
+9 model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1
+10 model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2
+11 model_MS_local_basic
+12 model_MS_Global_a1etaa3_HarveyLike_Classic_v2
+13 model_MS_Global_a1etaa3_HarveyLike_Classic_v3
+14 model_MS_local_Hnlm
+15 model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2
+16 model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3
+17 model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3
+18 model_MS_Global_a1n_a2a3_HarveyLike
+19 model_MS_Global_a1nl_a2a3_HarveyLike
+20 model_MS_Global_a1a2a3_HarveyLike

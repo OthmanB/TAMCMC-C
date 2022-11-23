@@ -33,6 +33,8 @@ Use cmake to install the program. For the main directory of the program:
 Some options exists to deactivate functions (eg. GSL and/or OpenMP):
    ```-DWITH_OPENMP=OFF``` : turn off implementation of parrallel computation with OpenMP
    ```-DWITH_GSL=OFF``` : turn off the gnuplot capabilities
+   ```-DCMAKE_C_COMPILER=gcc``` : Use a specific installation of your C compiler 
+   ```-DCMAKE_CXX_COMPILER=g++``` : Use a specific installation of your C++ compiler 
 
 ### Quick start and first test ###
    0. You might review the details on the code in the Github wiki: https://github.com/OthmanB/TAMCMC-C/wiki (still under construction)

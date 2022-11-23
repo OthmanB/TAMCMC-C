@@ -19,16 +19,17 @@
 #include <math.h>
 #include <Eigen/Dense>
  
- long double logP_gaussian(long double mean, long double sigma, long double x);
- long double logP_uniform(long double b_min, long double b_max, long double x);
- long double logP_uniform_abs(long double b_min, long double b_max, long double x);
- long double logP_uniform_cos(long double b_min, long double b_max, long double x);
- long double logP_multivariate_gaussian( Eigen::VectorXd mean, Eigen::MatrixXd Matrix, Eigen::VectorXd x);
- long double logP_jeffrey(long double hmin, long double hmax, long double h);
-long double logP_jeffrey_abs(long double hmin, long double hmax, long double h);
- long double logP_uniform_gaussian( long double b_min, long double b_max, 
-			long double sigma, long double x);
- long double logP_gaussian_uniform( long double b_min, long double b_max, 
-			long double sigma, long double x);
- long double logP_gaussian_uniform_gaussian( long double b_min, long double b_max, 
-			long double sigma1, long double sigma2, long double x);
+ long double logP_gaussian(const long double mean, const long double sigma, const long double x);
+ long double logP_gaussian_truncated(const long double mean, const long double sigma, const long double x, const long double bmin, const long double bmax);
+ long double logP_uniform(const long double b_min, const long double b_max, const long double x);
+ long double logP_uniform_abs(const long double b_min, const long double b_max, const long double x);
+ long double logP_uniform_cos(const long double b_min, const long double b_max, const long double x);
+ long double logP_multivariate_gaussian( const Eigen::VectorXd& mean, const Eigen::MatrixXd& Matrix, const Eigen::VectorXd& x);
+ long double logP_jeffrey(const long double hmin, const long double hmax, const long double h);
+long double logP_jeffrey_abs(const long double hmin, const long double hmax, const long double h);
+ long double logP_uniform_gaussian(const  long double b_min, const long double b_max, 
+			const long double sigma, const long double x);
+ long double logP_gaussian_uniform( const long double b_min, const  long double b_max, 
+			const long double sigma, const long double x);
+ long double logP_gaussian_uniform_gaussian(const  long double b_min, const long double b_max, 
+			const long double sigma1, const long double sigma2,const  long double x);

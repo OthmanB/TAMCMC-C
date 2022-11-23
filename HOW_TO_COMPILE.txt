@@ -1,0 +1,10 @@
+# Step 1: Create a build directory within the main program directory
+# Step 2: Navigate to the build directory
+# Step 3: Compile using cmake
+# Step 4: Move the cpptamcmc file into the main program directory
+
+# Typical compilation using default compilation options
+cmake ..
+
+# Example of Compilation Line using optimisation flags for OpenMP an for AND Ryzen 3XXX architectures, and a specific compiler
+cmake .. -DBUILD_ON_ZEN2=ON -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DWITH_OPENMP=ON

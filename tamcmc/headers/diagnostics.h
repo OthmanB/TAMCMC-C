@@ -105,22 +105,22 @@ class Diagnostics{
 		//Eigen::VectorXd str_to_Xdarr(const std::string str, const std::string delimiters);
 		//std::vector<double> str_to_dblarr(const std::string str, const std::string delimiters);
 		std::string formated_int_to_str(const int ind_param);
-		std::vector<double> vectXd_to_vec(VectorXd vecXd_in);
+		std::vector<double> vectXd_to_vec(const VectorXd& vecXd_in);
 
 		bool get_model_buffer_diags();
 		bool get_model_final_diags();
 
 		// ---- Histograms handling -----
-		VectorXd smooth(VectorXd xin, VectorXd in, double scoef);
+		VectorXd smooth(const VectorXd& xin, const VectorXd& in, const double scoef);
 		//VectorXd read_txt_output_params(std::string file); // used to read the output parameters, stored in the txt files
-		void write_data_tmp(VectorXd x, VectorXd y, VectorXd z); // used as a temporary storage for the plots of the data with gnuplot
+		void write_data_tmp(const VectorXd& x, const VectorXd& y, const VectorXd& z); // used as a temporary storage for the plots of the data with gnuplot
 		void fwrite_histogram(const Data_Nd samples, const std::string file_out, const size_t Nclasses, const int ind_param);
 		Data_Nd read_txt_output_params(const std::string file, const int Nlines, const bool verbose);
 
 		// ---- Plots handling -------
-		void gnuplt_chains_diags(int i, VectorXd Tcoefs);
-		void gnuplt_model_diags(Data *data_struc, VectorXd model, std::string phase);
-		void gnuplt_model_core(Data *data_struc, VectorXd model, std::string phase);
+		void gnuplt_chains_diags(const int i, const VectorXd& Tcoefs);
+		void gnuplt_model_diags(Data *data_struc, const VectorXd& model, const std::string phase);
+		void gnuplt_model_core(Data *data_struc, const VectorXd& model, const std::string phase);
 
 		void gnuplt_pdfs_diags_main(const int i);
 		void gnuplt_pdfs_diags(const std::string dir_pdfs_files, const std::vector<std::string> varnames);
@@ -129,20 +129,20 @@ class Diagnostics{
 	
 		// ---- Handling binary outputs -----
 		// Function to read *stat_criteria.bin, *params_chain-*.bin, *model*.bin *sigmas.bin and *mus.bin files. Basically anything that has only double in it
-		Eigen::MatrixXd read_bin_matrix_dbl(std::string binfile, long Ncols, long Nrows, std::string type); 
+		Eigen::MatrixXd read_bin_matrix_dbl(const std::string binfile, const long Ncols, const long Nrows, const std::string type); 
 		// Reading the parallel_tempering outputs
 		Ptempering_out read_bin_parallel_temp_params(const std::string binfile, const long Nrows);
 		// Reading the Pmoves and moveds variables
-		Moves_out read_bin_moves(std::string binfile, long Nchains, long Nrows);
+		Moves_out read_bin_moves(const std::string binfile, const long Nchains, const long Nrows);
 
 		// Reading the Header of the parameters
 		Params_hdr read_params_header(const std::string file);
 		// Write a Matrix into an ASCII file
-		void write_txt_matrix_dbl(const MatrixXd Mat, const std::string file_out);
+		void write_txt_matrix_dbl(const MatrixXd& Mat, const std::string file_out);
 
 		// Handling the Evidence
-		Evidence_out evidence_calc(const VectorXd Tcoefs, const MatrixXd Likelihoods);
-		void write_evidence(Evidence_out evidence, int i);
+		Evidence_out evidence_calc(const VectorXd& Tcoefs, const MatrixXd& Likelihoods);
+		void write_evidence(const Evidence_out& evidence, const int i);
 
 		// ------ Execute Shell commands ------
 		std::string shell_exec(const std::string cmd);

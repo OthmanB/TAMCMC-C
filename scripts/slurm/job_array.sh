@@ -8,14 +8,15 @@
 #SBATCH -a 1-44
 
 module purge
-module load gcc/4.9.3
-module load cmake/3.4.2
-module load gsl/2.1
-module load eigen/3.2.8
-module load boost/1.57.0
-module load gnuplot/5.0.0
+module load gcc/9.2.0
+module load cmake/3.18.4
+module load gsl/2.5
+#module load eigen/3.3.8
+module load boost/1.74.0
+module load gnuplot/5.4.3
 
-export EIGEN3_INCLUDE_DIR=$EIGEN_INC/eigen3
+#export EIGEN3_INCLUDE_DIR=$EIGEN_INC/eigen3
+export EIGEN3_INCLUDE_DIR=/home/ob19/Programs/eigen-3.4.0
 export CXX=g++
 export OMP_NUM_THREADS=10
 

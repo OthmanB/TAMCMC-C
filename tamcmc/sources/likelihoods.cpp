@@ -14,7 +14,7 @@
 
 using Eigen::VectorXd;
 
-long double likelihood_chi22p(VectorXd y, VectorXd model, long p){
+long double likelihood_chi22p(const VectorXd& y, const VectorXd& model, const long p){
 
 	long double f;
 //  exact formula :
@@ -28,12 +28,13 @@ return f;
 }
 
 
-long double likelihood_chi_square(VectorXd y, VectorXd model, VectorXd sigma){
+long double likelihood_chi_square(const VectorXd& y, const VectorXd& model, const VectorXd& sigma){
 
 	long double f;
 // Usual chi square definition
 	//std::cout << "sigma.array()=" << sigma.array() << std::endl;
 	f=-((y - model).array().square() * sigma.array().square().cwiseInverse()).sum();
+	f=f/2;
 	//std::cout << "f=" << f << std::endl;
 return f;
 }

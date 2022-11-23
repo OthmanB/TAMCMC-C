@@ -27,7 +27,7 @@ MatrixXd** initialize_3dMatrix(const int depth, const int Nrows, const int Ncols
     return matrix;
 } 
 
-MatrixXd** initset_3dMatrix(MatrixXd m_init, int depth){
+MatrixXd** initset_3dMatrix(const MatrixXd& m_init, const int depth){
 /* 
  * Initialize an array of matrix using an initial matrix m_init
 */
@@ -38,7 +38,7 @@ MatrixXd** initset_3dMatrix(MatrixXd m_init, int depth){
     return matrix;
 } 
 
-MatrixXd** copy_3dMatrix(MatrixXd** m3d_in, int depth){
+MatrixXd** copy_3dMatrix(MatrixXd** m3d_in, const int depth){
 /* 
  * Hard copy an array of matrix from m3d_in into m3d_out 
 */
@@ -51,7 +51,7 @@ MatrixXd** copy_3dMatrix(MatrixXd** m3d_in, int depth){
     return m3d_out;
 } 
 
-void set_3dMatrix(MatrixXd** matrix3d, MatrixXd m_in, int position){
+void set_3dMatrix(MatrixXd** matrix3d, const MatrixXd& m_in, const int position){
 /* 
  * Replace the matrix which is within an array 
  * of matrix at the position p. 
@@ -64,7 +64,7 @@ void set_3dMatrix(MatrixXd** matrix3d, MatrixXd m_in, int position){
 ////////////// 4D Matrix ////////////////
 
 
-MatrixXd*** initialize_4dMatrix(int depth, int Nchains, int Nrows, int Ncols, long double value=0.0) {
+MatrixXd*** initialize_4dMatrix(const int depth, const int Nchains, const int Nrows, const int Ncols, const long double value=0.0) {
     MatrixXd*** matrix = new MatrixXd** [depth];
     for (int d1 = 0; d1 < depth; d1++) {
         matrix[d1] = new MatrixXd* [Nchains];
@@ -75,7 +75,7 @@ MatrixXd*** initialize_4dMatrix(int depth, int Nchains, int Nrows, int Ncols, lo
 } 
 
 
-MatrixXd*** initset_4dMatrix(MatrixXd m_init, int depth1, int depth2){
+MatrixXd*** initset_4dMatrix(const MatrixXd& m_init, const int depth1, const int depth2){
 /* 
  * Initialize an array of matrix using an initial matrix m_init
 */
@@ -88,7 +88,7 @@ MatrixXd*** initset_4dMatrix(MatrixXd m_init, int depth1, int depth2){
     return matrix;
 } 
 
-void set_4dMatrix(MatrixXd*** matrix4d, MatrixXd m_in, int position1, int position2){
+void set_4dMatrix(MatrixXd*** matrix4d, const MatrixXd& m_in, const int position1, const int position2){
 /* 
  * Replace the matrix which is within an array 
  * of matrix at the position p1 and p2. 

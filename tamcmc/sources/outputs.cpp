@@ -21,7 +21,7 @@ using Eigen::VectorXd;
 using Eigen::VectorXi;
 
 //////////////// Constructors //////////////
-Outputs::Outputs(Config *cfg, VectorXd Tchains){
+Outputs::Outputs(Config *cfg, const VectorXd& Tchains){
 	
 	Nbuffer=cfg->outputs.Nbuffer;
 	Nchains=cfg->MALA.Nchains;
@@ -175,7 +175,7 @@ void Outputs::destroy_3dMatrix(MatrixXd** m3d, const int depth){
 	delete m3d;
 }
 
-void Outputs::destroy_4dMatrix(MatrixXd*** m4d, int depth, int Nch){
+void Outputs::destroy_4dMatrix(MatrixXd*** m4d, const int depth, const int Nch){
 	
 	for(int d1=0; d1< depth; d1++){
 		for(int d2=0; d2<Nch; d2++){
@@ -194,7 +194,7 @@ void Outputs::init_buffer_acceptance(){
 	buf_acceptance.acceptance_rate.resize(Nchains);
 }
 
-void Outputs::init_buffer_proposals(std::vector<std::string> vrs_nmes){
+void Outputs::init_buffer_proposals(const std::vector<std::string> vrs_nmes){
 
 	buf_proposal.counts=0; // How many samples are written so far? Should be iteratively updated
 	buf_proposal.Ncopy=0;
@@ -215,7 +215,7 @@ void Outputs::init_buffer_proposals(std::vector<std::string> vrs_nmes){
 }
 
 //--------------
-void Outputs::init_buffer_parallel_tempering(VectorXd Tchains){
+void Outputs::init_buffer_parallel_tempering(const VectorXd& Tchains){
 
 	buf_parallel_temp.counts=0; // How many samples are written so far? Should be iteratively updated
 	buf_parallel_temp.Ncopy=0; 
@@ -228,8 +228,8 @@ void Outputs::init_buffer_parallel_tempering(VectorXd Tchains){
 }
 
 //--------------
-void Outputs::init_buffer_params(VectorXd cons_in, std::vector<std::string> vrs_nmes,
-					std::vector<std::string> cns_nmes, std::vector<std::string> prms_nmes, VectorXi relax, VectorXi plength){
+void Outputs::init_buffer_params(const VectorXd& cons_in, const std::vector<std::string> vrs_nmes,
+					const std::vector<std::string> cns_nmes, const std::vector<std::string> prms_nmes, const VectorXi& relax, const VectorXi& plength){
 
 	buf_params.counts=0; // How many samples are written so far? Should be iteratively updated
 	buf_params.Ncopy=0;
@@ -273,7 +273,7 @@ void Outputs::init_buffer_stat_criteria(){
 }
 
 
-void Outputs::init_buffer_restore(long init_i){
+void Outputs::init_buffer_restore(const long init_i){
 
 	buf_restore.Nsamples_sofar=init_i;
 	buf_restore.counts=0; // How many samples are written so far? Should be iteratively updated
@@ -303,7 +303,7 @@ void Outputs::init_buffer_restore(long init_i){
 
                              /////////////// Methods FOR WRITTING IN PLAIN ASCII ////////////////
 
-void Outputs::write_txt_prop_params(long Nrest, bool dbg){
+void Outputs::write_txt_prop_params(const long Nrest, const bool dbg){
 
 	 bool need_header=1; // By defaut we write a header
 	 int chain, ind_row, index, Ntot, it;
@@ -507,7 +507,7 @@ void Outputs::write_txt_prop_params(long Nrest, bool dbg){
 }
 
 //------------------
-void Outputs::write_txt_params(long Nrest, bool dbg){
+void Outputs::write_txt_params(const long Nrest, const bool dbg){
 
 	 bool need_header=1; // By defaut we write a header
 	 int chain, ind_row, index, Ntot;
@@ -612,7 +612,7 @@ void Outputs::write_txt_params(long Nrest, bool dbg){
 }
 
 //------------------
-void Outputs::write_txt_parallel_temp_params(long Nrest, bool dbg){
+void Outputs::write_txt_parallel_temp_params(const long Nrest, const bool dbg){
 
 	 bool need_header=1; // By defaut we write a header
 	 int chain, ind_row, index, Ntot;
@@ -675,7 +675,7 @@ void Outputs::write_txt_parallel_temp_params(long Nrest, bool dbg){
 }
 
 //------------------
-void Outputs::write_txt_models(long Nrest, bool dbg){
+void Outputs::write_txt_models(const long Nrest, const bool dbg){
 
 	 bool need_header=1; // By defaut we write a header
 	 int chain, ind_row, index, Ntot;
@@ -788,7 +788,7 @@ void Outputs::write_txt_acceptance(){
 
 }
 
-void Outputs::write_txt_stat_criteria(long Nrest, bool dbg){
+void Outputs::write_txt_stat_criteria(const long Nrest, const bool dbg){
 
 	
 	 bool need_header=1; // By defaut we write a header
@@ -1026,7 +1026,7 @@ void Outputs::write_buffer_restore(){
 
                              /////////////// Methods FOR WRITTING IN BINARY ////////////////
 
-void Outputs::write_bin_prop_params(long Nrest){
+void Outputs::write_bin_prop_params(const long Nrest){
 
 	bool boolval=0;
 	size_t size_bool=sizeof(boolval);
@@ -1228,7 +1228,7 @@ void Outputs::write_bin_prop_params(long Nrest){
 
 
 //------------------
-void Outputs::write_bin_params(long Nrest){
+void Outputs::write_bin_params(const long Nrest){
 	 
          double dblval=0.0;
 	 size_t size_dbl=sizeof(dblval);
@@ -1333,7 +1333,7 @@ void Outputs::write_bin_params(long Nrest){
 }
 
 //------------------
-void Outputs::write_bin_parallel_temp_params(long Nrest){
+void Outputs::write_bin_parallel_temp_params(const long Nrest){
 
 	bool boolval=0;
 	int intval=0;
@@ -1403,7 +1403,7 @@ void Outputs::write_bin_parallel_temp_params(long Nrest){
 
 
 //------------------
-void Outputs::write_bin_models(long Nrest){
+void Outputs::write_bin_models(const long Nrest){
 
 	 double dblval=0.0;
 	 size_t size_dbl=sizeof(dblval);
@@ -1469,7 +1469,7 @@ void Outputs::write_bin_models(long Nrest){
 	}
 }
 
-void Outputs::write_bin_stat_criteria(long Nrest){
+void Outputs::write_bin_stat_criteria(const long Nrest){
 
 	 double dblval=0.0;
 	 size_t size_dbl=sizeof(dblval);
@@ -1549,7 +1549,7 @@ void Outputs::write_bin_stat_criteria(long Nrest){
 //------------------
 //------------------
 
-void Outputs::update_buffer_stat_criteria(VectorXd logLikelihood, VectorXd logPrior, VectorXd logPosterior){
+void Outputs::update_buffer_stat_criteria(const VectorXd& logLikelihood, const VectorXd& logPrior, const VectorXd& logPosterior){
 
  if(get_statcriteria == 1) {
 	long rest=Nsamples - buf_restore.Nsamples_sofar - Nbuffer*buf_stat_crit.Ncopy;
@@ -1587,7 +1587,7 @@ void Outputs::update_buffer_stat_criteria(VectorXd logLikelihood, VectorXd logPr
   }
 }
 
-void Outputs::update_buffer_models(MatrixXd models_in){
+void Outputs::update_buffer_models(const MatrixXd& models_in){
 
  if(get_models == 1) {
 	long rest=Nsamples - buf_restore.Nsamples_sofar - Nbuffer*buf_models.Ncopy;
@@ -1619,7 +1619,7 @@ void Outputs::update_buffer_models(MatrixXd models_in){
   }
 }
 
-void Outputs::update_buffer_params(MatrixXd params_in){
+void Outputs::update_buffer_params(const MatrixXd& params_in){
 
  if(get_params == 1) {
 	long rest=Nsamples - buf_restore.Nsamples_sofar - Nbuffer*buf_params.Ncopy;
@@ -1652,7 +1652,7 @@ void Outputs::update_buffer_params(MatrixXd params_in){
   }
 }
 
-void Outputs::update_buffer_ptempering(bool tempted_mixing, int chain_A, long double Probaswitch, bool bool_switched){
+void Outputs::update_buffer_ptempering(const bool tempted_mixing, const int chain_A, const long double Probaswitch, const bool bool_switched){
 
  if(get_parallel_tempering_params == 1) {
 	long rest=Nsamples - buf_restore.Nsamples_sofar - Nbuffer*buf_parallel_temp.Ncopy;
@@ -1693,8 +1693,8 @@ void Outputs::update_buffer_ptempering(bool tempted_mixing, int chain_A, long do
   }
 }
 
-void Outputs::update_buffer_proposals(VectorXd sigma_chains, MatrixXd mu_chains, VectorXd Pmove_chains, 
-			std::vector<bool> moved_chains, MatrixXd **covarmat_chains){
+void Outputs::update_buffer_proposals(const VectorXd& sigma_chains, const MatrixXd& mu_chains, const VectorXd& Pmove_chains, 
+			const std::vector<bool> moved_chains, MatrixXd **covarmat_chains){
 
   MatrixXd acceptance;
   long rest=Nsamples - buf_restore.Nsamples_sofar - Nbuffer*buf_proposal.Ncopy;
@@ -1755,7 +1755,7 @@ void Outputs::update_buffer_proposals(VectorXd sigma_chains, MatrixXd mu_chains,
 }
 
 
-void Outputs::update_buffer_restore(VectorXd sigma_chains, MatrixXd mu_chains, MatrixXd **covarmat_chains, MatrixXd params_in){
+void Outputs::update_buffer_restore(const VectorXd& sigma_chains, const MatrixXd& mu_chains, MatrixXd **covarmat_chains, const MatrixXd& params_in){
 /* 
  * Handle the output used to restore a job which has finished (e.g. end of a Burn-in phase) or that has failed for some reason (computer failure)
 */
@@ -1821,7 +1821,7 @@ bool Outputs::file_exists(const std::string& name) {
     return ( access( name.c_str(), F_OK ) != -1 );
 }
 
-MatrixXd Outputs::reject_rate(std::vector< std::vector<bool> > moveds, long Nbuffer, long Ncopy, int Nchains, long Nsamples_init){
+MatrixXd Outputs::reject_rate(const std::vector< std::vector<bool> > moveds, const long Nbuffer, const long Ncopy, const int Nchains, const long Nsamples_init){
 /*
  * Takes the moves (saved in the buffer for proposals) and calculates 
  * the acceptance rates for each chain for a given slice of size Nbuffer. 
@@ -1841,7 +1841,7 @@ MatrixXd Outputs::reject_rate(std::vector< std::vector<bool> > moveds, long Nbuf
 return acceptance;
 }
  
-long Outputs::count_accepted_vals(std::vector< std::vector<bool> > moves_chain, long m, long Nbuffer){
+long Outputs::count_accepted_vals(const std::vector< std::vector<bool> > moves_chain, const long m, const long Nbuffer){
 /*
  * One 1D bool array, counts the number of states which are at True
 */

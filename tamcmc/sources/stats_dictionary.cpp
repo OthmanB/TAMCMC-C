@@ -28,7 +28,7 @@
 
 // Note: These priors are handled using the 'case' statement. CASE 0 IS THE USER-DEFINED CASE (MEANS NO PRIOR USED)
 
-long double logP_uniform(long double b_min, long double b_max, long double x){
+long double logP_uniform(const long double b_min, const long double b_max, const long double x){
 /* 
  * Calculates the log probability for a uniform prior, given the value of x
  * CORRESPONDS TO CASE 1 IN THE MAIN PROGRAM
@@ -46,7 +46,7 @@ if ((x <= b_max) && (x >= b_min)){
 return logP;
 }
 
-long double logP_uniform_abs(long double b_min, long double b_max, long double x){
+long double logP_uniform_abs(const long double b_min, const long double b_max, const long double x){
 /* 
  * Calculates the log probability for a uniform prior, given the value of |x|
  * CORRESPONDS TO CASE 8 IN THE MAIN PROGRAM
@@ -64,7 +64,7 @@ if ((std::abs(x) <= b_max) && (std::abs(x) >= b_min)){
 return logP;
 }
 
-long double logP_uniform_cos(long double b_min, long double b_max, long double x){
+long double logP_uniform_cos(const long double b_min, const long double b_max, const long double x){
 /* 
  * Calculates the log probability for a uniform prior, given the value of cos(x)
  * x is assumed to be given in degree ==> conversion made in this prior
@@ -88,7 +88,7 @@ return logP;
 
 // -------------
 
-long double logP_gaussian(long double mean, long double sigma, long double x){
+long double logP_gaussian(const long double mean, const long double sigma,const  long double x){
 /* 
  * Calculates the log probability for a gaussian at a given value x
  * CORRESPONDS TO CASE 2 IN THE MAIN PROGRAM
@@ -98,9 +98,10 @@ long double logP_gaussian(long double mean, long double sigma, long double x){
 return -log(sqrt(2*PIl)*sigma)-0.5*pow((x- mean)/sigma, 2.);
 }
 
+
 // -------------
 
-long double logP_multivariate_gaussian( Eigen::VectorXd mean, Eigen::MatrixXd Matrix, Eigen::VectorXd x){
+long double logP_multivariate_gaussian(const Eigen::VectorXd& mean,const  Eigen::MatrixXd& Matrix, const Eigen::VectorXd& x){
 /* 
  * Calculates the log probability for a multivariate gaussian for a given vector x
  * CORRESPONDS TO CASE 3 IN THE MAIN PROGRAM
@@ -116,7 +117,7 @@ return logP;
 
 // -------------
 
-long double logP_jeffrey(long double hmin, long double hmax, long double h){
+long double logP_jeffrey(const long double hmin, const long double hmax, const long double h){
 /* 
  * Calculates the log probability for a Jeffreys-truncated prior at a given value h
  * CORRESPONDS TO CASE 4 IN THE MAIN PROGRAM
@@ -138,7 +139,7 @@ return logP;
 
 // -------------
 
-long double logP_jeffrey_abs(long double hmin, long double hmax, long double h){
+long double logP_jeffrey_abs(const long double hmin, const long double hmax, const long double h){
 /* 
  * Calculates the log probability for a Jeffreys-truncated prior at a given value of abs(h)
  * CORRESPONDS TO CASE 4 IN THE MAIN PROGRAM
@@ -162,8 +163,8 @@ return logP;
 // -------------
 
 
-long double logP_uniform_gaussian( long double b_min, long double b_max, 
-			long double sigma, long double x){
+long double logP_uniform_gaussian( const long double b_min, const long double b_max, 
+			const long double sigma,const  long double x){
 /* 
  * Calculates the log probability for a Uniform-Gaussian prior at a given value x
  * CORRESPONDS TO CASE 5 IN THE MAIN PROGRAM
@@ -189,8 +190,8 @@ return logP-C;
 // -------------
 
 
-long double logP_gaussian_uniform( long double b_min, long double b_max, 
-			long double sigma, long double x){
+long double logP_gaussian_uniform(const  long double b_min, const long double b_max, 
+			const long double sigma, const long double x){
 /* 
  * Calculates the log probability for a Gaussian-Uniform prior at a given value x
  * CORRESPONDS TO CASE 6 IN THE MAIN PROGRAM
@@ -215,8 +216,8 @@ return logP-C;
 
 // -------------
 
-long double logP_gaussian_uniform_gaussian( long double b_min, long double b_max, 
-			long double sigma1, long double sigma2, long double x){
+long double logP_gaussian_uniform_gaussian(const  long double b_min, const long double b_max, 
+			const long double sigma1, const long double sigma2, const long double x){
 /* 
  * Calculates the log probability for a Gaussian-Uniform-Gaussian prior at a given value x
  * sigma1 is the standard deviation for x<b_min. sigma2 is the standard deviation for x>b_max.

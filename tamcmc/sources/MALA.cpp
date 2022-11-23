@@ -42,12 +42,12 @@ using Eigen::VectorXd;
 using Eigen::VectorXi;
 
 
-MatrixXd** initialize_3dMatrix(int Nchains, int Nrows, int Ncols);
-void set_3dMatrix(MatrixXd** matrix3d, MatrixXd m_in, int position);
+//MatrixXd** initialize_3dMatrix(int Nchains, int Nrows, int Ncols);
+//void set_3dMatrix(MatrixXd** matrix3d, MatrixXd m_in, int position);
 MatrixXd** copy_3dMatrix(MatrixXd** m3d_in, int depth);
 MatrixXd multivariate_eigen(VectorXd, MatrixXd, int);
-double *r8vec_normal_01 ( int n, int *seed );
-double *uniform_01 ( int n, int *seed );
+double *r8vec_normal_01 (const int n, int *seed );
+double *uniform_01 (const int n, int *seed );
 extern long ben_clock();
 
 MALA::MALA(Config *cfg){ // Constructor
@@ -150,7 +150,7 @@ long double MALA::p1_fct(long double x){
 return scalar_p;
 }
 
-MatrixXd MALA::p2_fct(MatrixXd x){
+MatrixXd MALA::p2_fct(const MatrixXd& x){
 
 	MatrixXd matrix_p;
 
@@ -163,7 +163,7 @@ MatrixXd MALA::p2_fct(MatrixXd x){
 	return matrix_p;
 }
 
-VectorXd MALA::p3_fct(VectorXd x){
+VectorXd MALA::p3_fct(const VectorXd& x){
 	VectorXd vector_p;
 	
 	if(x.norm() <=A1){
@@ -188,7 +188,7 @@ return N0 + rand()%Nmax; // srand(seed) is executed by the constructor of the MA
 }
 
 
-void MALA::restore_proposal(const VectorXd vars, Config *cfg){
+void MALA::restore_proposal(const VectorXd& vars, Config *cfg){
 /* 
  * Used to setup the initial values for the proposal law when it is requested
  * to restore the variables (do_restore=1 in the configuration file)
@@ -254,14 +254,18 @@ void MALA::init_proposal(const VectorXd vars, const std::vector<std::string> var
 		for(int j=0; j<s_inerror.size();j++){
 			if(var_names[i] == s_inerror[j]){
 				error[i]=vars[i]*fracerr[j] + offseterr[j];
+				//std::cout << "   -----     Found! ------" << std::endl;
+				//std::cout << "      vars[" << i << "]=" << vars[i] << "  fracerr[" << j << "] =" << fracerr[j] <<  "  offseterr[" << j << "]=" << offseterr[j] << std::endl;
+				//std::cout << "   -----------------------" << std::endl;
 			}
 		}
 	}
+	std::cout << " -- " << std::endl;
     for(long i=0; i<vars.size(); i++){
         std::cout << " var[" << i << "]=" << vars[i] <<"   ===> err[" << i << "]=" << error[i]  <<  std::endl;
     }
 
-	std::cout << " ---------------------------------------------------------------" << std::endl;
+   std::cout << " ---------------------------------------------------------------" << std::endl;
 	std::cout << " Initializing the matrix of covariance and the scaling factor..." << std::endl;
         error=error.array().square();
 	cov0=error.asDiagonal();
@@ -289,7 +293,7 @@ void MALA::init_proposal(const VectorXd vars, const std::vector<std::string> var
 }
 
 
-void MALA::update_proposal(VectorXd vars, long double acceptance, int m){
+void MALA::update_proposal(const VectorXd& vars, long double acceptance, int m){
 /*
  * This function update the proposal law parameters
 */
@@ -323,7 +327,7 @@ VectorXd MALA::D_MALA(){
 return drift;
 }
 
-long double MALA::multinormal_logpdf(VectorXd deltavars, VectorXd drift1, MatrixXd covmat1){
+long double MALA::multinormal_logpdf(const VectorXd& deltavars, const VectorXd& drift1, const MatrixXd& covmat1){
 /* The function that ensure proper balance.
  * For the moment, this is not implemented so that only the Metropolis algorithm would work
  * For its implementation, check the function of the same name in stat.py
@@ -332,10 +336,12 @@ long double MALA::multinormal_logpdf(VectorXd deltavars, VectorXd drift1, Matrix
 return 0.;
 }
 
-VectorXd MALA::new_prop_values(VectorXd vars, int m){
+VectorXd MALA::new_prop_values(const VectorXd& vars, int m){
 /*
  * This function generate new samples according to the current proposal law
 */
+	bool is_finite=true;
+	int c;
 	VectorXd ran, shift(Nvars);
 	MatrixXd tmpmat;
 
@@ -347,7 +353,17 @@ VectorXd MALA::new_prop_values(VectorXd vars, int m){
 	
 	// ***** Update of the proposal laws *****
 	ran=vars + Lchol*Eigen::Map<VectorXd>(y, epsilon2.rows()); // Compute the multivariate distribution and project it into the parameter space
-
+	
+	c=0;
+	while (is_finite == true && c<ran.size()){
+		is_finite=std::isfinite(ran[c]);
+		if (is_finite == false){
+			std::cout << "Warning : Generation of a new vector lead to non-finite value: Recomputing..." << std::endl;
+			y = r8vec_normal_01 ( epsilon2.rows(), &seed );
+			ran=vars + Lchol*Eigen::Map<VectorXd>(y, epsilon2.rows()); // Compute the multivariate distribution and project it into the parameter space	
+		}
+		c=c+1;
+	}
 	delete y;
 return ran;
 }
@@ -467,11 +483,10 @@ void MALA::update_position_MH(Model_def *model_current, Model_def *model_propose
 	if((*cfg_class).MALA.proposal_type != "Random" && (*cfg_class).MALA.proposal_type != "Exact_On_Grid"){
 		msg_handler("", "ongrid_option", "MALA::update_position_MH", (*cfg_class).MALA.proposal_type, 1);
 	}
-
 	(*model_propose).vars.row(m)=vars_new.transpose();
 	(*model_propose).update_params_with_vars(m); // required as the model depends on params, not on vars...
 	(*model_propose).generate_model(data_struc, m, Tcoefs); // This will calculate (*model_class).logLikelihood (tempered), (*model_class).logPriors and (*model_class).logPosterior
-
+	
 	if (std::isnan((*model_propose).logLikelihood[m]) == 0){
 		if ((*model_propose).logPosterior[m] == -INFINITY){ // Some priors should generate infinities (e.g. Uniform priors), in that case the solution is rejected 100% of the time
 
@@ -628,11 +643,10 @@ void MALA::execute(Model_def *model_current, Model_def *model_propose, Data *dat
 		}
 
 		gamma=c0/(1. + i);
-		
-#pragma omp parallel for default(shared) private(chain)
+
+#pragma omp parallel for num_threads(Nchains) default(shared) private(chain)
 		for (chain=0; chain<Nchains; chain++){
 			VectorXd vec_tmp;
-
 
 			// [1] Propose a new position and test it so that the model_current is updated (if new position accepted) using model_propose
 			//     Note that model_propose must have been initialized in order to work
@@ -648,12 +662,9 @@ void MALA::execute(Model_def *model_current, Model_def *model_propose, Data *dat
 			}
 			if (logicA[chain] == 1 && ( i%periods_learn[whichA[chain]]) == 0){
 				vec_tmp=(*model_current).vars.row(chain);
-				update_proposal(vec_tmp, (*model_current).Pmove[chain], chain);
-			
-				
+				update_proposal(vec_tmp, (*model_current).Pmove[chain], chain);	
 			} //else { std::cout << " NO Learning for chain " << chain << std::endl; }
 		}
-
 		for (int chain=0; chain<Nchains; chain++){
 			if(logicA[chain] > logic_old){ // case of logic=1 and logic_old=0
 				std::cout << "        ["<< i << "] Learning turned ON...Learning periodicity: " << periods_learn[whichA[chain]] << std::endl;
@@ -684,17 +695,14 @@ void MALA::execute(Model_def *model_current, Model_def *model_propose, Data *dat
 				std::cout << "        ["<< i << "] Average swaping rate for the last " << swap_period << " swaps (in %): " << 100. * swaping_rate/Nswap << std::endl;
 				Nswap=0; // re-initialize the average counter
 				swaping_rate=0; // re-initialize the average swaping rate
-			}
-			
+			}			
 		} else {
 			tempted_mixing=0;
 			chain_A=-1;
 		}
-	
 		// [4] Show / save results
 		// Update the restoration point when counts == Nbuffer (conditon handled within the method)
 		outputs_class->update_buffer_restore(sigma, mu, covarmat, model_current->vars);
-
 		// Generate the outputs... If requested
 		outputs_class->update_buffer_stat_criteria(model_current->logLikelihood, model_current->logPrior, model_current->logPosterior); 	
 		//std::cout << "Before writting params" << std::endl;
@@ -705,7 +713,6 @@ void MALA::execute(Model_def *model_current, Model_def *model_propose, Data *dat
 		outputs_class->update_buffer_proposals(sigma, mu, model_current->Pmove, 
 			    			model_current->moved, covarmat);
 		outputs_class->update_buffer_models(model_current->model); //IF ACTIVATED IT SLOWS DOWN THE PROCESS AND CREATE HUGE FILES!!! OVERRID THIS FUNCTION WHEN Ndata_Obs > Ndata_Obs_limit
-
 		// Generate diagnostics... If requested... REQUIRES THAT THE APPROPRIATE OUTPUTS EXIST
 		if(diags->get_model_buffer_diags() == 1){
 			mean_params_Nbuf=(mean_params_Nbuf.transpose() + model_current->params.row(0)); // average made only over the coldest chain

@@ -1,5 +1,202 @@
 # Version history #
 
+### v1.83.X Tweaks ###
+	- 1.83.1: Adding the possibility of settting priors values for ferr in the hyper prior section. The syntax is the same as the one used for the common part, except that the first column must be the fref frequency (as before)
+    - 1.83.2: In bin2txt, adding as argument the last sample to be exctracted. Warning: This may break codes that call bin2txt
+    - 1.83.3: Adding A constant model of Width for AppWidth_v4
+	- 1.83.4: Bug Fix in reading model files when there is only one spline column (extra priors) instead of 1 for the initial guess + 1 for the prior name + N for the parameters of the prior. Another bug fix concerns the fact that the RGB v4 model was not using the spline! It has been commented by mistake at some point
+	- 1.83.5: Update in tools/getstats : Three new optional parameters were added: first_index, last_index and Sample_period. This now align the capabilities of getstats with the capabilities of bin2txt. 
+	
+### v1.83 New tool and improvments ###
+	- Adding a quick_samples_stats.cpp and quick_samples_stats.h in tools/ that contains functions to compute the mean, median and stddev from a VectorXd
+	- Using quick_samples_stats in bin2txt_params.cpp in order to show the median and the stddev while unpacking the binary files. This is for example useful in small models such as the Gaussian model
+  - Models with AppWidth now require that numax (and optionaly its error) is provided by the user. Previously if this was not provided, the code was calculating it. But this is highly instable due the usally limited number of modes in RGB stars
+  - Appourchaux Gaussian priors have been revised so that these are using 5% numax if err_numax is not provided in the model file. And use err_numax otherwise.
+
+### v1.82 New Model ###
+	- Adding a model 'model_ajfit' that allows you to fit data for a2, a4, a6 using Alm in order to determine latitudes of active regions
+	- Warning: In order to get compatibility with ajfit models, a critical change was made in the config.cpp::setup : I Made direct use of the (global) data.data_all instead of the (temporary local) data_in. If a subroutine within read_inputs_files() changes data_all, this may have impact on the routines set prior model_ajfit. A close monitoring of the situation is required in the future, to see any unusual behavior in e.g the ranges of the data
+	- Bug Fix: 
+		 * Corrected the missing nu_cl in the function 'decompose_Alm_fct()' and in 'build_l_mode_ajAlm()'. This affected models 'model_MS_Global_ajAlm_HarveyLike' (direct or indirect)
+		 
+### v1.81 Improvment ###
+		- Adding in the model with activity  'model_MS_Global_ajAlm_HarveyLike' the possibility of not using Alm directly: Using decompose_Alm option we can now converts it to a2,a4,a6 terms. The user can then choose which terms are used and wich ones are not. It allows to
+			  control the fit accuracy, in line with the simulations involving aj coefficients
+			  	- decompose_Alm = -1 : Use Alm directly (no decomposition)
+			  	- decompose_Alm = 0  : use a2, a4, a6
+					- decompose_Alm = 1  : use a2, a4
+			  	- decompose_Alm = 2  : use a2 only
+			By default, decompose_Alm is set to -1 in the io_ms_global.cpp
+
+### v1.8 Fixes and test  ####
+	- Fixes the problem of a3 that is always positive in the posterior: It was due to some residual lines of codes in priors_calc.cpp inteded for the obselete models with activity as a power law.
+	- Model with activity 'model_MS_Global_a1etaAlma3_HarveyLike' renaming 'model_MS_Global_ajAlm_HarveyLike'  to verification and full testing [TESTING]
+
+### v1.73 New model and tools ###
+  - WARNING: I NOTICED THAT THE HFACTOR MODIFICATION MAY BE A PROBLEM IN v3 models. The io_asymptotic is clerarly quite messy and would require cleaning once we 
+             have converged toward a nice solution for the fitting
+  - Addition: I have added a corrective factor Wfactor, similarly to Hfactor, it changes Wl=(1 + zeta(nu)).W(l=0) to Wl=(1 + Wfactor.zeta(nu)).W(l=0).
+  				    It is an optional parameter set to 1 when not provided so that it is retrocompatible with older version. However:
+  				    	- It requires to add Wfactor as an argument in the .model file (GU prior is recommended at that stage with Upper bound at 1 to avoid negative widths)
+  				    	- It was tested and explicitly implemented only for model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4
+  				WARNING: FULL TESTS MADE ONLY FOR THE cubic spline (hermite spline should also work though)
+  - Addition: 
+  		- tools/quickshow.py: Allows you to quickly visualise a params.model file (either created by the IDL postprocessing file or by the debug 'outparams=true' option inside the models)
+  		- tools/Gaussfit_tools/init_fit.py : Adding the capability of using a data file (instead of a sav file) in order to create an initial configuration file for fitting a gaussian. Because usually those data files are already made as the result of a fit, their range is restricted and thus, the user will have to be carefull with the lower harvey profile: The results of the gaussian fit are likely to give weak constrain on it due to the lack of data to support the fit in that region (if the original data file does include low-frequencies)
+  		- tools/recale_height.py: A small function that allows you to divide the power of a spectrum by a certain factor (default is factor=1000). This could be usefull to have 
+  			better convergence properties of the MCMC as it avoid to have large covariance terms (errors on the height are usually of the order of 20% of the input). The matrix inversion  process when evaluating the best MCMC 'step size' can indeed suffer from important error propagation issue if the covariance terms are too different from approximately 1 to 10.
+ 	- Changes: The auto prior for delta0l: Use of a narrower prior: +/-2% of Dnu (instead of 5%)
+ 	
+	- Model for RGB stars : model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4
+		 Changes are in external/ARMM, introduction of polyfit.cpp/h in sources/headers, adding external/spline. 
+	     * Contrary to v3, it has the following capabilities:
+           1. model_type = 1 : The user can choose to use the l=0, shifted with d01 in order to generate l=1 p modes.
+                  In this case, we make use of:
+             solve_mm_asymptotic_O2from_l0(nu_l0_in, el, delta0l, DPl, alpha_g, q, resol, bool returns_pg_freqs=true, verbose=false, freq_min=fmin, freq_max=fmax)
+           2. OR model_type=0: it can use an O2 polynomial:   
+               solve_mm_asymptotic_O2p(Dnu_p, epsilon, el, delta0l, alpha_p, nmax, DPl, alpha_g, q, fmin, fmax, resol, true, false); //returns_pg_freqs=true, verbose=false
+              Here, Dnu_p, epsilon are calculated using a linear fit of l=0 frequencies.
+              alpha_p, nmax are determined using a 2nd order fit of l=0 frequencies.
+              The switch between these two option is made using a control parameter at the end of vector of parameters (replacing sigma_limit of v2 and v3 and named model_type)
+         	The fit incorporate a list of Nerr parameters situated between ferr=[Nmax+ lmax + Nfl0 + 8] and [Nmax+ lmax + Nfl0 + 8 +Nerr] that are used to correct from the bias of the exact asymptotic model
+          These are associated to a list of Nerr list of fixed frequencies between fref=[Nmax+ lmax + Nfl0 + 8 + Nerr] and [Nmax+ lmax + Nfl0 + 8 + 2 Nerr] that provided frequencies of (a) case of bias_type = 0 (cte):
+               The reference frequencies fref are used as 'windows' for determining region of 'constant bias': If a mode lies within a window [fref(j),fref(j+1)] of the list, then we apply the correction ferr(j)
+               This means that multiple modes may have the same correction factor ferr(j) and that some window may have 0. Be aware of this when post processing: Each window must be cleaned of solutions with 0 modes
+           (b) case of bias_type = 1 (Cubic spline, ie strongly correlated as it is twice continuously differentiable):
+               The reference frequencies fref are used as 'anchors' for a spline defined by the values ferr.
+               The spline fitting is performed here in this function using the spline module from https://github.com/ttk592/spline/ also forked to my repo
+           (c) case of bias_type = 2 (Hermite spline, ie less correlated variable as it is once continuously differentiable):
+               The reference frequencies fref are used as 'anchors' for a spline defined by the values ferr.
+               The spline fitting is performed here in this function using the spline module from https://github.com/ttk592/spline/ also forked to my repo
+
+### v1.72 Bug Fixes and New model ###
+	- Bug fixes 
+	- Model for RGB stars with constant width (experimental): model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3
+
+### v1.71 EXPERIMENTAL Improvment ###
+	- Adding a check of the finitness of the new proposal vector. If not successful, it retries to generate a new random vector
+	  This will come at an extra computation cost of Nchain*Nparams ~ 500 operations
+
+### v1.70-dev New model + Improvements + Bug Fix  ###
+	* Bug Fix:
+  	- Some function were putting a a3 coefficient for l=1. a3 does not exist for l=1 and it is corrected [DONE]
+  * Improvments:
+  	- Use of acoefs.cpp in order to hande the aj decomposition in a cleaner way   [DONE]
+  	- Use of a Qlm(l,m) function to avoid mutliple repetition in the code. Qlm(l,m) includes Dnl = 2./3  [DONE]
+		- Reorganise existing functions to use the new acoefs functions when necessary  [DONE]
+	  - Rearanging and cleaning the functions in build_lorentzian.cpp in order to avoid repeating sections that handle the optimisation [DONE]
+  	- Update for Alm: Instead of using directly Alm(theta,delta), we give the user possibility to decompose Alm~F(a2,a4,a6) and to decide which aj to not account for
+  	- The logLikelihood is computed only if the logPrior is not -INFINITY. This avoid us to compute the model when it is not necessary ==> performance improvement  [DONE]
+  	- Removed the model *acta3 that were obselete [DONE]
+  	- Systematic use of eta0 = 3.pi/(G.rho_sun) . (Dnu_sun/Dnu)^2 in models.cpp and io_ms_global.cpp for the centrifugal force instead of eta = eta0.a1^2. Additionnaly eta0 was corrected from a bug [DONE]
+  	- Optimisation of the structure of priors_calc.cpp inside MS_global case.
+	* New models:
+		- Adding acoefs capabilities up to a6: Compose frequencies with a-coefficients and decompose frequencies into a-coefficients [DONE]
+		- Model that handle <a1>_l, <a2>_l, <a3>_l,<a4>_l,<a5>_l, <a6>_l in linear function and for MS stars
+		- Model that handle a1(nu,l), a2(nu,l), a3(nu,l), a4(nu,l), a5(nu,l), a6(nu,l) in linear function and for MS stars
+
+### v1.65-dev Improvments ###
+	* Refactoring the section external code that can compute Glm/Alm function in preparation of the more general solver for any kind of 
+          Activity zone. Old function named ylm.cpp and ylm.h were replaced by activity.cpp and activity.h. Note the although functions were
+          renamed [xxxx]Alm[xxxx] I currently only set Alm in "gate" mode and did not update the model itself and checked it consistency.
+          Ideally, the "gate" or "gauss" mode should be a global parameter
+        * Tuning of prior_calc.cpp::priors_Harvey_Gaussian() in order to enable a fit of the Gaussian envelope in a similar fashion that the MCMC part  
+          Of my IDL code 'Preset-Analysis-v8.1', ultimately replacing it (for the Gaussian fit at least for the moment)
+        * Full support of the Harvey_Gaussian fit.
+        * New tool to automatically generate a .data and .model file for the Gaussian envelope fit: init_fit.py
+          Most elements and logic is taken from init_fit.pro of Preset-Analysis-v8.1'. Note that it will still need guesses for Amax and numax. Those are in principle provided by my code 'envelope_measure.pro' 
+ 				* Creation of several function in order to bridge mode_envelope.pro (that gives guesses on Amax and numax) with the init_fit.py function
+ 				* Adding a tool within init_fit.py that can generate a .model and .data file from the results of at Gaussian fit in order to make a second Gaussian fit (pass 2) that will enhance the noise background guess. This reveals to be sometime usefull due to the fact that priors set automatically in init_fit.py (pass 1) are sometimes poor
+	* Fix issue where simulation files that specify trunc_c [Value] cannot be read due to the fact that the program expect trunc_c Fix [Value]
+
+### v1.64-dev Improvment ###
+	* New model:
+		- Adding a model named 'model_RGB_asympt_a1etaa3_AppWidth_HarveyLike' that: (1) Handle a pure asymtptotic relation and (2) use random quantities as hyperparameters to evaluate the inaccuracy of that model and to still be able to fit the spectrum exactly despite those inaccuracy
+	* Safety:
+		- Ensure that the user is warned when the command line is typed with indexing starting at 0 (e.g. ./cpptamcmc execute 1 0 1) instead of 1 (./cpptamcmc execute 1 1 2)
+### v1.63-dev Improvment ###
+	* Improvment:
+		- Implementation of clm for l=3 modes. allows to account for a3(n,l=3). Previously approximated by cln=0
+### v1.62-dev Bug Fix and Improvments ###
+	* Bug Fix:
+		- properly linking optimised_xxx_a1a2a3* to a1a2* a1la2* and a1nla2* models (was mistakenly linked to a1etaa3)
+	* Improvments: model_MS_Global_a1etaGlma3_HarveyLike() that use Gizon 2002 AN prescription for describing Activity effect on modes
+		- Adding build_l_mode_a1etaGlma3(), optimum_lorentzian_calc_a1etaGlma3() and model_MS_Global_a1etaGlma3_HarveyLike()  [100%]
+		- Adapting model_def and model list  [100%]
+		- Adapting prior_calc.cpp for the new model [100%] 
+		- testing [100%]: Note that I let epsilon to take negative values. I suspect this is important to allow a2_AR<0
+		
+### v1.61-dev Improvments ###
+	* Improvments:
+		- Adding an optional boolean switch in the list of models to allow outputs of the mode parameters in the form of an ascii table (used in getmodel)
+		- Adding optional boolean switch in model_def.cpp for call_model() and call_model_explicit : This to ensure usability by getmodel 
+		- Adding a writing function for ascii table outputs
+		- Update of getmodel: It will output an ascii table of all the best fit parameters
+
+### v1.6-dev Improvments ###
+  * New models:
+  	* Adding core functions in build_lorentzian.cpp to handle a2 coefficient (see Gizon,2002, https://www2.mps.mpg.de/homes/gizon/PAPERS/an_323_251.pdf) 
+    Need to add a2 as a polynomial of O1 to handle a2=cte or a2=linear(nu) or a2=quadratic(nu) for a1l fit and a1 fits (replaces eta parameter)
+  	* Add model in models.cpp that handle a2 for MS stars in the case of a1 is constant 
+  	* Update io_ms_global.cpp to initialise properly model parameters for the new models
+  	* Update priors_calc.cpp to handle a2 priors
+  	* update models_list.ctrl 
+  	* update model_def.cpp in the switch cases
+  	* update the default_errors.cfg
+
+  * Bug fixes:
+  	- Update of the CMakeList.txt with some (missing) -fopenmp option (guarantees omp is used whenever possible)
+    - Removed the 4 threads hard-coded for the ARMM solver and explicitly impose num_threads = Nchains in MALA.cpp to paralelise the Tempered chains. It worked better like this
+    - a3/a1 and a2/a1 limits where systematically wrongly set: priors_calc.cpp was set such that a1 was extracted from the slot of only classic models. A new extra_priors[5] switch allows to mitigate the issue
+  * Prospect for subversions:
+  	- Extend testing and implementation of the a2 to a1l, a1nl and a1n MS models. Currently models.cpp do have those, but priors_calc, model_def and io_ms_global.cpp are incomplete and force the stop of the program if one tries to use them
+
+### v1.57-dev New model ###
+  * Adding a model with free widths for asymptotic mixed modes fitting (model model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3)
+  * Adding the parallelised version of ARMM (with 4 threads)
+
+### v1.56-dev Minor improvments ###
+  * Change of the sigma for the gaussian smoothness condition for fl1p modes for asymptotic models
+  * Adjustments of default_errors.cfg for asymtptotic models
+  * Enlargement of the range for the fl1p modes in asymptotic models
+  * Impose abs() when generating initial guesses for the Width using Appourchaux relation in asymptotic models
+  * Removal of the smoothness condition for the l=2 in asymptotic models
+  * Removal of the d02 prior in asymptotic models
+
+### v1.55-dev New models and improvments ###
+	* Bug Fix:Fix bug when initializing delta0l with fix_auto [DONE]
+	* Adding : sigma_Hl1 (replaces sigma_p) [DONE]
+	* Adding a model that has the fl1p modes as free parameters... priors and initial guesses are automatically set [DONE]
+	* Improvment: taging modes for asymtptotic model as RGB using error_default.cfg standard: Frequency_RGB_l [DONE]
+	* Upgrading Dnu determination in priors_calc.cpp using l=0 mode fitting
+
+
+### v1.52-dev Improvoment ###
+	* Bug fix: There was multiple NaN that were still not corrected in v1.51. It was comming from the fact the Hl0 interpolation at fl1 frequencies 
+			   Could lead to negative Hl1 heights sometimes. The fix was to enforce the Hl1 to be positive when generating the model, effectively avoiding NaN in the likelihood
+	* Optimisation: Use of the goto statement when f=-INFINITY priors_calc.cpp so that we skip any calculation that would follow if f=-INFINITY
+	* Improvment: 
+		- Enforcing positivity of Width parameters when those have Gaussian priors
+		- Adding a small suite of tool in IDL (data_extract_IDL) into the tools directory. This allows to (a) extract samples (all or a subset defined by the user) and save them into an IDL sav file. For this, bin2txt must be compiled and present into the tools directory. (b) Generate models using the getmodel binary program to plot the best fit on the top of data and save this in an eps file.
+		- getmodel::check_retrocompatibility() function is now having status=2 by default, which means that by default we assume that models follow a compatible format with any code abobe 1.3. This means that getmodel will no longer need to be updated to handle new models. 
+		
+### v1.51-dev ###
+	* Adding an upper limit to the random quantities generated by sigma_m parameter
+	* Several bug fixes
+	* Remaining problem: 
+		(1) All of the frequencies seems to be scarcely sampled... default errors too big? Will need to try to use a separate Frequency_l (Frequency_RGB_l) and set it properly whenever needed (a threshold on Dnu)
+		(2) We some extremely strange NaN on the likelihood when testing the full modeling of KIC 008751420. This problem does not appear when using a narrow range of p modes. What is even more strange is that this happens while the proposed position seems to be the same as the initial position (according to the debug message shown when NaN arises). It could mean that there is a serious issue in the random generation or in the core of the code that really need to be investigated.
+		
+### v1.5-dev [100% Implemented... Need testing] ###
+	* Improvments: adding the possibility to fit the spectrum with the asymptotic relation of the mixed modes (l=1 and l=2)
+	  in the case of RGB models (handled by a new file, io_rgb_global.cpp)
+	  	- update models.cpp to include the model [100%]
+	  	- convert the mixed mode solver functions from python to c++ by starting by the core solver function (that can be tested within python by a wraper) [100%]
+	  	- update of config.cpp [100%]
+	  	- update of model_def.cpp [100%]
+	  	- create and write io_rgb_global.cpp [100%]
+	* Bug fix: removing useless '...' into the linking process of the CMakelist.txt, that were leading to show warnings during the compilation [100%]
+
 ### v1.4.31-dev Bug fix: 30/09/2020 ###
     * getmodel was not properly updated to handle 1.3.3 update on handling the models names using a file (.list file). 
       The consequence is that no model was recognized and the getmodel tool could not operate. 

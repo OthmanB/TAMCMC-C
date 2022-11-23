@@ -7,6 +7,11 @@
 #include <vector>
 #include <iostream>
 #include <iomanip>
+//#include <filesystem> // ONLY FOR C++17
+#include <cstdio>
+#include <cstring>
+#include <cerrno>
+
 #include "models.h"
 #include "model_def.h"
 #include "data.h"
@@ -19,6 +24,7 @@ int options(int argc, char* argv[], int Nmaxlines);
 void usage(int argc, char* argv[], int Nmaxlines);
 int check_retrocompatibility(VectorXi plength, std::string modelname);
 VectorXd adapt2new_MSGlobal(const VectorXi plength, const VectorXd params, const double c0);
+void mvfile(std::string file_in, std::string file_out);
 
 Data Data_Nd2Data(Data_Nd dat);
 
@@ -71,7 +77,7 @@ int main(int argc, char* argv[]){
 		data_model=Data_Nd2Data(data);
 
 		// Getting the list of models that are currently implemented
-		std::string file_list=cpath + "models_ctrl.list";
+		std::string file_list=cpath + "/models_ctrl.list";
 		listoutputs=cfg.read_listfiles(file_list, 1);	 // The file must be in the same folder as the main getmodel compiled file
 		modelname_switch=cfg.convert_model_fct_name_to_switch(modelname, listoutputs); // look for the case number that is going to be used in call_model
 
@@ -90,11 +96,11 @@ int main(int argc, char* argv[]){
 			// After all the comments, the first line must contain plength
 			plength=str_to_Xiarr(line0, " \t"); // The separator is either a space of a tabulation
 			status_compat=check_retrocompatibility(plength, modelname); // Verify the consistency of the vector with earlier version of the code
-
 			// All the following lines must correspond to a vector of inputs. 1 line <==> 1 model. Maximum of Nmaxlines lines permitted
 			i=0;
 			std::getline(cfg_session, line0);
 			while(!cfg_session.eof() && i < Nmaxlines){ 
+				//std::getline(cfg_session, line0);
 				line0=strtrim(line0);
 				char0=strtrim(line0.substr(0, 1));
 				
@@ -109,12 +115,15 @@ int main(int argc, char* argv[]){
 					arr0=adapt2new_MSGlobal(plength, arr0, 20.); // last value is c0
 				}				
 				model0=model_list.call_model_explicit(&data_model, plength, arr0, modelname_switch);
-
 				if(i==0){// Initialisation of the Matrix of parameters
 					models.resize(Nmaxlines, model0.size());
 				} 
 				models.row(i) = model0; //call_model_solo(&data, arr0, plength, modelname);
 				std::getline(cfg_session, line0);
+				// Taking care of the params.model file that is created since version 1.61
+				//std::string file_out;
+				//file_out="params_" + int_to_str(i) + ".model";
+				mvfile("params.model", "params_" + int_to_str(i) + ".model");
 				i=i+1;
 			}	
 			Nmodels=i;	
@@ -126,7 +135,6 @@ int main(int argc, char* argv[]){
    			std::cout << "The program will exit now" << std::endl;
    			exit(EXIT_FAILURE);
 		}
-		
 		std::cout << "  4. Writing outputs into the output file in a simple matricial format... " << std::endl;
 		data_out.resize(data.data.rows(), data.data.cols() + Nmodels) ; //We take the initial data and the models as additional columns
 		data_out.block(0, 0, data.data.rows(), data.data.cols())=data.data; // Put the data first
@@ -241,7 +249,7 @@ void usage(int argc, char* argv[], int Nmaxlines){
 int check_retrocompatibility(VectorXi plength, std::string modelname){
 
 	int Nplength_expected=-1; // By defaut, consider that plength is not compatible with the current program
-	int status=-1;
+	int status=2; // DEFAULT IS EVERYTHING OK (EXPERIMENTAL... IF FAILS NEED TO BE TO -1)
 	if (modelname == "model_MS_Global_a1etaa3_HarveyLike" || modelname == "model_MS_Global_a1etaa3_Harvey1985" || modelname == "model_MS_Global_a1l_etaa3_HarveyLike" ||
 	   modelname == "model_MS_Global_a1n_etaa3_HarveyLike" || modelname == "model_MS_Global_a1nl_etaa3_HarveyLike"){
 		Nplength_expected = 11;
@@ -264,11 +272,16 @@ int check_retrocompatibility(VectorXi plength, std::string modelname){
         //std::cout << "Status set to 2 (Classic model)" << std::endl;
         status=2;
     }
-    if (modelname =="model_MS_local_basic"){
+    if (modelname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2" ){ // This new function appears in version 1.5 so it is ok
+        //std::cout << "Status set to 2 (Classic model)" << std::endl;
+        status=2;
+    }
+    /*if (modelname =="model_MS_local_basic"){
     	std::cout << "   >> The model 'model_MS_local_basic' is not handled by getmodel yet" << std::endl;
     	std::cout << "      Currently working on its support... please wait that it gets released" << std::endl;
     	exit(EXIT_FAILURE);
     }
+    */
 	if(status >1){
 		std::cout << "   >> Compatibility/Consistency test with earlier version passed..." << std::endl;
 	}
@@ -303,3 +316,21 @@ VectorXd adapt2new_MSGlobal(const VectorXi plength, const VectorXd params, const
 
 	return newparams;
 }
+
+/*
+   ONLY FOR C++17
+*/
+/*void mvfile(std::string file_in, std::string file_out) {
+  try {
+    std::filesystem::rename(file_in, file_out);
+  } catch (std::filesystem::filesystem_error& e) {
+    std::cout << e.what() << '\n';
+  }
+}
+*/
+void mvfile(std::string file_in, std::string file_out) {
+  if(std::rename(file_in.c_str(), file_out.c_str()) < 0) {
+    std::cout << strerror(errno) << '\n' << std::endl;
+  }
+}
+

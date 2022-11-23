@@ -6,18 +6,18 @@
  */
 #include <math.h>
 #include <Eigen/Dense>
-//#include "function_rot.h"
+#include "function_rot.h"
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
-double combi(int n, int r);
-double dmm(int l, int m1, int m2, double beta);
-int factorial(int n);
-MatrixXd function_rot( int l, double beta);
-VectorXd amplitude_ratio(int l, double beta);
+//double combi(int n, int r);
+//double dmm(int l, int m1, int m2, double beta);
+//int factorial(int n);
+//MatrixXd function_rot( int l, double beta);
+//VectorXd amplitude_ratio(int l, double beta);
 
-VectorXd amplitude_ratio(int l, double beta){
+VectorXd amplitude_ratio(const int l,  const double beta){
 /* Main function that calculates the mode visibilities
    requires: 
 	- l: degree of the mode
@@ -46,7 +46,7 @@ VectorXd amplitude_ratio(int l, double beta){
 return vv;        
 }
 
-MatrixXd function_rot(int l, double beta){
+MatrixXd function_rot(const int l, const double beta){
 	
 	const long dim=2*l+1;
 	MatrixXd mat(dim,dim);
@@ -78,7 +78,7 @@ MatrixXd function_rot(int l, double beta){
 	return mat;
 }
 
-double dmm(int l, int m1, int m2, double beta){
+double dmm(const int l, const int m1, const int m2, const double beta){
 	double sum=0;
 	double var=0;
 	for(long s=0; s<= l-m1; s++ ){
@@ -92,11 +92,11 @@ double dmm(int l, int m1, int m2, double beta){
 	return sum;
 }
 
-double combi(int n, int r){
+double combi(const int n, const int r){
 	return factorial(n)/factorial(n-r)/factorial(r);
 }
 
-int factorial(int n) {
+int factorial(const int n) {
     long factorial=1;
 
     for (long i = 1; i <= n; i++) {
