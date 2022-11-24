@@ -1,6 +1,0 @@
-Progress on 1.4.1-Dev
-
-Remaining task before setting it as master:
-6. Need to implement if necessary the new functions (from io_MS_Global, with Appourchaux widths or from io_local) into the getmodel [NOT YET]
-
- 
