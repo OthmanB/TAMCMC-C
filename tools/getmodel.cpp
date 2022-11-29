@@ -50,15 +50,12 @@ int main(int argc, char* argv[]){
 
 		// Set the current path variables
 		std::string cpath=getcwd(NULL, 0);
-
 		Nmaxlines=5; // Maximum of models that can be provided (and therefore generated)
-
 		testval=options(argc, argv, Nmaxlines);
-
+		std::cout << testval << std::endl;
 		filename_data=argv[1];
 		filename_params=argv[2];
 		modelname=argv[3]; 
-	
 		if(testval == 10 || testval == 13){
 			std::cout << " Output directory / Output file not provided " << std::endl;
 			std::cout << "       - Generating the output files within the current directory" << std::endl;
@@ -107,9 +104,7 @@ int main(int argc, char* argv[]){
 		if(testval == 10 || testval == 11){
 			std::cout << "      - Data file: " << filename_data << std::endl;
 		} else{
-			std::cout << "1.1" << std::endl;
 			tmp=strsplit(argv[pos_option_type], "="); // Dealing with case where data_type option is requested, but IS GIVEN BEFORE output dir provided
-			std::cout << "1.2" << std::endl;
 			if(tmp[1] == "range"){
 				data_range=str_to_Xdarr(filename_data, ",");// filename_data contains 3 values the string in that scenario
 				if (data_range.size() !=3){
@@ -126,6 +121,7 @@ int main(int argc, char* argv[]){
 		}
 		std::cout << "      - Parameters file: " << filename_params << std::endl;
 		std::cout << "      - Output dir: " << dirout << std::endl;
+		
 		if(filename_data != ""){
 			std::cout << "  1. Reading the data file..." << std::endl;
 			verbose=0;
@@ -272,7 +268,8 @@ int options(int argc, char* argv[], int Nmaxlines){
 	
 	val=-1;
 	arg1="";
-	
+	 // Deal with the case that any of the argument happens to be requesting for parameters only (no spectrum)
+	 // This case is useful to get for example only the l=1 mixed modes, which are a solution of fitting parameters
 	if(argc == 2){
 		arg1=argv[1];
 		if(arg1 == "version"){
