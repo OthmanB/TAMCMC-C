@@ -83,7 +83,7 @@ int main(int argc, char* argv[]){
 				fileout="output_model.ascii";
 				std::cout <<"       Default filename used for the ASCII file: " << fileout << std::endl;
 			} else{
-				dirout="";
+				dirout="/";
 				if(tmp[0] != "."){
 					for(int i=0; i<tmp.size()-1;i++){
 						dirout=dirout + tmp[i] + "/";
@@ -91,7 +91,7 @@ int main(int argc, char* argv[]){
 				} // Otherwise, the user specifically asked the current dir
 				fileout=argv[pos_option_file];
 				std::cout << " Directory and filename provided for outputs" << std::endl;
-				if (dirout !=""){
+				if (dirout !="/"){
 					std::cout << "       - Identified directory: " << dirout << std::endl;
 				} else{
 					std::cout << "       - Identified directory: " << "Current Directory" << std::endl;
@@ -331,7 +331,7 @@ void usage(int argc, char* argv[], int Nmaxlines){
 			std::cout << "         Remark concerning data_type: If data_type is 'range', the output file will not have a copy of the observational data" << std::endl;
 			std::cout << "         Remark concerning the options: There is no order requirement. However, there is no consistency check between the data_type and the arg1 content" << std::endl;
 			std::cout << " Call sequence: " << std::endl;
-			std::cout << "     " << argv[0] << " [data filename] [parameter filename]  [model name] [output filename] [Options" << std::endl;
+			std::cout << "     " << argv[0] << " [data filename] [parameter filename]  [model name] [output filename] [Options]" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 	
