@@ -5646,7 +5646,7 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
         } else{
             global_mixed_modes_params << model_type, -1 , -1 , delta0l , 0 , 0 , DPl , alpha_g , q_star , 0;            
         }
-        mixed_modes_name_params = " el / fl1_asymptotic / included? / spline_corr / ksi_pg / h1_h0 / Hl1p_all / Hl1_all / Wl1_all ";
+        mixed_modes_name_params = "# el / fl1_asymptotic / included? / spline_corr / ksi_pg / h1_h0 / Hl1p_all / Hl1_all / Wl1_all ";
         for(L=0;L<freqs_l1.nu_m.size();L++){
             k=0;
             included=0;
