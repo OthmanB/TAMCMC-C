@@ -53,7 +53,10 @@ VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& p
 VectorXd model_MS_Global_ajAlm_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams); // Added on 31 Mar 2021
 
 void write_star_params(const VectorXd& spec_params, const VectorXd& raw_params, const VectorXi& plength, const MatrixXd& mode_params, const MatrixXd& noise_params, const std::string file_out, const std::string modelname, const std::string name_params);
-
+void write_star_params_mixed(const VectorXd& spec_params, const VectorXd& raw_params, const VectorXi& plength, const MatrixXd& mode_params, const MatrixXd& noise_params, 
+    const std::string file_out, const std::string modelname, const std::string name_params, const MatrixXd& mixed_mode_params, const std::string mixed_mode_name_params,
+    const VectorXd global_mixed_mode_params, const std::vector<std::string> global_mixed_mode_name_params, VectorXd nu_p, VectorXd nu_g);
+            
 bool debug(const VectorXd& model, const long double Hl, const long double fl, const long double a1, const long double eta, const long double a3,
                const long double asym, const long double Wl, const long double el, const long double step, const double inclination, const VectorXd& ratios,
                const long double trunc_c, bool exit_c=true);

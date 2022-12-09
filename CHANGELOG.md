@@ -7,6 +7,8 @@
 	- 1.83.4: Bug Fix in reading model files when there is only one spline column (extra priors) instead of 1 for the initial guess + 1 for the prior name + N for the parameters of the prior. Another bug fix concerns the fact that the RGB v4 model was not using the spline! It has been commented by mistake at some point
 	- 1.83.5: Update in tools/getstats : Three new optional parameters were added: first_index, last_index and Sample_period. This now align the capabilities of getstats with the capabilities of bin2txt. 
 	- 1.83.6: Update of tools/getmodel: Added data_type as optional parameter. If set to 'data_type=range', it expects the argv[1] to have 3 values only: xmin,xmax,resolution. And it generates the x-axis for the model within getmodel. This differs from 'data_type=file', which keeps the former behavior (expecting a data file as input for argv[1])
+	- 1.83.7: Update on model model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4 relying on the ARMM: with outparams = True, the created params.model file returns a new table (at the end of the file) that contains information specific to the mixed modes such as: l, fl_mixed, fl_p, fl_g, ksi_pg, h1_h0, a boolean saying if the mode was included in the model or just calculated and thrown.
+		Will need later on to implement that change in all ARMM-related models
 	
 ### v1.83 New tool and improvments ###
 	- Adding a quick_samples_stats.cpp and quick_samples_stats.h in tools/ that contains functions to compute the mean, median and stddev from a VectorXd

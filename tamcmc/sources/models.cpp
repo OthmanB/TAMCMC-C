@@ -5304,11 +5304,16 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
     double e, tmp, r;
     int Nharvey;
     long cpt;
-    
+    // For outparams table
     const int Nrows=1000, Ncols=9; // Number of parameters for each mode
     MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
-    int Line=0; // will be used to trim the mode_params table where suited
-    
+    int k, L, Line=0; // will be used to trim the mode_params table where suited
+    // For the mixed modes table
+    VectorXd b, global_mixed_modes_params(10); // b is a bias vector
+    bool included;
+    MatrixXd mixed_modes_params;
+    std::string mixed_modes_name_params;
+    std::vector<std::string> global_mixed_modes_name_params(10);
     //outparams=true;
     /*
        -------------------------------------------------------
@@ -5399,32 +5404,17 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
             bias.set_points(fref_all,ferr_all,tk::spline::cspline_hermite);     // this calculates all spline coefficients
         }
     }
-       // -------- DEBUG OF l=1 mixed modes -----
-    /*
-    std::cout << "delta0l =" << delta0l << std::endl;
-    std::cout << "DPl =" << DPl << std::endl;
-    std::cout << "alpha_g =" << alpha_g << std::endl;
-    std::cout << "q_star =" << q_star << std::endl;
-    //std::cout << "sigma_p =" << sigma_p_l1 << std::endl;
-    //std::cout << "sigma_g =" << sigma_g_l1 << std::endl;
-    //std::cout << "sigma_m =" << sigma_m_l1 << std::endl;
-    std::cout << "Hfactor =" << Hfactor << std::endl;
-    std::cout << "rot_env =" << rot_env << std::endl;
-    std::cout << "rot_core =" << rot_core << std::endl;
-    std::cout << "step =" << step << std::endl;
-    */
-    // ---------------------------------------
 
     const double fmin=fl0_all.minCoeff(); // This is to avoid a change in the number of modes
     const double fmax=fl0_all.maxCoeff();  // This is to avoid a change in the number of modes 
     //const Data_eigensols freqs_l1=solve_mm_asymptotic_O2from_nupl(fl1p_all, 1, delta0l, DPl, alpha_g, q_star, 0, step, true, false, fmin, fmax); // note that we use the true data resolution (step) for optimising computation
+    VectorXd xfit, rfit;
+    xfit=linspace(0, fl0_all.size()-1, fl0_all.size());
+    rfit=linfit(xfit, fl0_all); // rfit[0] = Dnu
+    const double Dnu_p=rfit[0];
+    const long double n0=floor(rfit[0]/Dnu_p);
+    const double epsilon_p = rfit[0]/Dnu_p -n0;
     if (model_type == 0){
-        VectorXd xfit, rfit;
-        xfit=linspace(0, fl0_all.size()-1, fl0_all.size());
-        rfit=linfit(xfit, fl0_all); // rfit[0] = Dnu
-        const double Dnu_p=rfit[0];
-        const long double n0=floor(rfit[0]/Dnu_p);
-        const double epsilon_p = rfit[0]/Dnu_p -n0;
         //std::cout << " ---- 1st Order Fit ----" << std::endl;
         //std::cout << " Dnu_p =" << rfit[0] << std::endl;
         //std::cout << " epsilon_p + n0 =" << rfit[1]/rfit[0] << std::endl;
@@ -5471,7 +5461,7 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
         std::cout << " --- " << std::endl;
         */
         //exit(EXIT_SUCCESS);
-        } else{
+    } else{
         freqs_l1=solve_mm_asymptotic_O2from_l0(fl0_all, 1, delta0l, DPl, alpha_g, q_star, 0, step, true, false, fmin, fmax);
     }
     fl1_all=freqs_l1.nu_m;
@@ -5479,9 +5469,13 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
     // Adding the bias function to the vector fl1_all
 
 //  std::cout << " fl1     /   bias     /   Total " << std::endl;
+    b.resize(fl1_all.size());
+    b.setZero();
+    
     for (int i=0; i< fl1_all.size(); i++){
+        b[i]=bias(fl1_all[i]);
         //std::cout << fl1_all[i] << "  ";
-        fl1_all[i] = fl1_all[i] + bias(fl1_all[i]);
+        fl1_all[i] = fl1_all[i] + b[i];
         //std::cout << bias(fl1_all[i]) << "  "  << fl1_all[i] << std::endl;
     }
     
@@ -5550,7 +5544,7 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
     eta0=eta0_fct(fl0_all);
     a3=params[Nmax + lmax + Nf + 3];
     asym=params[Nmax+lmax + Nf + 4];
-   
+
     // --------------
     // --------------
     // --------------
@@ -5640,6 +5634,40 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
     model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
 
     if(outparams){
+        // Prepare Mixed modes data arrays
+        mixed_modes_params.resize(freqs_l1.nu_m.size(), 9);
+        global_mixed_modes_name_params[0] = "model_type"; global_mixed_modes_name_params[1] = "Dnu_p"  ; global_mixed_modes_name_params[2] = "epsilon_p"; 
+        global_mixed_modes_name_params[3] = "delta0l"   ; global_mixed_modes_name_params[4] = "alpha_p"; global_mixed_modes_name_params[5] = "nmax"; 
+        global_mixed_modes_name_params[6] = "DPl"       ; global_mixed_modes_name_params[7] = "alpha_g"; global_mixed_modes_name_params[8] = "q_star"; 
+        global_mixed_modes_name_params[9] = "sigma_p";
+        if (model_type == 0){
+            //global_mixed_mode_name_params = "model_type, Dnu_p, epsilon_p, delta0l , alpha_p, nmax, DPl, alpha_g, q_star, sigma_p"
+            global_mixed_modes_params << model_type, Dnu_p , epsilon_p , delta0l , 0 , 0 , DPl , alpha_g , q_star , 0;
+        } else{
+            global_mixed_modes_params << model_type, -1 , -1 , delta0l , 0 , 0 , DPl , alpha_g , q_star , 0;            
+        }
+        mixed_modes_name_params = " el / fl1_asymptotic / included? / spline_corr / ksi_pg / h1_h0 / Hl1p_all / Hl1_all / Wl1_all ";
+        for(L=0;L<freqs_l1.nu_m.size();L++){
+            k=0;
+            included=0;
+            //std::cout << "       freqs_l1.nu_m[" << L << "] = " << freqs_l1.nu_m[L] << std::endl;
+            while((fl1_all[k]- b[k] != freqs_l1.nu_m[L]) && k<fl1_all.size()-1){
+                //std::cout << "                   fl1_all[" << k << "] =" << fl1_all[k] - b[k] << "        b =" << b[k] << std::endl;
+                k=k+1;
+            }
+            if(fl1_all[k] - b[k] == freqs_l1.nu_m[L]){
+                included=1;
+            }
+            //std::cout << " final k:" << k <<  "    fl1_all[k] - b[k] = " << fl1_all[k] - b[k]  << "    " << freqs_l1.nu_m[L] << std::endl;
+            //std::cout << " --- " << std::endl;
+            if(included == 0){
+                mixed_modes_params.row(L) << 1, freqs_l1.nu_m[L], included, -1 , -1 , -1 , -1, -1 , -1;
+            } else{
+                mixed_modes_params.row(L) << 1, freqs_l1.nu_m[L], included, b[k], ksi_pg[k], h1_h0_ratio[k], Hl1p_all[k], Hl1_all[k], Wl1_all[k];
+            }   
+        }
+
+        // Writing on files all of the data 
         int c=0;
         std::string file_out="params.model";
         std::string modelname = __func__;
@@ -5655,8 +5683,10 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
            }
         }
         noise(Nharvey, 0) = noise_params(c); // White noise 
-        write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
-        
+        //write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
+        write_star_params_mixed(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, 
+                        file_out, modelname, name_params, mixed_modes_params, mixed_modes_name_params,
+                        global_mixed_modes_params,  global_mixed_modes_name_params, freqs_l1.nu_p, freqs_l1.nu_g);
         file_out="params.raw";
         std::ofstream outfile;
         outfile.open(file_out.c_str());
@@ -6580,6 +6610,97 @@ void write_star_params(const VectorXd& spec_params, const VectorXd& raw_params, 
     }
 }
 
+void write_star_params_mixed(const VectorXd& spec_params, const VectorXd& raw_params, const VectorXi& plength, const MatrixXd& mode_params, const MatrixXd& noise_params, 
+    const std::string file_out, const std::string modelname, const std::string name_params, const MatrixXd& mixed_mode_params, const std::string mixed_mode_name_params,
+    const VectorXd global_mixed_mode_params, const std::vector<std::string> global_mixed_mode_name_params, VectorXd nu_p, VectorXd nu_g){
+
+    VectorXi Nchars_spec(3), Nchars_params(17), Nchars_noise(3), precision_spec(3), precision_params(17), precision_noise(3);
+
+    std::ofstream outfile;
+    outfile.open(file_out.c_str());
+
+    if(outfile.is_open()){
+        // ---------------------
+        Nchars_spec << 20, 20 , 20;
+        precision_spec << 10, 10, 10;
+
+        //outfile << "ID= " << identifier << std::endl;
+        outfile << "Model = " << modelname << std::endl;
+        outfile << "plength = ";
+        for(int i=0;i<plength.size(); i++){
+            outfile << std::setw(8) << std::setprecision(0) << plength(i);
+        }
+        outfile << std::endl;
+        outfile << "raw_params = ";
+        for(int i=0;i<raw_params.size(); i++){
+            outfile << std::setw(20) << std::setprecision(8) << raw_params(i);
+        }
+        outfile << std::endl;
+        outfile << "# Spectrum parameters. Frequency range min/max (microHz) / Resolution (microHz)" << std::endl;
+        outfile << std::setw(Nchars_spec[0]) << std::setprecision(precision_spec[0]) << spec_params[0];
+        outfile << std::setw(Nchars_spec[1]) << std::setprecision(precision_spec[1]) << spec_params[1];
+        outfile << std::setw(Nchars_spec[2]) << std::setprecision(precision_spec[2]) << spec_params[2] << std::endl;
+
+
+        // ---------------------
+        outfile << "# Configuration of mode parameters. This file was generated by models.cpp (TAMCMC code version >1.61)" << std::endl;
+        Nchars_params    << 5, 20, 20, 20, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16 , 16; // Handle max 15 input here. The only constrain is to have deg/freq/H/W first
+        precision_params << 1, 10, 10, 10, 8, 8 , 8 , 8 , 8 , 8 , 8 , 8 , 8 , 8 , 8, 8 , 8;
+        outfile << name_params << std::endl; //"# Input mode parameters. degree / freq / H / W / splitting a1 / a2_0  / a2_1  / a2_2 / a3 / asymetry / inclination" << std::endl;   
+        
+        for(int i=0; i<mode_params.rows(); i++){
+            for(int j=0;j<mode_params.cols(); j++){
+                outfile << std::setw(Nchars_params[j]) << std::setprecision(precision_params[j]) << mode_params(i,j);
+            }
+            outfile << std::endl;
+        }
+
+        // ---------------------
+        Nchars_noise << 16, 16, 16;
+        precision_noise << 6, 6, 6;
+
+        outfile << "# Configuration of noise parameters. This file was generated by write_star_mode_params (write_star_params.cpp)" << std::endl;
+        outfile << "# Input mode parameters. H0 , tau_0 , p0 / H1, tau_1, p1 / N0. Set at -1 if not used. -2 means that the parameter is not even written on the file (because irrelevant)." << std::endl;
+
+        for(int i=0; i<noise_params.rows(); i++){
+            for(int j=0;j<noise_params.cols(); j++){
+                outfile << std::setw(Nchars_noise[j]) << std::setprecision(precision_noise[j]) << noise_params(i,j);
+            }
+            outfile << std::endl;
+        }
+
+        outfile << "# Mixed mode global parameters. This file was generated by models.cpp (TAMCMC code version >1.83.7)" << std::endl;
+        for(int i=0; i<global_mixed_mode_params.size();i++){
+            outfile << global_mixed_mode_name_params[i] << " = " << global_mixed_mode_params[i] << std::endl;
+        }
+        outfile << "nu_p = ";
+        for(int i=0; i<nu_p.size()-1;i++){
+            outfile << nu_p[i] << " , ";
+        }
+        outfile << nu_p[nu_p.size()-1] << std::endl;
+        outfile << "nu_g = ";
+        for(int i=0; i<nu_g.size()-1;i++){
+            outfile << nu_g[i] << " , ";
+        }
+        outfile << nu_g[nu_g.size()-1] << std::endl;
+        //
+        outfile << " # Mixed mode local parameters." << std::endl;
+        outfile << mixed_mode_name_params << std::endl; 
+        for(int i=0; i<mixed_mode_params.rows(); i++){
+            for(int j=0;j<mixed_mode_params.cols(); j++){
+                outfile << std::setw(Nchars_params[j]) << std::setprecision(precision_params[j]) << mixed_mode_params(i,j);
+            }
+            outfile << std::endl;
+        }
+        outfile.close();
+    }  
+    else {
+        std::cout << " Unable to open file " << file_out << std::endl;  
+        std::cout << " Check that the full path exists" << std::endl;
+        std::cout << " The program will exit now" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+}
 
 ///// ----------- FOR DEBUG ------------/////
 
