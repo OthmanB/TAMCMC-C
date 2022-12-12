@@ -5622,7 +5622,6 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
        -------------------------------------------------------
     */
     model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
-    std::cout << "[END] epsilon_p = " << epsilon_p << std::endl;
     if(outparams){
         // Prepare Mixed modes data arrays
         mixed_modes_params.resize(freqs_l1.nu_m.size(), 9);
