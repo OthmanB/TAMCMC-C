@@ -4989,8 +4989,8 @@ VectorXd model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4(const VectorXd& params,
         xfit=linspace(0, fl0_all.size()-1, fl0_all.size());
         rfit=linfit(xfit, fl0_all); // rfit[0] = Dnu
         const double Dnu_p=rfit[0];
-        const long double n0=floor(rfit[0]/Dnu_p);
-        const double epsilon_p = rfit[0]/Dnu_p -n0;
+        const int n0=floor(rfit[1]/Dnu_p);
+        const double epsilon_p = rfit[1]/Dnu_p -n0;
         //std::cout << " ---- 1st Order Fit ----" << std::endl;
         //std::cout << " Dnu_p =" << rfit[0] << std::endl;
         //std::cout << " epsilon_p + n0 =" << rfit[1]/rfit[0] << std::endl;
@@ -4998,8 +4998,8 @@ VectorXd model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4(const VectorXd& params,
         //rfit=polyfitXd(xfit, fl0_all, 2); // rfit[0] = A, rfit[1]=B, rfit[2]=C : alpha_p=2 C / Dnu_p   ; nmax = (1 - B/Dnu_p)/alpha_p ; epsilon = A/Dnu_p - alpha_p * nmax^2 / 2
         //const long double alpha_p=2 *rfit[2]/Dnu_p;
         //const long double nmax = (1-rfit[1]/Dnu_p)/alpha_p;
-        //const long double n0=floor(rfit[0]/Dnu_p - alpha_p * pow(nmax,2) / 2);
-        //const long double epsilon_p = rfit[0]/Dnu_p - alpha_p * pow(nmax,2) / 2 - n0; // remove n0
+        //const long double n0=floor(rfit[1]/Dnu_p - alpha_p * pow(nmax,2) / 2);
+        //const long double epsilon_p = rfit[1]/Dnu_p - alpha_p * pow(nmax,2) / 2 - n0; // remove n0
         /*
         std::cout << " A=rfit[0] =" << rfit[0] << std::endl;
         std::cout << " B=rfit[1] =" << rfit[1] << std::endl;
@@ -5412,8 +5412,8 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
     xfit=linspace(0, fl0_all.size()-1, fl0_all.size());
     rfit=linfit(xfit, fl0_all); // rfit[0] = Dnu
     const double Dnu_p=rfit[0];
-    const long double n0=floor(rfit[0]/Dnu_p);
-    const double epsilon_p = rfit[0]/Dnu_p -n0;
+    const int n0=floor(rfit[1]/Dnu_p);
+    const double epsilon_p = rfit[1]/Dnu_p -n0;
     if (model_type == 0){
         //std::cout << " ---- 1st Order Fit ----" << std::endl;
         //std::cout << " Dnu_p =" << rfit[0] << std::endl;
@@ -5422,8 +5422,8 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
         //rfit=polyfitXd(xfit, fl0_all, 2); // rfit[0] = A, rfit[1]=B, rfit[2]=C : alpha_p=2 C / Dnu_p   ; nmax = (1 - B/Dnu_p)/alpha_p ; epsilon = A/Dnu_p - alpha_p * nmax^2 / 2
         //const long double alpha_p=2 *rfit[2]/Dnu_p;
         //const long double nmax = (1-rfit[1]/Dnu_p)/alpha_p;
-        //const long double n0=floor(rfit[0]/Dnu_p - alpha_p * pow(nmax,2) / 2);
-        //const long double epsilon_p = rfit[0]/Dnu_p - alpha_p * pow(nmax,2) / 2 - n0; // remove n0
+        //const long double n0=floor(rfit[1]/Dnu_p - alpha_p * pow(nmax,2) / 2);
+        //const long double epsilon_p = rfit[1]/Dnu_p - alpha_p * pow(nmax,2) / 2 - n0; // remove n0
         /*
         std::cout << " A=rfit[0] =" << rfit[0] << std::endl;
         std::cout << " B=rfit[1] =" << rfit[1] << std::endl;
@@ -5472,24 +5472,14 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
     b.resize(fl1_all.size());
     b.setZero();
     
+    /*
     for (int i=0; i< fl1_all.size(); i++){
         b[i]=bias(fl1_all[i]);
         //std::cout << fl1_all[i] << "  ";
         fl1_all[i] = fl1_all[i] + b[i];
         //std::cout << bias(fl1_all[i]) << "  "  << fl1_all[i] << std::endl;
     }
-    
-    //exit(EXIT_SUCCESS);
-    //if (sigma_m_l1 != 0){
-    //   for (int en=0; en<fl1_all.size(); en++)
-    //    {
-    //         r = distrib_fl1m(gen_m);
-    //         while (r > sigma_limit){
-    //            r = distrib_fl1m(gen_m);
-    //        }
-    //        fl1_all[en]=fl1_all[en] + r;
-    //    }
-    //} 
+    */
      // Generating widths profiles for l=1 modes using the ksi function
     ksi_pg=ksi_fct2(fl1_all, freqs_l1.nu_p, freqs_l1.nu_g, freqs_l1.dnup, freqs_l1.dPg, q_star, "precise"); //"precise" // assume Dnu_p, DPl and q constant
     h1_h0_ratio=h_l_rgb(ksi_pg, Hfactor); // WARNING: Valid assummption only not too evolved RGB stars (below the bump, see Kevin mail 10 August 2019).
@@ -5632,7 +5622,7 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
        -------------------------------------------------------
     */
     model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
-
+    std::cout << "[END] epsilon_p = " << epsilon_p << std::endl;
     if(outparams){
         // Prepare Mixed modes data arrays
         mixed_modes_params.resize(freqs_l1.nu_m.size(), 9);
