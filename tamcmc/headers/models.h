@@ -4,6 +4,7 @@
 #pragma once
 //#include "noise_models.h"
 #include "build_lorentzian.h"
+#include <vector>
 //#include "interpol.h"
 //#include "function_rot.h"
 
