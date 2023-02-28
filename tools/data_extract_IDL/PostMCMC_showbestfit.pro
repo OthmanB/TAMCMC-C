@@ -16,15 +16,15 @@ pro showbestfit
 	p=max(where(b eq 47))
 	cpath=strtrim(b[0:p-1],2)
     ;dir_OS=cpath + '/../../' ; USE TO GET RESULTS DIRECTLY INTO THE PRODUCTS DIRECTORY INSIDE THE TAMCMC PROGRAM
-	dir_OS='/Users/obenomar/Work/trash/'
+	dir_OS='/Users/obenomar/Work/trash/novalue/aj_ln/'
     
-    dir_outputs=dir_OS + '/outputs_3900X/Powell_fit_shortrange/'
-    dir_inputs=dir_OS + '/inputs/Powell_fit_shortrange/'
-    dir_out=dir_OS + '/products_3900X/Powell_fit_shortrange/'
+    dir_outputs=dir_OS + '/outputs/'
+    dir_inputs=dir_OS + '/inputs/'
+    dir_out=dir_OS + '/products/'
 	modelname='model_MS_Global_aj_HarveyLike'
 	phase_list='A*'
 	index0_list=0;
-	last_index=-1;
+	;last_index=-1;
     ;modelname='model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3' ; MODEL FOR DEEPINVEST
     ;modelname='model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3'
 
@@ -95,7 +95,7 @@ pro showbestfit
 
     Nb_classes=100.;
     ;index0=70000. ; index of the first entry that is kept
-    keep_period=2. ; Keep 1 out of keep_period
+    keep_period=4. ; Keep 1 out of keep_period
  	
     dirs=file_search(dir_outputs + dir_filter) ; lists the directories
     Ndirs=n_elements(dirs)
@@ -287,12 +287,14 @@ function PostMCMC_showbestfit, root_outputs, root_inputs, dir_out, modelname, st
 		file_ps_echelle=dir_IDL_out + 'Echelle_Diagram.eps'  
 		nimp,name=file_ps_echelle,/paper,/eps
 			; The input here must be : freq, spectrum , noise model. NOTE: THE NOISE MODEL IS ALWAYS REMOVED INSIDE show_ech_diag_CPP
-			show_ech_diag_CPP, dir_IDL_out + '/best_fit_params_0.model', model_noise, ps=1, shifts=shifts, trunc_spec=trunc_spec
+			;show_ech_diag_CPP, dir_IDL_out + '/best_fit_params_0.model', model_noise, ps=1, shifts=shifts, trunc_spec=trunc_spec
+			show_ech_diag_CPP, dir_IDL_out + '/params_0.model', model_noise, ps=1, shifts=shifts, trunc_spec=trunc_spec
 		fimp
 		file_ps_echelle=dir_IDL_out + 'Echelle_Diagram_residuals.eps' 
 		nimp,name=file_ps_echelle,/paper,/eps
 			; The input here must be : freq, spectrum , noise model. NOTE: THE NOISE MODEL IS ALWAYS REMOVED INSIDE show_ech_diag_CPP
-			show_ech_diag_CPP, dir_IDL_out + '/best_fit_params_0.model', model_bestfit[0:2,*], ps=1, shifts=shifts, trunc_spec=trunc_spec
+			;show_ech_diag_CPP, dir_IDL_out + '/best_fit_params_0.model', model_bestfit[0:2,*], ps=1, shifts=shifts, trunc_spec=trunc_spec
+			show_ech_diag_CPP, dir_IDL_out + '/params_0.model', model_bestfit[0:2,*], ps=1, shifts=shifts, trunc_spec=trunc_spec
 		fimp
 		save, model_bestfit, model_noise, filename=dir_IDL_out + '/spectrum_models.sav'
 		;stop

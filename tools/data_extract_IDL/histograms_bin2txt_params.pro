@@ -14,10 +14,8 @@ function histograms_bin2txt_params, dir_out, Nb_classes, root_filename, dir_bin2
 	if n_elements(delete_txt_outputs) eq 0 then delete_txt_outputs=1 ; by default, erase outputs in ASCII format... keep only the .SAV
 
 	print, 'Converting the binary file into a serie of text file by using the built-in C++ function of TAMCMC...'
-	;spawn, '../bin2txt/./bin2txt_params.out ' + root_filename + ' 0 ' + dir_out + ' ' + strtrim(round(index0), 2) + $
-	;		' ' + strtrim(round(keep_period),2)  + ' 0' ; The last '1' means that we DO NOT replicate the constant in the ascii file
 	spawn, dir_bin2txt + './bin2txt ' + root_filename + ' 0 ' + dir_out + ' ' + strtrim(round(index0), 2) + $
-			' ' + strtrim(round(keep_period),2)  + ' 0' ; The last '1' means that we DO NOT replicate the constant in the ascii file
+			' -1 ' + strtrim(round(keep_period),2)  + ' 0' ; The -1 is for the last element (since v1.83.2). The last '1' means that we DO NOT replicate the constant in the ascii file
 
 	files=file_search(dir_out + "*.ASCII") ; list all created files
 
