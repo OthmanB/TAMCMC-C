@@ -5,6 +5,7 @@ project(cpptamcmc VERSION 1.7.0)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(Boost_USE_MULTITHREADED TRUE)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../bin)
 
 option(WITH_GSL "GSL Library" ON)
 option(WITH_OPENMP "OpenMP Library" ON)
@@ -78,7 +79,8 @@ set(HEADERS  #_COMMON
     external/ARMM/solver_mm.h
     external/ARMM/bump_DP.h
     external/ARMM/linfit.h
-    external/integrate/activity.h
+    external/Alm/Alm_cpp/activity.h
+	#external/integrate/activity.h
     external/spline/src/spline.h
     tools/quick_samples_stats.h
     )
@@ -117,7 +119,8 @@ set(SOURCES_MAIN  #_COMMON
     external/ARMM/solver_mm.cpp
     external/ARMM/bump_DP.cpp
     external/ARMM/linfit.cpp
-    external/integrate/activity.cpp
+    #external/integrate/activity.cpp
+	external/Alm/Alm_cpp/activity.cpp
     )
  
 #Define the sources for the bin2txt program
@@ -161,7 +164,8 @@ set(SOURCES_TOOLS_GETMODEL
 	tamcmc/sources/acoefs.cpp
 	external/ARMM/solver_mm.cpp
 	external/ARMM/bump_DP.cpp
-	external/integrate/activity.cpp
+	#external/integrate/activity.cpp
+	external/Alm/Alm_cpp/activity.cpp
         )
 
 #Define the sources for the testsolver_mm program

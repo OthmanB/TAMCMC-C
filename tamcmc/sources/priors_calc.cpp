@@ -186,7 +186,7 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 				}
 				i0=i0+Nfl[el];
 			}
-			if (thetas_terms[0] < thetas_terms[1]/2){
+			if (thetas_terms[0] < thetas_terms[1]/2 && thetas_terms[0] > 90 - thetas_terms[1]/2){ // Second condition added on 27 Dec
 				f=-INFINITY;
 				goto end;
 			}
@@ -698,11 +698,15 @@ return f;
 long double priors_ajfit(const VectorXd& params, const VectorXi& params_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch){
 	const double theta0=params[1];
 	const double delta=params[2];
+	const int filter=params[params_length.segment(0,4).sum()+4];
 	long double f=0;
 	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
-	// In the case of a 'gate' prior, We have to exclude theta0 < delta/2 by design because theta_min = theta0 - delta/2  must be in [0,Pi/2]	
-	if (theta0 < delta/2){
-		f=-INFINITY;
+
+	// In the case of a 'gate' prior (filter =0), We have to exclude theta0 < delta/2 by design because theta_min = theta0 - delta/2  must be in [0,Pi/2]	
+	if (filter == 0){
+		if (theta0 < delta/2 && theta0 > 90. - delta/2){ // Added the second condition on 27 Dec 2022
+			f=-INFINITY;
+		}
 	}
 	return f;
 }

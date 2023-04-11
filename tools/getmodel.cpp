@@ -9,6 +9,8 @@
 #include <iomanip>
 //#include <filesystem> // ONLY FOR C++17
 #include <cstdio>
+#include <ios>
+#include <fstream>
 #include <cstring>
 #include <cerrno>
 
@@ -26,6 +28,7 @@ void usage(int argc, char* argv[], int Nmaxlines);
 int check_retrocompatibility(VectorXi plength, std::string modelname);
 VectorXd adapt2new_MSGlobal(const VectorXi plength, const VectorXd params, const double c0);
 void mvfile(std::string file_in, std::string file_out);
+//inline bool exists_test (const std::string& name);
 
 Data Data_Nd2Data(Data_Nd dat);
 
@@ -181,16 +184,15 @@ int main(int argc, char* argv[]){
 					plength[plength.size()-1]=1; // adding c0
 					arr0=adapt2new_MSGlobal(plength, arr0, 20.); // last value is c0
 				}	
-				model0=model_list.call_model_explicit(&data_model, plength, arr0, modelname_switch);
+				model0=model_list.call_model_explicit(&data_model, plength, arr0, modelname_switch, true);
 				if(i==0){// Initialisation of the Matrix of parameters
 					models.resize(Nmaxlines, model0.size());
 				} 
 				models.row(i) = model0; 
 				std::getline(cfg_session, line0);
 				// Taking care of the params.model file that is created since version 1.61
-				//std::string file_out;
-				//file_out="params_" + int_to_str(i) + ".model";
-				mvfile("params.model", dirout + "/params_" + int_to_str(i) + ".model");
+				mvfile(cpath + "/params.model", dirout + "/params_" + int_to_str(i) + ".model");
+				std::cout << "    " << cpath + "/params.model" << " --> " << dirout + "/params_" + int_to_str(i) + ".model" << std::endl;
 				i=i+1;
 			}	
 			Nmodels=i;	
@@ -421,9 +423,29 @@ VectorXd adapt2new_MSGlobal(const VectorXi plength, const VectorXd params, const
   }
 }
 */
+// Another version that should work always
 void mvfile(std::string file_in, std::string file_out) {
   if(std::rename(file_in.c_str(), file_out.c_str()) < 0) {
     std::cout << strerror(errno) << '\n' << std::endl;
   }
 }
 
+/*
+void mvfile(std::string file_in, std::string file_out) {
+  std::ifstream in(file_in.c_str(), std::ios::in | std::ios::binary);
+  std::ofstream out(file_out.c_str(), std::ios::out | std::ios::binary);
+  out << in.rdbuf();
+  std::remove(file_in.c_str());
+}
+*/
+
+/*
+inline bool exists_test1 (const std::string& name) {
+    if (FILE *file = fopen(name.c_str(), "r")) {
+        fclose(file);
+        return true;
+    } else {
+        return false;
+    }   
+}
+*/

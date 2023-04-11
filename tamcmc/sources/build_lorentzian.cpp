@@ -9,7 +9,7 @@
 #include "build_lorentzian.h"
 #include <iostream>
 #include <iomanip>
-#include "../../external/integrate/activity.h"
+#include "../../external/Alm/Alm_cpp/activity.h"
 #include "acoefs.h"
 using Eigen::VectorXd;
 using Eigen::VectorXi;

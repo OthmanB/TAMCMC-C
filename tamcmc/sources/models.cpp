@@ -6,7 +6,7 @@
 #include "noise_models.h"
 #include "../../external/ARMM/solver_mm.h"
 #include "../../external/ARMM/bump_DP.h"
-#include "../../external/integrate/activity.h"
+#include "../../external/Alm/Alm_cpp/activity.h"
 #include "acoefs.h"
 #include "interpol.h"
 #include "linfit.h"
@@ -6446,7 +6446,16 @@ VectorXd model_ajfit(const VectorXd& params, const VectorXi& params_length, cons
     //
     const int lmax=3;
     const std::string data_type="mean_nu_l"; 
-    const std::string filter_type="gate";
+    std::string filter_type;
+    if (params[params_length.segment(0,4).sum()+4] == 0){
+        filter_type="gate";
+    }
+    if (params[params_length.segment(0,4).sum()+4] == 1){
+        filter_type="gauss";
+    }
+    if (params[params_length.segment(0,4).sum()+4] == 2){
+        filter_type="triangle";
+    }
     const bool do_a2=params[params_length.segment(0, 4).sum()];
     const bool do_a4=params[params_length.segment(0, 4).sum()+1];
     const bool do_a6=params[params_length.segment(0, 4).sum()+2];

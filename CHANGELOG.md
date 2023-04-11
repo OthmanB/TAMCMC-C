@@ -9,7 +9,15 @@
 	- 1.83.6: Update of tools/getmodel: Added data_type as optional parameter. If set to 'data_type=range', it expects the argv[1] to have 3 values only: xmin,xmax,resolution. And it generates the x-axis for the model within getmodel. This differs from 'data_type=file', which keeps the former behavior (expecting a data file as input for argv[1])
 	- 1.83.7: Update on model model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4 relying on the ARMM: with outparams = True, the created params.model file returns a new table (at the end of the file) that contains information specific to the mixed modes such as: l, fl_mixed, fl_p, fl_g, ksi_pg, h1_h0, a boolean saying if the mode was included in the model or just calculated and thrown.
 		Will need later on to implement that change in all ARMM-related models
-	
+	- 1.83.8:  Binary files are now generated into a bin directory. More importantly, Update of the Alm model to add the latest version of the Alm (V2) that includes the possibility of a triangular filter and some bug fixes in the way the integral is performed. This resulted in these changes:
+			  1. The Alm directory is now in external/Alm (instead of external/integral) and contains several testing elements in python.
+	          2. Update of the models.cpp path to activity.h according to (1)
+			  3. Update of the prior in priors_calc.cpp for the aj_fit and ajAlm model in order to (also) forbid theta > 90 - delta/2 when in 'gate' case
+			  4. The gauss filter now works (!)
+			  5. Changed io_ajfit.cpp in order to allow to have filter_type used as an argument to change the filter type between 'gate', 'gauss' and 'triangle'
+		THINGS WHICH WERE NOT CHANGED: ajAlm model (fitting directly the spectrum with the activity model) still have a hardcoded filter_type = 'gate'
+		      This will need to be changed eventually
+
 ### v1.83 New tool and improvments ###
 	- Adding a quick_samples_stats.cpp and quick_samples_stats.h in tools/ that contains functions to compute the mean, median and stddev from a VectorXd
 	- Using quick_samples_stats in bin2txt_params.cpp in order to show the median and the stddev while unpacking the binary files. This is for example useful in small models such as the Gaussian model
