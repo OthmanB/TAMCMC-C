@@ -1813,7 +1813,7 @@ VectorXd model_MS_Global_ajAlm_HarveyLike(const VectorXd& params, const VectorXi
      * Warning: Although we have Nfli terms, all these MUST have same size, provided that 0<i<lmax. 
      *          Size MUST be 0 otherwise (this check is not made in this function)    
      */
-
+    //outparams=true;
     const double step=x[1]-x[0]; // used by the function that optimise the lorentzian calculation
     const long double pi = M_PI; //3.141592653589793238462643383279502884L;  
  
@@ -1831,8 +1831,25 @@ VectorXd model_MS_Global_ajAlm_HarveyLike(const VectorXd& params, const VectorXi
     const int Nf=Nfl0+Nfl1+Nfl2+Nfl3;
     const double trunc_c=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc];
     const bool do_amp=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc+1];
-    const int decompose_Alm=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc+2]; // TO VERIFY THE SLOT
-    const std::string filter_type="gate";
+    const int decompose_Alm=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc+2]; // Kind of decomposition, if any
+    const int filter_code=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc+3]; // To decide what filter is used
+    std::string filter_type;
+    switch (filter_code)
+    {
+    case 0:
+        filter_type="gate";
+        break;
+    case 1:
+        filter_type="gauss";
+        break;
+    case 2:
+        filter_type="triangle";
+        break;    
+    default:
+        std::cerr << "Unreconized filter_code value (" << filter_code << std::endl;
+        std::exit(EXIT_FAILURE);
+        break;
+    }
 
     double inclination;
     
@@ -1926,7 +1943,7 @@ VectorXd model_MS_Global_ajAlm_HarveyLike(const VectorXd& params, const VectorXi
         //eta0=0; // FOR TEST PURPOSE ONLY
         switch (decompose_Alm){
             case -1:
-                model_final=optimum_lorentzian_calc_ajAlm(x, model_final, Hl1, fl1, a1, a3, a5, eta0, epsilon_nl, thetas, asym, Wl1, 1, ratios_l1, step, trunc_c);
+                model_final=optimum_lorentzian_calc_ajAlm(x, model_final, Hl1, fl1, a1, a3, a5, eta0, epsilon_nl, thetas, asym, Wl1, 1, ratios_l1, step, trunc_c, filter_type);
                 break;
             // do_a2, do_a4, do_a6
             case 0: // decompose_Alm = 0 ==> do_a2=true, do_a4=true, do_a6=true
@@ -1968,7 +1985,7 @@ VectorXd model_MS_Global_ajAlm_HarveyLike(const VectorXd& params, const VectorXi
         epsilon_nl=epsilon_terms[0] + epsilon_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11 
         switch (decompose_Alm){
             case -1:
-                model_final=optimum_lorentzian_calc_ajAlm(x, model_final, Hl2, fl2, a1, a3, a5, eta0, epsilon_nl, thetas, asym, Wl2, 2, ratios_l2, step, trunc_c);
+                model_final=optimum_lorentzian_calc_ajAlm(x, model_final, Hl2, fl2, a1, a3, a5, eta0, epsilon_nl, thetas, asym, Wl2, 2, ratios_l2, step, trunc_c, filter_type);
                 break;
             // do_a2, do_a4, do_a6
             case 0: // decompose_Alm = 0 ==> do_a2=true, do_a4=true, do_a6=true
@@ -2009,7 +2026,7 @@ VectorXd model_MS_Global_ajAlm_HarveyLike(const VectorXd& params, const VectorXi
         epsilon_nl=epsilon_terms[0] + epsilon_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11  
         switch (decompose_Alm){
             case -1:
-                model_final=optimum_lorentzian_calc_ajAlm(x, model_final, Hl3, fl3, a1, a3, a5, eta0, epsilon_nl, thetas, asym, Wl3, 3, ratios_l3, step, trunc_c);
+                model_final=optimum_lorentzian_calc_ajAlm(x, model_final, Hl3, fl3, a1, a3, a5, eta0, epsilon_nl, thetas, asym, Wl3, 3, ratios_l3, step, trunc_c, filter_type);
                 break;
             // do_a2, do_a4, do_a6
             case 0: // decompose_Alm = 0 ==> do_a2=true, do_a4=true, do_a6=true

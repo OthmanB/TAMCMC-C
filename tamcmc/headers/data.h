@@ -93,6 +93,7 @@ struct MCMC_files{
 	std::vector<std::string> common_names;
 	std::vector<std::string> common_names_priors;
 	MatrixXd modes_common;
+	//std::string filter_type; // For Alm models only
 };
 
 struct aj_files{
