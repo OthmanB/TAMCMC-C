@@ -50,9 +50,9 @@ VectorXd ksi_fct1(const VectorXd& nu, const long double nu_p, const long double 
 */
 VectorXd ksi_fct2(const VectorXd& nu, const VectorXd& nu_p, const VectorXd& nu_g, const VectorXd& Dnu_p, const VectorXd& DPl, const long double q, const std::string norm_method="fast");
 
-VectorXd gamma_l_fct2(const VectorXd& ksi_pg, const VectorXd& nu_m, const VectorXd& nu_p_l0, const VectorXd& width_l0, const VectorXd& hl_h0_ratio, const int el);
+VectorXd gamma_l_fct2(const VectorXd& ksi_pg, const VectorXd& nu_m, const VectorXd& nu_p_l0, const VectorXd& width_l0, const VectorXd& hl_h0_ratio, const int el, const long double factor=1.0);
 
-VectorXd h_l_rgb(const VectorXd& ksi_pg);
+VectorXd h_l_rgb(const VectorXd& ksi_pg,  const long double factor=1.0);
 
 // Put here the code for reading template files that contain heights and width profiles
 template_file read_templatefile(const std::string file, const bool ignore_errors=true);

@@ -34,6 +34,7 @@ long double likelihood_chi_square(const VectorXd& y, const VectorXd& model, cons
 // Usual chi square definition
 	//std::cout << "sigma.array()=" << sigma.array() << std::endl;
 	f=-((y - model).array().square() * sigma.array().square().cwiseInverse()).sum();
+	f=f/2;
 	//std::cout << "f=" << f << std::endl;
 return f;
 }

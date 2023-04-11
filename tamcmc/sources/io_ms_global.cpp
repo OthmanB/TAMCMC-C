@@ -16,6 +16,7 @@
 #include "io_ms_global.h"
 #include "io_models.h"
 #include "function_rot.h"
+#include "interpol.h"
 
 using Eigen::VectorXd;
 using Eigen::VectorXi;
@@ -35,7 +36,7 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 	MCMC_files iMS_global;
 
 	iMS_global.numax=-9999; // Initialize the optional variable numax
-	
+	iMS_global.err_numax=-9999; // Initialize the optional variable err_numax
     cpt=0;
     i=0;
     out=0;
@@ -65,6 +66,12 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 			word=strsplit(line0, " ");
 			iMS_global.numax=str_to_dbl(word[1]);
 			if(verbose == 1) {std::cout << "           numax =" << iMS_global.numax << std::endl;}		
+			if (word.size() == 3){
+				iMS_global.err_numax=str_to_dbl(word[2]);
+				if(verbose == 1){
+					std::cout << "           err_numax =" << iMS_global.err_numax << std::endl;
+				}	
+			}
 		}
 		if (char0 == "!" && char1 != "!" && char1 != "n"){
 			word=strsplit(line0, " ");
@@ -149,9 +156,10 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
     
 	// -------------------------------------
 	
+/*
 	i=0;
 	cpt=0;
-	iMS_global.hyper_priors.resize(10);
+	iMS_global.hyper_priors.resize(50);
 	if(verbose == 1) {std::cout << " - Hyper priors:" << std::endl;}
 	while ((out < 4) && !cfg_session.eof()){ // the priors, until we reach the next # symbol
 			std::getline(cfg_session, line0);
@@ -169,7 +177,62 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 	  if(verbose == 1) {
 		std::cout << iMS_global.hyper_priors.transpose() << std::endl;
 	  }
-
+*/
+// Modified on 18 Aug 2022 to handle an array of values for the hyper priors
+// This was specifically redesigned to handle spline fitting with hyper parameters
+// The assumed structure is: 
+//   value for x-axis, prior type, prior_parameters
+	i=0;
+	cpt=0;
+	if(verbose == 1) {std::cout << " - Hyper priors:" << std::endl;}
+	while ((out < 4) && !cfg_session.eof()){ // the priors, until we reach the next # symbol
+			std::getline(cfg_session, line0);
+			line0=strtrim(line0);
+			char0=strtrim(line0.substr(0, 1));
+			if (char0 != "#"){
+				word=strsplit(line0, " \t");
+				if (cpt == 0){ // We need to detect the number of columns of the hyper_priors
+					if(word.size() == 1){ // Case where no prior information is actually. It is more a compatibility mode with old code.				
+						iMS_global.hyper_priors.resize(50,1);
+					}
+					if(word.size() ==2){
+						std::cout << "  Error in the definition of the hyper priors" << std::endl;
+						std::cout << "  only two columns detected while it should be either one column" << std::endl;
+						std::cout << "  or at least columns (for a Fix hyper prior)" << std::endl;
+						std::cout << "  Check your model file" << std::endl;
+						exit(EXIT_FAILURE);
+					}
+					if(word.size() >2){ // We have at least 3 elements: The hyper_prior value in the x-axis, prior_type and then a hyper_prior parameter
+						iMS_global.hyper_priors.resize(50,word.size()-1);
+					}
+				}
+				// Gather all numerical values in hyper_priors
+//				std::cout << "Gather all numerical values in hyper_priors" << std::endl;
+				iMS_global.hyper_priors(i,0)=str_to_dbl(word[0]);
+				for(int j=2; j<word.size();j++){
+					iMS_global.hyper_priors(i,j-1)=str_to_dbl(word[j]);
+				}
+//				std::cout << "Gather all the prior types on hyper_priors_type" << std::endl;
+				// Gather all the prior types on hyper_priors_type
+				if (word.size()>1){
+					iMS_global.hyper_priors_names.push_back(word[1]);
+				}
+				//iMS_global.hyper_priors.row(i)=str_to_Xdarr(line0, " \t");
+				cpt=cpt+1;
+			} else{
+				 out=out+1;
+			}
+			i=i+1;
+	  }
+//	  std::cout << " Conservative resize" << std::endl;
+	  if (word.size() != 1){
+		iMS_global.hyper_priors.conservativeResize(cpt, word.size()-1);
+	  } else{
+		iMS_global.hyper_priors.conservativeResize(cpt, 1);
+	  }
+	  if(verbose == 1) {
+		std::cout << iMS_global.hyper_priors.transpose() << std::endl;
+	  }
 	i=0;
 	cpt=0;
 	iMS_global.eigen_params.resize(200,6);
@@ -179,7 +242,7 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 			line0=strtrim(line0);
 			char0=strtrim(line0.substr(0, 1));
 			if (char0 != "#"){
-				word=strsplit(line0, " \t");
+				//word=strsplit(line0, " \t");
 				iMS_global.eigen_params.row(i)=str_to_Xdarr(line0, " \t");
 				cpt=cpt+1;
 		 	} else{
@@ -301,7 +364,8 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
    		std::cout << "The program will exit now" << std::endl;
    		exit(EXIT_FAILURE);
    }
-      
+    
+   //exit(EXIT_SUCCESS);  
    return iMS_global;
 }
 
@@ -316,22 +380,23 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 	const double M_sun=1.98855e30; //in kg
 	const double rho_sun=M_sun*1e3/(4*pi*std::pow(R_sun*1e5,3)/3); //in g.cm-3
 	const int Nmax_prior_params=4; // The maximum number of parameters for the priors. Should be 4 in all my code
-
 	const double Hmin=1, Hmax=10000; // Define the default lower and upper boundary for the Jeffreys priors applied to heights
-
+	const std::vector<double> Vl{1, 1.5, 0.53, 0.08};
 	double rho=pow(inputs_MS_global.Dnu/Dnu_sun,2.) * rho_sun;
 	double Dnl=0.75, trunc_c=-1;
 	double numax=inputs_MS_global.numax;
+	double err_numax=inputs_MS_global.err_numax;
 	
 
 	// All Default booleans
 	bool do_a11_eq_a12=1, do_avg_a1n=1, do_amp=0;
 	bool bool_a1sini=0, bool_a1cosi=0;
-	int lmax, en, ind, Ntot, p0, cpt, a2_switch, a2_param_count=0;
+	int decompose_Alm=-1; // For models that involve Alm computation
+	int lmax, en, ind, Ntot, p0, cpt, aj_switch, a2_param_count=0;
 	uint8_t do_width_Appourchaux=0; // We need more than a boolean here, but no need to use a 64 bit signed int
 	double tol=1e-2, tmp;
 	VectorXi pos_el, pos_relax0, els_eigen, Nf_el(4), plength;
-	VectorXd ratios_l, tmpXd, extra_priors;
+	VectorXd ratios_l, tmpXd, extra_priors, aj_param_count(6);
 	std::vector<int> pos_relax;
 	std::vector<double> f_inputs, h_inputs, w_inputs, f_priors_min, f_priors_max, f_el;;
 	std::vector<bool> f_relax, h_relax, w_relax; 
@@ -345,13 +410,17 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 	IO_models io_calls; // function dictionary that is used to initialise, create and add parameters to the Input_Data structure
 
 	// -------------- Set Extra_priors ----------------	
-	extra_priors.resize(6);
+	extra_priors.resize(10);
 	extra_priors[0]=1; // By default, we apply a smoothness condition
 	extra_priors[1]=2.; // By default, the smoothness coeficient is 2 microHz
-	extra_priors[2]=0.2; // By default a3/a1<=0.2
-	extra_priors[3]=0; // Switch to control whether a prior imposes Sum(Hnlm)_{m=-l, m=+l}=1. Default: 0 (none). >0 values are model_dependent
-	extra_priors[4]=0.4; // Handle a default limit on a2/a1... default is 0.2
-	extra_priors[5]=-1;  // Specify rules to apply to specific models (e.g. models a1a2a3 must have extra_priors[5]=1)
+	extra_priors[2]=1e6; // aj/a1 No limit, j=1
+	extra_priors[3]=0.50; // aj/a1 No limit, j=2
+	extra_priors[4]=0.20; // aj/a1 No limit, j=3
+	extra_priors[5]=0.15; // aj/a1 No limit, j=4
+	extra_priors[6]=0.05; // aj/a1 No limit, j=5
+	extra_priors[7]=0.05; // aj/a1 No limit, j=6
+	extra_priors[8]=0; // Switch to control whether a prior imposes Sum(Hnlm)_{m=-l, m=+l}=1. Default: 0 (none). >0 values are model_dependent
+	extra_priors[9]=-1;  // Specify rules to apply to specific models (e.g. models a1a2a3 must have extra_priors[5]=1)
 	// ------------------------------------------------
 
 	// Flatening and ordering of all the inputs/relax variables
@@ -361,7 +430,8 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
     // --- Look for common instruction That must be run before the setup ---------
 	all_in.model_fullname=" "; // Default is an empty string
 	//all_in.prior_fullname="prior_MS_Global"; // Default set of prior
-	a2_switch=0;
+	aj_switch=0;
+	aj_param_count.setZero();
     for(int i=0; i<inputs_MS_global.common_names.size(); i++){
         if(inputs_MS_global.common_names[i] == "model_fullname" ){ // This defines if we assume S11=S22 or not (the executed model will be different)
         	all_in.model_fullname=inputs_MS_global.common_names_priors[i];
@@ -373,20 +443,20 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
             if(all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike"){
             	do_a11_eq_a12=1;
             	do_avg_a1n=1;
-            	extra_priors[5]=0; // used in priors_calc.cpp 
+            	extra_priors[9]=0; // used in priors_calc.cpp 
             }
             if(all_in.model_fullname == "model_MS_Global_a1etaa3_Harvey1985"){
             	do_a11_eq_a12=1;
             	do_avg_a1n=1;        
-            	extra_priors[5]=0; // used in priors_calc.cpp     	
+            	extra_priors[9]=0; // used in priors_calc.cpp     	
             }
             if(all_in.model_fullname == "model_MS_Global_a1a2a3_HarveyLike"){
             	do_a11_eq_a12=1;
             	do_avg_a1n=1;
-            	a2_switch=1; 
-            	extra_priors[5]=1; // used in priors_calc.cpp           	
+            	aj_switch=1; 
+            	extra_priors[9]=1; // used in priors_calc.cpp           	
             }
-            if(all_in.model_fullname == "model_MS_Global_a1acta3_HarveyLike"){ // OBSELETE
+/*            if(all_in.model_fullname == "model_MS_Global_a1acta3_HarveyLike"){ // OBSELETE
             	do_a11_eq_a12=1;
             	do_avg_a1n=1;
             }
@@ -394,52 +464,59 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
          		do_a11_eq_a12=1;
            		do_avg_a1n=1;          	
            	}
+*/
            	if(all_in.model_fullname == "model_MS_Global_a1l_etaa3_HarveyLike"){
            		//Previously corresponding to average_a1nl     bool    0    1 
            	    do_a11_eq_a12=0;
            		do_avg_a1n=1;
-           		extra_priors[5]=2; // used in priors_calc.cpp 
+           		extra_priors[9]=2; // used in priors_calc.cpp 
            	}
         	if(all_in.model_fullname == "model_MS_Global_a1n_etaa3_HarveyLike"){
            		do_a11_eq_a12=1;
         		do_avg_a1n=0;
-        		extra_priors[5]=3; // used in priors_calc.cpp 
+        		extra_priors[9]=3; // used in priors_calc.cpp 
             }
         	if(all_in.model_fullname == "model_MS_Global_a1nl_etaa3_HarveyLike"){
         		//Previously corresponding to average_a1nl     bool    0    0
         		do_a11_eq_a12=0;            		
         		do_avg_a1n=0;
-        		extra_priors[5]=4; // used in priors_calc.cpp 
+        		extra_priors[9]=4; // used in priors_calc.cpp 
             }
         	if(all_in.model_fullname == "model_MS_Global_a1n_a2a3_HarveyLike"){
         		//Previously corresponding to average_a1nl     bool    0    0
         		do_a11_eq_a12=1;            		
         		do_avg_a1n=0;
-        		a2_switch=2;
-        		extra_priors[5]=5; // used in priors_calc.cpp 
+        		aj_switch=2;
+        		extra_priors[9]=5; // used in priors_calc.cpp 
             }
         	if(all_in.model_fullname == "model_MS_Global_a1l_a2a3_HarveyLike"){
         		//Previously corresponding to average_a1nl     bool    0    0
         		do_a11_eq_a12=0;            		
         		do_avg_a1n=1;
-        		a2_switch=3;
-        		extra_priors[5]=6; // used in priors_calc.cpp 
+        		aj_switch=3;
+        		extra_priors[9]=6; // used in priors_calc.cpp 
             }
         	if(all_in.model_fullname == "model_MS_Global_a1nl_a2a3_HarveyLike"){
         		//Previously corresponding to average_a1nl     bool    0    0
         		do_a11_eq_a12=0;            		
         		do_avg_a1n=0;
-        		a2_switch=4;
-        		extra_priors[5]=7; // used in priors_calc.cpp 
+        		aj_switch=4;
+        		extra_priors[9]=7; // used in priors_calc.cpp 
             }
-        	if(all_in.model_fullname == "model_MS_Global_a1etaAlma3_HarveyLike"){
+        	if(all_in.model_fullname == "model_MS_Global_ajAlm_HarveyLike"){
         		//Previously corresponding to average_a1nl     bool    0    0
         		do_a11_eq_a12=1;            		
         		do_avg_a1n=1;
-        		a2_switch=5;
-        		extra_priors[5]=8; // used in priors_calc.cpp 
+        		aj_switch=5;  //Case for 2x(a1,a3,a5, epsilon) + theta0 + delta + eta0 switch + 1 asymetry
+        		extra_priors[9]=8; // used in priors_calc.cpp 
             }
-
+       	if(all_in.model_fullname == "model_MS_Global_aj_HarveyLike"){
+        		//Previously corresponding to average_a1nl     bool    0    0
+        		do_a11_eq_a12=1;            		
+        		do_avg_a1n=1;
+        		aj_switch=6; // Case for 2x(a1,a2,a3,a4,a5,a6) + eta0 switch + 1 asymetry
+        		extra_priors[9]=9; // used in priors_calc.cpp 
+            }
             if(all_in.model_fullname == "model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1" || all_in.model_fullname == "model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2"){
             	do_a11_eq_a12=1;
             	do_avg_a1n=1;
@@ -590,6 +667,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 			io_calls.fill_param(&width_in, "Width_l0", "Fix", h_inputs[i], tmpXd, i, 0);			
 		}
 	}
+
 	
 	// --- Default setup for frequencies ---
 	for(int i=0; i<f_inputs.size(); i++){
@@ -600,40 +678,34 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 			io_calls.fill_param(&freq_in, "Frequency_l", "Fix", f_inputs[i], tmpXd, i, 0);			
 		}
 	}
-
 	// ----------- Calculate numax -----------
-	// Flated the output vector
-	tmpXd.resize(Nf_el.sum());
-	cpt=0;
+	// Flaten the output vector
 	if(numax <=0){
+		tmpXd.resize(Nf_el.sum());
 		std::cout << "numax not provided. Input numax may be required by some models... Calculating numax..." << std::endl;
-		for(int el=0; el<=3; el++){
-			if( Nf_el[el] != 0){
-				if(el == 0){
-					//std::cout << "l=0" << std::endl;
-					tmpXd.segment(cpt , Nf_el[el])=height_in.inputs; 
-				}
-				if(el == 1){
-					//std::cout << "l=1" << std::endl;
-					tmpXd.segment(cpt , Nf_el[el])=height_in.inputs*1.5; ; //using default visibilities as weights 
-				}
-				if(el == 2){
-					//std::cout << "l=2" << std::endl;
-					tmpXd.segment(cpt , Nf_el[el])=height_in.inputs*0.53; //using default visibilities as weights
-				}
-				if(el == 3){
-					//std::cout << "l=3" << std::endl;
-					tmpXd.segment(cpt , Nf_el[el])=height_in.inputs*0.08; //using default visibilities as weights
-				}
-			cpt=cpt+Nf_el[el];
-			//std::cout << "cpt[" << el <<	 "]" << cpt << std::endl;
+		//std::cout << height_in.inputs << std::endl;
+		tmpXd.segment(0 , Nf_el[0])=height_in.inputs;
+		cpt=Nf_el[0];
+		std::cout << freq_in.inputs << std::endl;
+		for(int el=1; el<=3; el++){
+			for(int n=0; n<Nf_el[el]; n++){
+				tmpXd[cpt+n]=std::abs(lin_interpol(freq_in.inputs.segment(0, Nf_el[0]), height_in.inputs, freq_in.inputs[Nf_el[0]+n]))*Vl[el]; // Modified on 1 Mar 2022 
+				//std::cout << "l=" << el << "  n=" << n << std::endl;
 			}
+			cpt=cpt+Nf_el[el];
+			//std::cout << "cpt[" << el <<	 "]=" << cpt << std::endl;
 		}
-		//std::cout << "getting in getnumax..." << std::endl;
+		std::cout << "getting in getnumax..." << std::endl;
 		numax=getnumax(freq_in.inputs , tmpXd); // We had to flatten the Height vector and put visibilities
 		std::cout << "     numax: " << numax << std::endl;
 	} else {
 		std::cout << " Using provided numax: " << numax << std::endl;
+		if (err_numax <= 0){
+			err_numax=0.05*numax;
+			std::cout << " err_numax not provided. It will be set to 5% of numax: " << std::endl;
+		} else{
+			std::cout << " Using provided err_numax: " << err_numax << std::endl;
+		}
 	}
 	std::cout << " ------------------" << std::endl;
 
@@ -642,7 +714,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 
 	// ----- Switch between the models that handle averaging over n,l or both -----
    if(do_a11_eq_a12 == 1 && do_avg_a1n == 1){
-   		switch (a2_switch){
+   		switch (aj_switch){
         	case 0:
         		io_calls.initialise_param(&Snlm_in, 6, Nmax_prior_params, -1, -1);
     			break;
@@ -659,17 +731,28 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
     			io_calls.initialise_param(&Snlm_in, 6 + Nf_el[0], Nmax_prior_params, -1, -1); // Add Nmax a2 coefficients in the a1nl_a2a3 models
    				break;
     		case 5:
-    			io_calls.initialise_param(&Snlm_in, 6 + 3 + 2, Nmax_prior_params, -1, -1); // Add 3 epsilon_nl coefficients (a2_AR) and 2 theta parameters for the a1etaAlma3 models
+    			io_calls.initialise_param(&Snlm_in, 8 + 2 + 1 + 1, Nmax_prior_params, -1, -1); // Add 2x(a1,a3,a5,epsilon) + theta0 + delta + 1 val (bool 0/1) for eta0 + 1 asymetry
+				tmpXd.resize(4);
+    			tmpXd << -9999, -9999, -9999, -9999; 	
+    			io_calls.fill_param(&Snlm_in, "eta0_switch", "Fix", 1, tmpXd, 10, 0); // set the defaut eta0 boolean to 1 (eta0 calculation REQUIRED BY DEFAULT)
     			break;
+    		case 6:
+    			io_calls.initialise_param(&Snlm_in, 12+1+1, Nmax_prior_params, -1, -1); // Add 2x(a1,a2,a3,a4,a5,a6) +  1 val (bool 0/1) for eta0 + 1 asymetry
+    			tmpXd.resize(4);
+    			tmpXd << -9999, -9999, -9999, -9999; 	
+    			io_calls.fill_param(&Snlm_in, "eta0_switch", "Fix", 0, tmpXd, 12, 0); // set the defaut eta0 boolean to 0 (Not eta0 calculation)
+    			break;		
    			default:
-   				std::cout << "  Issues on the a2_switch configuration inside io_ms_global" << std::endl;
-   				std::cout << "  a2_switch =" << a2_switch << " Has no preset rules" << std::endl;
+   				std::cout << "  Issues on the aj_switch configuration inside io_ms_global" << std::endl;
+   				std::cout << "  aj_switch =" << aj_switch << " Has no preset rules" << std::endl;
    				std::cout << "  Debug required. The program will exit now" << std::endl;
    				exit(EXIT_SUCCESS);
     		}
     }  
+    //io_calls.show_param(Snlm_in, 0);
+
     if(do_a11_eq_a12 == 0 && do_avg_a1n == 1){
-   		switch (a2_switch){
+   		switch (aj_switch){
         	case 0:
         		io_calls.initialise_param(&Snlm_in, 7, Nmax_prior_params, -1, -1);
     			break;
@@ -686,8 +769,8 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
     			io_calls.initialise_param(&Snlm_in, 7 + Nf_el[0], Nmax_prior_params, -1, -1); // Add Nmax a2 coefficients in the a1nl_a2a3 models
    				break;
    			default:
-   				std::cout << "  Issues on the a2_switch configuration inside io_ms_global" << std::endl;
-   				std::cout << "  a2_switch =" << a2_switch << " Has no preset rules" << std::endl;
+   				std::cout << "  Issues on the aj_switch configuration inside io_ms_global" << std::endl;
+   				std::cout << "  aj_switch =" << aj_switch << " Has no preset rules in the case of do_a11_eq_a12 == 0 && do_avg_a1n == 1" << std::endl;
    				std::cout << "  Debug required. The program will exit now" << std::endl;
    				exit(EXIT_SUCCESS);
     		}
@@ -695,7 +778,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
     }
     if(do_a11_eq_a12 == 1 && do_avg_a1n == 0){
 		if (Nf_el[1] == Nf_el[2]){
-   			switch (a2_switch){
+   			switch (aj_switch){
         		case 0:
         			io_calls.initialise_param(&Snlm_in, 6 + Nf_el[1], Nmax_prior_params, -1, -1);
     				break;
@@ -712,8 +795,8 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
     				io_calls.initialise_param(&Snlm_in, 6 + Nf_el[1] + Nf_el[0], Nmax_prior_params, -1, -1); // Add Nmax a2 coefficients in the a1nl_a2a3 models
    					break;
    				default:
-   					std::cout << "  Issues on the a2_switch configuration inside io_ms_global" << std::endl;
-   					std::cout << "  a2_switch =" << a2_switch << " Has no preset rules" << std::endl;
+   					std::cout << "  Issues on the aj_switch configuration inside io_ms_global" << std::endl;
+   					std::cout << "  aj_switch =" << aj_switch << " Has no preset rules in the case of do_a11_eq_a12 == 1 && do_avg_a1n == 0" << std::endl;
    					std::cout << "  Debug required. The program will exit now" << std::endl;
    					exit(EXIT_SUCCESS);
     			}
@@ -727,7 +810,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 		}
     }
     if(do_a11_eq_a12 == 0 && do_avg_a1n == 0){
-   		switch (a2_switch){
+   		switch (aj_switch){
        		case 0:
        			io_calls.initialise_param(&Snlm_in, 6 + Nf_el[1]+Nf_el[2], Nmax_prior_params, -1, -1);
     			break;
@@ -744,14 +827,17 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
     			io_calls.initialise_param(&Snlm_in, 6 + Nf_el[1]+Nf_el[2] + Nf_el[0], Nmax_prior_params, -1, -1); // Add Nmax a2 coefficients in the a1nl_a2a3 models
    				break;
    			default:
-   				std::cout << "  Issues on the a2_switch configuration inside io_ms_global" << std::endl;
-   				std::cout << "  a2_switch =" << a2_switch << " Has no preset rules" << std::endl;
+   				std::cout << "  Issues on the aj_switch configuration inside io_ms_global" << std::endl;
+   				std::cout << "  aj_switch =" << aj_switch << " Has no preset rules in the case of do_a11_eq_a12 == 0 && do_avg_a1n == 0" << std::endl;
    				std::cout << "  Debug required. The program will exit now" << std::endl;
    				exit(EXIT_SUCCESS);
     		} 
     }
-   	
-	for(int i=0; i<inputs_MS_global.common_names.size(); i++){
+ 	
+	for(int i=0; i<inputs_MS_global.common_names.size(); i++){	
+		//std::cout << "5 - " << i << std::endl;
+		//std::cout << "inputs_MS_global.common_names[i] = " << inputs_MS_global.common_names[i] << std::endl;
+
 		// --- Common parameters than can be run during setup ---
 		if(inputs_MS_global.common_names[i] == "freq_smoothness" || inputs_MS_global.common_names[i] == "Freq_smoothness"){
 			if(inputs_MS_global.common_names_priors[i] != "bool"){
@@ -866,53 +952,28 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
         	}
 		}
 		if(inputs_MS_global.common_names[i] == "asphericity_eta"|| inputs_MS_global.common_names[i] == "Asphericity_eta"){
-			if (a2_switch == 0){
-				Snlm_in.inputs_names[1]="Asphericity_eta";
-				if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){ // Case where the centrifugal force is added but FIXED.
-					Snlm_in.priors_names[1]="Fix"; //In all cases the centrifugal force is fixed
-					Snlm_in.relax[1]=0;
-					if(inputs_MS_global.modes_common(i,0) == 1){
-  						if (Snlm_in.inputs[0] != -9999){ 
-							//eta=(4./3.)*!pi*Dnl*(a1_init*1d-6)^2/(rho*G)
-							Snlm_in.inputs[1]=(4./3.)*pi*Dnl*pow(Snlm_in.inputs[0]*1e-6,2.)/(rho*G);
-							std::cout << " -------------" << std::endl;
-							std::cout << "Asphericity_eta given with Fix_Auto ==> Setting the asphericity to the centrifugal force" << std::endl;
-							std::cout << "      eta=" << Snlm_in.inputs[1] << std::endl;
-							std::cout << " -------------" << std::endl;
-						} else{
-							std::cout << "Warning: the keyword 'asphericity_eta' must appear after the keyword splitting_a1" << std::endl;
-							std::cout << "         This because the splitting_a1 is used to define the initial value of asphericity" << std::endl;
-							std::cout << "         Edit the .MCMC file accordingly" << std::endl;
-							std::cout << "The program will exit now" << std::endl;
-							exit(EXIT_FAILURE);
-						}
-					} else{
-						Snlm_in.inputs[1]=0;
-					}
-				} else{ // Case where the centrifugal force is user-defined: Could be free or fixed
-					p0=1;
-					io_calls.fill_param(&Snlm_in, "Asphericity_eta", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
-				}
-			} else{
-				std::cout << " asphericity_eta global parameter found in .model file but the chosen model is incompatible with this (a2_switch > 0). " << std::endl;
-				std::cout << " If you use a model that fits a2 coefficients, please use the 'a2' parameter and set to Auto or Fix.  Or for models a1l_a2a3 or a1a2a3 use " << std::endl;
-				std::cout << " the 'a2_0', 'a2_1' and 'a2_2' parameters... a2_0:constant term, a2_1: Linear term, a2_3: Quadratic term" << std::endl;
-				exit(EXIT_FAILURE);
-			}
+			std::cout << " Warning: Update on the code (07/12/2021) does not allow to use Asphericity_eta as a keyword in io_ms_global models" << std::endl;
+			std::cout << "          The calculation of eta is now made systematically within the models and no longer requires the eta parameter" << std::endl;
+			std::cout << "          Consequently, this parameter will be ignored" << std::endl;
+			Snlm_in.inputs_names[1]="Empty";
+			Snlm_in.priors_names[1]="Fix";
+			Snlm_in.inputs_names[1]="Asphericity_eta";
+			Snlm_in.relax[1]=0;
+			Snlm_in.inputs[1]=0;
 		}
-		if(inputs_MS_global.common_names[i] == "a2" && a2_switch >=2){ // a2 is a valid keyword only for a1n_a2a3, a1l_a2a3, a1nl_a2a3 models
+		if(inputs_MS_global.common_names[i] == "a2" && aj_switch >=2){ // a2 is a valid keyword only for a1n_a2a3, a1l_a2a3, a1nl_a2a3 models
 			std::cout << "io_ms_global.cpp : NEED TO BE UPDATED TO HANDLES MODELS WITH n or l dependence of a2" << std::endl;
 			std::cout << "The program will exit now" << std::endl;
 			exit(EXIT_SUCCESS);
 		}		
-		if(inputs_MS_global.common_names[i] == "a2" && a2_switch <2){ // a2 is a valid keyword only for a1n_a2a3, a1l_a2a3, a1nl_a2a3 models
+		if(inputs_MS_global.common_names[i] == "a2" && aj_switch <2){ // a2 is a valid keyword only for a1n_a2a3, a1l_a2a3, a1nl_a2a3 models
 			std::cout << "   a2 keyword is not valid for fitting a2 coefficients in case of a1n_a2a3, a1l_a2a3, a1nl_a2a3 models " << std::endl;
 			std::cout << "   models a1l_a2a3 or a1a2a3 use the 'a2_0', 'a2_1' and 'a2_2' parameters... a2_0:constant term, a2_1: Linear term, a2_3: Quadratic term" << std::endl;
 			std::cout << "   Please change the .model accordingly" << std::endl;
 			std::cout << "   The program will exit now" << std::endl;
 			exit(EXIT_SUCCESS);
 		}
-		if(inputs_MS_global.common_names[i] == "a2_0" && a2_switch == 1){ // a2 is a valid keyword only for a1n_a2a3, a1l_a2a3, a1nl_a2a3 models
+		if(inputs_MS_global.common_names[i] == "a2_0" && aj_switch == 1){ // a2 is a valid keyword only for a1n_a2a3, a1l_a2a3, a1nl_a2a3 models
 			a2_param_count=a2_param_count+1;
 			p0=6; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
 			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
@@ -922,7 +983,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 				exit(EXIT_SUCCESS);
 			}
 		}
-		if(inputs_MS_global.common_names[i] == "a2_1"  && a2_switch == 1){ // a2 is a valid keyword only for a1n_a2a3, a1l_a2a3, a1nl_a2a3 models
+		if(inputs_MS_global.common_names[i] == "a2_1"  && aj_switch == 1){ // a2 is a valid keyword only for a1n_a2a3, a1l_a2a3, a1nl_a2a3 models
 			a2_param_count=a2_param_count+1;
 			p0=6+1; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
 			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
@@ -932,7 +993,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 				exit(EXIT_SUCCESS);
 			}
 		}
-		if(inputs_MS_global.common_names[i] == "a2_2"  && a2_switch == 1){ // a2 is a valid keyword only for a1n_a2a3, a1l_a2a3, a1nl_a2a3 models
+		if(inputs_MS_global.common_names[i] == "a2_2"  && aj_switch == 1){ // a2 is a valid keyword only for a1n_a2a3, a1l_a2a3, a1nl_a2a3 models
 			a2_param_count=a2_param_count+1;
 			p0=6+2; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
 			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
@@ -942,8 +1003,10 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 				exit(EXIT_SUCCESS);
 			}		
 		}
+		aj_param_count=aj_param_count + settings_aj_splittings(i,inputs_MS_global, &Snlm_in, aj_switch);
+
 //  Dealing with models using epsilon_nl see Gizon 2002, AN
-		if(inputs_MS_global.common_names[i] == "epsilon_0" && a2_switch == 5){ // a2_switch=5 is for model_MS_Global_a1etaAlma3_HarveyLike
+		if(inputs_MS_global.common_names[i] == "epsilon_0" && aj_switch == 5){ // aj_switch=5 is for model_MS_Global_ajAlm_HarveyLike
 			a2_param_count=a2_param_count+1;
 			p0=6; 
 			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
@@ -953,7 +1016,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 				exit(EXIT_SUCCESS);
 			}
 		}
-		if(inputs_MS_global.common_names[i] == "epsilon_1"  && a2_switch == 5){ // a2_switch=5 is for model_MS_Global_a1etaAlma3_HarveyLike
+		if(inputs_MS_global.common_names[i] == "epsilon_1"  && aj_switch == 5){ // aj_switch=5 is for model_MS_Global_ajAlm_HarveyLike
 			a2_param_count=a2_param_count+1;
 			p0=6+1; 
 			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
@@ -963,36 +1026,33 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 				exit(EXIT_SUCCESS);
 			}
 		}
-		if(inputs_MS_global.common_names[i] == "epsilon_2"  && a2_switch == 5){ // a2_switch=5 is for model_MS_Global_a1etaAlma3_HarveyLike
+		if(inputs_MS_global.common_names[i] == "theta0"  && aj_switch == 5){ //theta0: central latitude for the Active Region. aj_switch=5 is for model_MS_Global_ajAlm_HarveyLike
 			a2_param_count=a2_param_count+1;
 			p0=6+2; 
 			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
-				io_calls.fill_param(&Snlm_in, "espilon_2", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+				io_calls.fill_param(&Snlm_in, "theta0", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 			} else{
-				std::cout << "    Fix_Auto requested for epsilon_2 ... This is not allowed. Please use an explicit prior " << std::endl;
+				std::cout << "    Fix_Auto requested for theta0 ... This is not allowed. Please use an explicit prior " << std::endl;
 				exit(EXIT_SUCCESS);
 			}		
 		}
-		if(inputs_MS_global.common_names[i] == "theta0"  && a2_switch == 5){ //theta0: central latitude for the Active Region. a2_switch=5 is for model_MS_Global_a1etaAlma3_HarveyLike
+		if(inputs_MS_global.common_names[i] == "delta"  && aj_switch == 5){ //theta_min and theta_max = theta0 +/- Dtheta/2: Max angle for the Active Region. aj_switch=5 is for model_MS_Global_ajAlm_HarveyLike
 			a2_param_count=a2_param_count+1;
 			p0=6+3; 
 			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
-				io_calls.fill_param(&Snlm_in, "theta0", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+				io_calls.fill_param(&Snlm_in, "delta", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 			} else{
-				std::cout << "    Fix_Auto requested for epsilon_2 ... This is not allowed. Please use an explicit prior " << std::endl;
+				std::cout << "    Fix_Auto requested for delta ... This is not allowed. Please use an explicit prior " << std::endl;
 				exit(EXIT_SUCCESS);
 			}		
 		}
-		if(inputs_MS_global.common_names[i] == "Dtheta"  && a2_switch == 5){ //theta_min and theta_max = theta0 +/- Dtheta/2: Max angle for the Active Region. a2_switch=5 is for model_MS_Global_a1etaAlma3_HarveyLike
-			a2_param_count=a2_param_count+1;
-			p0=6+4; 
-			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
-				io_calls.fill_param(&Snlm_in, "Dtheta", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
-			} else{
-				std::cout << "    Fix_Auto requested for epsilon_2 ... This is not allowed. Please use an explicit prior " << std::endl;
-				exit(EXIT_SUCCESS);
-			}		
+		if(inputs_MS_global.common_names[i] == "decompose_Alm"  && aj_switch == 5){ //theta_min and theta_max = theta0 +/- Dtheta/2: Max angle for the Active Region. aj_switch=5 is for model_MS_Global_ajAlm_HarveyLike
+			if(inputs_MS_global.common_names_priors[i] != "Fix"){
+				fatalerror_msg_io_MS_Global("decompose_Alm", "Fix", "", "" );
+			}
+			decompose_Alm=inputs_MS_global.modes_common(i,0);
 		}
+
 // ---
 		if(inputs_MS_global.common_names[i] == "splitting_a3" || inputs_MS_global.common_names[i] == "Splitting_a3"){
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
@@ -1006,7 +1066,11 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 				fatalerror_msg_io_MS_Global("asymetry", "Fix_Auto", "", "" );
 			}
-			p0=5;
+			if (aj_switch != 6 && aj_switch != 5){
+				p0=5;
+			} else{
+				p0=Snlm_in.inputs.size()-1; // The new standard for aj fitting is that the Asymetry is at the end of the Snlm 
+			}
 			io_calls.fill_param(&Snlm_in, "Lorentzian_asymetry", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);
 		}
 		// --- Dealing with visibilities ---
@@ -1095,13 +1159,19 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
             bool_a1sini=1;
 		}
 	}
-if (a2_switch == 1 && a2_param_count !=3){
+
+if (aj_switch == 1 && a2_param_count !=3){
 	std::cout << " Invalid number of constraints for a2: Please set a2_0, a2_1 and a2_2" <<std::endl;
 	exit(EXIT_SUCCESS); 
 }
-if (a2_switch == 5 && a2_param_count !=5){
-	std::cout << " Invalid number of constraints for epsilon: Please set epsilon_0, epsilon_1, epsilon_2 and theta_min, Dtheta for the considered model" <<std::endl;
+if (aj_switch == 5 && a2_param_count !=4){
+	std::cout << " Invalid number of constraints for epsilon: Please set epsilon_0, epsilon_1 and theta0, delta for the considered model" <<std::endl;
 	exit(EXIT_SUCCESS); 
+}
+if (aj_switch == 6 && aj_param_count.sum() !=12){
+	std::cout << "aj_param_count = " << aj_param_count << std::endl;
+	std::cout << " Invalid number of constraints for epsilon: Please set a1_0, a1_1, a2_0, a2_1, a3_0, a3_1, a4_0, a4_1, a5_0, a5_1, a6_0, a6_1 (12 parameters) for the considered model" <<std::endl;
+	exit(EXIT_SUCCESS); 	
 }
 if(bool_a1cosi != bool_a1sini){ // Case when one of the projected splitting quantities is missing ==> Problem
 	std::cout << "Warning: Both 'sqrt(splitting_a1).sini' and 'sqrt(splitting_a1).cosi' keywords must appear" << std::endl;
@@ -1113,9 +1183,8 @@ if(bool_a1cosi != bool_a1sini){ // Case when one of the projected splitting quan
 if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Splitting_a1 are supposed to be used (CLASSIC and CLASSIC_vX models)
 	if( (all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike") || (all_in.model_fullname == "model_MS_Global_a1etaa3_Harvey1985") ||
 		(all_in.model_fullname == "model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1") || (all_in.model_fullname=="model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2")  ||
-		(all_in.model_fullname == "model_MS_Global_a1n_a2a3_HarveyLike") || (all_in.model_fullname == " model_MS_Global_a1nl_a2a3_HarveyLike")  || (all_in.model_fullname == "model_MS_Global_a1a2a3_HarveyLike") ||
-		(all_in.model_fullname == "model_MS_Global_a1etaAlma3_HarveyLike") ){
-		std::cout << "Warning: Splitting_a1 and Inclination keywords detected while requested model is model_MS_Global_a1etaa3_HarveyLike... ADAPTING THE VARIABLE FOR ALLOWING THE FIT TO WORK" << std::endl;
+		(all_in.model_fullname == "model_MS_Global_a1n_a2a3_HarveyLike") || (all_in.model_fullname == " model_MS_Global_a1nl_a2a3_HarveyLike")  || (all_in.model_fullname == "model_MS_Global_a1a2a3_HarveyLike") ){
+		std::cout << "Warning: Splitting_a1 and Inclination keywords detected while requested model is " << all_in.model_fullname << "... ADAPTING THE VARIABLE FOR ALLOWING THE FIT TO WORK" << std::endl;
 		
 		std::cout << "         Replacing variables splitting_a1 and inclination by sqrt(splitting_a1).cos(i) and sqrt(splitting_a1).sin(i)..." << std::endl;
 
@@ -1168,7 +1237,7 @@ if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Spli
 				ind=ind+1;
 			}
 		}
-		extra_priors[3]=1; // Impose Sum(H(nlm))_{l=-m,l=+m} =1 for that model (case == 1)
+		extra_priors[8]=1; // Impose Sum(H(nlm))_{l=-m,l=+m} =1 for that model (case == 1)
 	}
 	if(all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike_Classic_v3"){
 		for(int i=0; i<8;i++){std::cout << "  ------------------------------------------------------------------------------" <<std::endl;}
@@ -1202,7 +1271,7 @@ if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Spli
 				}
 			}
 		}
-		extra_priors[3]=2; // Cannot impose Sum(H(nlm))_{l=-m,l=+m} =1 for that model (case == 2) because we do not rely on visbilities
+		extra_priors[8]=2; // Cannot impose Sum(H(nlm))_{l=-m,l=+m} =1 for that model (case == 2) because we do not rely on visbilities
 	}
 	// ----------------                                                                                      ----------------
 	// ----------------                                                                                      ----------------
@@ -1225,6 +1294,7 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
    	io_calls.fill_param(&Inc_in, "Empty", "Fix", 0, Inc_in.priors.col(0), 0, 1); // Note that inputs_MS_global.modes_common.row(0) is not used... just dummy   	
    	io_calls.fill_param(&Snlm_in, "Empty", "Fix", 0, Snlm_in.priors.col(0), 0, 1); // "Splitting_a1" default values are erased
 }
+
 	// ----------------------------------------------------
 	// ---------------- Handling noise --------------------
 	// ----------------------------------------------------
@@ -1240,8 +1310,13 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	plength[3]=Nf_el[1]       ; plength[4]=Nf_el[2]		   ; plength[5]=Nf_el[3];
 	plength[6]=Snlm_in.inputs.size(); plength[7]=w_inputs.size() ; plength[8]=Noise_in.inputs.size(); 
 	plength[9]=Inc_in.inputs.size();
-	plength[10]=2; // This is trunc_c and do_amp;
-	
+	// -- Extend the parameter vector if decompose_Alm if necessary (see further for the parameter filling) --
+	if (all_in.model_fullname == "model_MS_Global_ajAlm_HarveyLike"){
+		plength[10]=3; // This is trunc_c and do_amp + decompose_Alm;
+	}else{
+		plength[10]=2; // This is trunc_c and do_amp;
+	}	
+
 	io_calls.initialise_param(&all_in, plength.sum(), Nmax_prior_params, plength, extra_priors);
 	
 	// --- Put the Height or Amplitudes---
@@ -1265,11 +1340,11 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 		io_calls.add_param(&all_in, &width_in, p0);
 	} 
 	if(do_width_Appourchaux == 1){// Case of: model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1
-		width_in=set_width_App2016_params_v1(numax, width_in);
+		width_in=set_width_App2016_params_v1(numax, err_numax, width_in);
 		io_calls.add_param(&all_in, &width_in, p0);
 	}
 	if(do_width_Appourchaux == 2){// Case of: model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1
-		width_in=set_width_App2016_params_v2(numax, width_in);
+		width_in=set_width_App2016_params_v2(numax, err_numax, width_in);
 		io_calls.add_param(&all_in, &width_in, p0);
 	}
 	// --- Put the Noise ---
@@ -1284,14 +1359,18 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8] + all_in.plength[9];
 	io_calls.fill_param(&all_in, "Truncation parameter", "Fix", trunc_c, inputs_MS_global.modes_common.row(0), p0, 1);
 	if (all_in.inputs[p0] <= 0){
-		std::cout << "Warning: trunc_c <= 0. This is forbidden. Setting default to 10000. (No truncation)" << std::endl;
+		std::cout << "Warning: trunc_c = " << all_in.inputs[p0] << " <= 0. This is forbidden. Setting default to 10000. (No truncation)" << std::endl;
 		all_in.inputs[p0]=10000.; // In case of a non-sense value for c, we use Full-Lorentzian as default
 	}
 	// -- Add the Amplitude switch --
 	p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8] + all_in.plength[9] + 1;
 	io_calls.fill_param(&all_in, "Switch for fit of Amplitudes or Heights", "Fix", do_amp, inputs_MS_global.modes_common.row(0), p0,1);
-		
-			
+
+	if (all_in.model_fullname == "model_MS_Global_ajAlm_HarveyLike"){
+		p0=plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8] + all_in.plength[9] + 2;
+		io_calls.fill_param(&all_in, "decompose_Alm", "Fix", decompose_Alm, inputs_MS_global.modes_common.row(0), p0,1);
+	}
+
 	if(verbose == 1){
 		std::cout << " ----------------- Configuration summary -------------------" << std::endl;
 		std::cout << "Model Name = " << all_in.model_fullname << std::endl;
@@ -1302,9 +1381,9 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 			std::cout << "   smoothness coeficient as specified by the user (of defined by default): " << all_in.extra_priors[1] << " microHz" << std::endl;
 		}
 
-		std::cout << "    Maximum ratio between a2 and a1: " << all_in.extra_priors[4] << std::endl;
-		
-		std::cout << "    Maximum ratio between a3 and a1: " << all_in.extra_priors[2] << std::endl;
+		for(int eli=0; eli<6; eli++){ //   aj, with 1<j<6
+			std::cout << "    Maximum ratio between a"<<eli+1<<" and a1: " << all_in.extra_priors[2+eli] << std::endl;
+		}
 			
 		std::cout << " -----------------------------------------------------------" << std::endl;
 		std::cout << " ---------- Configuration of the input vectors -------------" << std::endl;
@@ -1327,8 +1406,8 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 		std::cout << " -----------------------------------------------------------" << std::endl;
 	}
 	
-	if (a2_switch >=2 && a2_switch != 5){ // a2_switch = 5 is a model that use eta and Alm to get a2_CF and a2_AR and is already set
-		std::cout << " io_ms_global.cpp : a2_switch >=2 not yet properly configured yet" << std::endl;
+	if (aj_switch >=2 && aj_switch != 5 && aj_switch !=6){ // aj_switch = 5 is a model that use eta and Alm to get a2_CF and a2_AR and is already set
+		std::cout << " io_ms_global.cpp : aj_switch >=2 not yet properly configured yet" << std::endl;
 		std::cout << " The program will exit now" << std::endl;
 		exit(EXIT_SUCCESS);
 	}
@@ -1468,7 +1547,7 @@ double getnumax(const VectorXd& fl, const VectorXd& Hl){
 	return numax;
 }
 
-Input_Data set_width_App2016_params_v1(const double numax, Input_Data width_in){
+Input_Data set_width_App2016_params_v1(const double numax, const double err_numax, Input_Data width_in){
 /* 
  * Function that calculates the initial guesses for the widths using numax and the linear fit reported in Appourchaux+2016
  * Note that these values are taken by hand from the graphs
@@ -1494,7 +1573,7 @@ Input_Data set_width_App2016_params_v1(const double numax, Input_Data width_in){
  		
  	// Priors on the parameters... most of those are put completely wildely: Would need to plot the graphs from App2016 to put proper gaussians
  	priors(0,0)=out[0];
- 	priors(0,1)=out[0]*0.1; // 10% of numax on nudip
+ 	priors(0,1)=err_numax; // 10% of numax on nudip
  	priors(1,0)=out[1];
  	priors(1,1)=out[1]*0.2; // 20% of alpha
  	priors(2,0)=out[2];
@@ -1517,7 +1596,7 @@ Input_Data set_width_App2016_params_v1(const double numax, Input_Data width_in){
 	return width_in;
 }
 
-Input_Data set_width_App2016_params_v2(const double numax, Input_Data width_in){
+Input_Data set_width_App2016_params_v2(const double numax, const double err_numax, Input_Data width_in){
 /* 
  * Function that calculates the initial guesses for the widths using numax and the linear fit reported in Appourchaux+2016
  * Note that these values are taken by hand from the graphs
@@ -1575,9 +1654,9 @@ Input_Data set_width_App2016_params_v2(const double numax, Input_Data width_in){
 	// POSITION PARAMETERS WITH GAUSSIAN PRIORS AND INTENSIVE PARAMETERS AS UNIFORM
  	
     priors(0,0)=out[0];
- 	priors(0,1)=out[0]*0.1; // 10% of numax on numax
+ 	priors(0,1)=err_numax; // 10% of numax on numax
  	priors(1,0)=out[1];
- 	priors(1,1)=out[1]*0.1; // 10% of numax on nudip
+ 	priors(1,1)=err_numax; // 10% of numax on nudip
  	priors(2,0)=0;
  	priors(2,1)=6; // min/max of the plot in Appourchaux 2016
  	priors(3,0)=0; //
@@ -1605,4 +1684,149 @@ Input_Data set_width_App2016_params_v2(const double numax, Input_Data width_in){
 	*/
 	//io_calls.show_param(width_in, 0);
 	return width_in;
+}
+
+
+// This function handles all of the aj related options. 
+// It is designed for aj models and/or models with a combination of aj and Alm
+VectorXd settings_aj_splittings(const int i, const MCMC_files inputs_MS_global, Input_Data* Snlm_in, const int aj_switch){
+	int p0;
+	VectorXd aj_param_count(6); // counter for knowing where we passed
+	IO_models io_calls; // function dictionary that is used to initialise, create and add parameters to the Input_Data structure
+	
+	aj_param_count.setZero();
+	//std::cout << "inputs_MS_global.common_names[" << i << "] =" << inputs_MS_global.common_names[i] << "   aj_switch=" << aj_switch  << std::endl;
+		if(inputs_MS_global.common_names[i] == "a1_0" && (aj_switch == 6 || aj_switch == 5)){  // This is a valid keyword only for aj models
+			aj_param_count[0]=aj_param_count[0]+1;
+			p0=0; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
+			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+				io_calls.fill_param(Snlm_in, "a1_0", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			} else{
+				std::cout << "    Fix_Auto requested for a1_0 ... This is not allowed. Please use an explicit prior " << std::endl;
+				exit(EXIT_SUCCESS);
+			}
+		}
+		if(inputs_MS_global.common_names[i] == "a1_1"  && (aj_switch == 6 || aj_switch == 5)){ // This is a valid keyword only for aj models
+			aj_param_count[0]=aj_param_count[0]+1;
+			p0=1; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
+			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+				io_calls.fill_param(Snlm_in, "a1_1", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			} else{
+				std::cout << "    Fix_Auto requested for a1_1 ... This is not allowed. Please use an explicit prior " << std::endl;
+				exit(EXIT_SUCCESS);
+			}
+		}
+		if(inputs_MS_global.common_names[i] == "a2_0" && aj_switch == 6){  // This is a valid keyword only for aj models
+			aj_param_count[1]=aj_param_count[1]+1;
+			p0=2; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
+			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+				io_calls.fill_param(Snlm_in, "a2_0", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			} else{
+				std::cout << "    Fix_Auto requested for a2_0 ... This is not allowed. Please use an explicit prior " << std::endl;
+				exit(EXIT_SUCCESS);
+			}
+		}
+		if(inputs_MS_global.common_names[i] == "a2_1"  && aj_switch == 6){ // This is a valid keyword only for aj models
+			aj_param_count[1]=aj_param_count[1]+1;
+			p0=3; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
+			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+				io_calls.fill_param(Snlm_in, "a2_1", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			} else{
+				std::cout << "    Fix_Auto requested for a2_1 ... This is not allowed. Please use an explicit prior " << std::endl;
+				exit(EXIT_SUCCESS);
+			}
+		}
+		if(inputs_MS_global.common_names[i] == "a3_0" && (aj_switch == 6 || aj_switch == 5)){  // This is a valid keyword only for aj models
+			aj_param_count[2]=aj_param_count[2]+1;
+			p0=4; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
+			if (aj_switch == 5){ // ajAlm case 
+				p0=2; 
+			}
+			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+				io_calls.fill_param(Snlm_in, "a3_0", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			} else{
+				std::cout << "    Fix_Auto requested for a3_0 ... This is not allowed. Please use an explicit prior " << std::endl;
+				exit(EXIT_SUCCESS);
+			}
+		}
+		if(inputs_MS_global.common_names[i] == "a3_1"  && (aj_switch == 6 || aj_switch == 5)){ // This is a valid keyword only for aj models
+			aj_param_count[2]=aj_param_count[2]+1;
+			p0=5; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
+			if (aj_switch == 5){ // ajAlm case 
+				p0=3; 
+			}
+			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+				io_calls.fill_param(Snlm_in, "a3_1", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			} else{
+				std::cout << "    Fix_Auto requested for a3_1 ... This is not allowed. Please use an explicit prior " << std::endl;
+				exit(EXIT_SUCCESS);
+			}
+		}
+		if(inputs_MS_global.common_names[i] == "a4_0" && aj_switch == 6){  // This is a valid keyword only for aj models
+			aj_param_count[3]=aj_param_count[3]+1;
+			p0=6; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
+			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+				io_calls.fill_param(Snlm_in, "a4_0", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			} else{
+				std::cout << "    Fix_Auto requested for a4_0 ... This is not allowed. Please use an explicit prior " << std::endl;
+				exit(EXIT_SUCCESS);
+			}
+		}
+		if(inputs_MS_global.common_names[i] == "a4_1"  && aj_switch == 6){ // This is a valid keyword only for aj models
+			aj_param_count[3]=aj_param_count[3]+1;
+			p0=7; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
+			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+				io_calls.fill_param(Snlm_in, "a4_1", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			} else{
+				std::cout << "    Fix_Auto requested for a3_1 ... This is not allowed. Please use an explicit prior " << std::endl;
+				exit(EXIT_SUCCESS);
+			}
+		}
+		if(inputs_MS_global.common_names[i] == "a5_0" && (aj_switch == 6 || aj_switch == 5)){  // This is a valid keyword only for aj models
+			aj_param_count[4]=aj_param_count[4]+1;
+			p0=8; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
+			if (aj_switch == 5){ // ajAlm case 
+				p0=4; 
+			}
+			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+				io_calls.fill_param(Snlm_in, "a5_0", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			} else{
+				std::cout << "    Fix_Auto requested for a4_0 ... This is not allowed. Please use an explicit prior " << std::endl;
+				exit(EXIT_SUCCESS);
+			}
+		}
+		if(inputs_MS_global.common_names[i] == "a5_1"  && (aj_switch == 6 || aj_switch == 5)){ // This is a valid keyword only for aj models
+			aj_param_count[4]=aj_param_count[4]+1;
+			p0=9; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
+			if (aj_switch == 5){ // ajAlm case 
+				p0=5; 
+			}
+			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+				io_calls.fill_param(Snlm_in, "a5_1", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			} else{
+				std::cout << "    Fix_Auto requested for a5_1 ... This is not allowed. Please use an explicit prior " << std::endl;
+				exit(EXIT_SUCCESS);
+			}
+		}
+		if(inputs_MS_global.common_names[i] == "a6_0" && aj_switch == 6){  // This is a valid keyword only for aj models
+			aj_param_count[5]=aj_param_count[5]+1;
+			p0=10; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
+			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+				io_calls.fill_param(Snlm_in, "a6_0", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			} else{
+				std::cout << "    Fix_Auto requested for a6_0 ... This is not allowed. Please use an explicit prior " << std::endl;
+				exit(EXIT_SUCCESS);
+			}
+		}
+		if(inputs_MS_global.common_names[i] == "a6_1"  && aj_switch == 6){ // This is a valid keyword only for aj models
+			aj_param_count[5]=aj_param_count[5]+1;
+			p0=11; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
+			if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+				io_calls.fill_param(Snlm_in, "a6_1", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+			} else{
+				std::cout << "    Fix_Auto requested for a6_1 ... This is not allowed. Please use an explicit prior " << std::endl;
+				exit(EXIT_SUCCESS);
+			}
+		}
+	return aj_param_count;
 }

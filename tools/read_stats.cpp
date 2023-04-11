@@ -46,10 +46,11 @@ int main(int argc, char* argv[]){
  * about the parallel chains. See the structure Ptempering_out for further
  * information about the retrieved variables.
 */
-    	const int Nchars=20;
-    	const int precision=10;
+    const int Nchars=20;
+    const int precision=10;
 	int readchain; // index of the chain to be read
-	int testval; // for the options
+	int cpt, lcpt, testval; // for the options
+	int ind0=0, indmax=-1, Samples_period=1; // The Samples_period defines out of all samples, how many we keep.
 	long Nrows, Nchains;
 	std::string file_proba, file_proba_hdr, file_out;
 	std::ifstream file;
@@ -60,22 +61,37 @@ int main(int argc, char* argv[]){
 	
 		testval=options(argc, argv); // return 10 if correct number of arguments. Return code version if requested. Show usage otherwise.
 
-		//if (testval == 10){
 		file_proba=argv[1];
 		file_proba_hdr=argv[1];
 		file_proba=file_proba + ".bin";
 		file_proba_hdr=file_proba_hdr + ".hdr";
 		std::istringstream(argv[2]) >> readchain; 
 		file_out=argv[3]; 
-		//}
-					
+
 		std::cout << "  0. Configuration: " << std::endl;
 		std::cout << "      - Header file: " << file_proba_hdr << std::endl;		
 		std::cout << "      - Binary file: " << file_proba << std::endl;
 		std::cout << "      - Reading chain: " << readchain << std::endl;
 		std::cout << "      - Output ASCII file: " << file_out << std::endl;
-	
-		std::cout << "  1. Reading the data file..." << std::endl;
+
+		if (testval == 11){ // Add the optional arguments
+			std::istringstream(argv[4]) >> ind0;
+			std::istringstream(argv[5]) >> indmax;
+			std::istringstream(argv[6]) >> Samples_period;			
+			std::cout << "      Optional Arguments: " << std::endl;
+			std::cout << "      	- Index of the first kept sample: " << ind0 << std::endl;
+			std::cout << "      	- Index of the last kept sample: " << indmax << std::endl;
+			std::cout << "      	- Samples_period: " << Samples_period << " ==> ";
+			std::cout << " Keep 1 sample every " << Samples_period << " samples" << std::endl;
+		}
+		if(Samples_period < 1){
+			std::cout << "Warning: The given periodicity value is smaller than 1... The program will use the default value instead (Period =1)" << std::endl;
+			std::cout << "          ===> All samples will be returned" << std::endl;
+			Samples_period=1;
+		}
+
+
+	std::cout << "  1. Reading the data file..." << std::endl;
 
 	std::cout << "# Reading Header file:" << file_proba_hdr << std::endl;
 	hdr=read_proba_header(file_proba_hdr);
@@ -91,6 +107,23 @@ int main(int argc, char* argv[]){
 
 	std::cout << "# Reading Filename:" << file_proba << std::endl;
 	proba=read_bin_proba_params(file_proba, hdr.Nsamples_done, hdr.Nchains);
+	// Consistency checks on optional arguements
+	if (indmax < 0){
+		std::cout << std::endl;
+		std::cout << "    Warning: Negative indmax provided ==> the last sample is going to be the last sample of the chain" << std::endl;
+		std::cout << std::endl;
+		//indmax=data_array.rows();
+		indmax=hdr.Nsamples_done;
+	}
+	if (indmax < ind0+Samples_period){
+		std::cout << "    Error: The last index must be greater than the first sample + Periodicity " << std::endl;
+		std::cout << "           The program will exit" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	if (Samples_period <=0){
+		std::cout << "    Warning: Negative sampling period provided ==> sampling period will be fixed to 1 " << std::endl; 
+		Samples_period=1;
+	}
 
 	/////// Write the parameters ////////	
 	outfile_proba.open(file_out.c_str()); 
@@ -107,10 +140,28 @@ int main(int argc, char* argv[]){
 				outfile_proba.flush(); // Explicitly specify to flush the header into the disk
 				
 				// Writing Data 
-				for(int i=0; i<hdr.Nsamples_done; i++){	
-					strg.str(std::string());	
-					strg << std::setw(Nchars) << std::setprecision(precision) << proba.logL(i,readchain) << "   " << proba.logPr(i,readchain)  << "   " << proba.logP(i,readchain) << "\n";
-    				outfile_proba << strg.str().c_str();
+				if(Samples_period <= 1){ // Case where we return all samples
+					for(int i=0; i<hdr.Nsamples_done; i++){	
+						strg.str(std::string());	
+						strg << std::setw(Nchars) << std::setprecision(precision) << proba.logL(i,readchain) << "   " << proba.logPr(i,readchain)  << "   " << proba.logP(i,readchain) << "\n";
+    					outfile_proba << strg.str().c_str();
+					}
+				} else{
+					// ---- Selecting only 1 sample out every Sample_period samples -----
+					std::cout << "  2. Applying the selection rule..." << std::endl;
+					std::cout << "     Operation is of the type: ";
+					std::cout << "     Ouputs[" << ind0 << "]  --> New_Outputs[" << ind0 + Samples_period-1 << "]  "  << std::endl;		
+					std::cout << "     ..." << std::endl;
+					cpt=ind0; lcpt=0;
+					while(cpt<hdr.Nsamples_done){
+						strg.str(std::string());	
+						strg << std::setw(Nchars) << std::setprecision(precision) << proba.logL(cpt,readchain) << "   " << proba.logPr(cpt,readchain)  << "   " << proba.logP(cpt,readchain) << "\n";
+    					outfile_proba << strg.str().c_str();
+						cpt=cpt+Samples_period;
+						lcpt=lcpt+1;
+					}
+//					std::cout << " Final index of flushed samples: " << lcpt-1 << std::endl;
+					std::cout << "                       New size : " << (indmax -ind0)/Samples_period << std::endl;
 				}
 			outfile_proba.flush(); // Explicitly specify to flush the data into the disk
 			strg.str(std::string());
@@ -181,7 +232,7 @@ Proba_hdr read_proba_header(const std::string file){
 
   long varcase;
   std::string line;
-  std::vector<std::string> keyword, varnames, varT;
+  std::vector<std::string> keyword, varnames;
   std::ifstream myfile;
 
   Proba_hdr data;
@@ -221,7 +272,6 @@ Proba_hdr read_proba_header(const std::string file){
 	}
     }
     myfile.close();
-
   } else {
 	std::cout << "    Unable to open the following parameter file: " << file << std::endl; 
 	std::cout << "    The program will stop now" << std::endl;
@@ -276,6 +326,14 @@ int options(int argc, char* argv[]){
 	if(argc == 4){
 		val=10;
 	}
+	if(argc == 7){
+		val=11;
+	}
+	if(argc >=5 && argc <=6){
+		// When using optional arguments, All of the tree optional
+		// arguments must be provided
+		usage(argc, argv);
+	}
 
 	if (val == -1){ // Error code
 		usage(argc, argv);
@@ -297,8 +355,9 @@ void usage(int argc, char* argv[]){
 			std::cout << "     [1] The data and header full path and name without extension (e.g: /Users/me/myfile). Extensions are assumed to be .bin and .hdr" << std::endl;
 			std::cout << "     [2] The index of the parallel chain that should be read (e.g.: 0 for the main parallel chain)" << std::endl;
 			std::cout << "     [3] The output filename fullpath (e.g.: /Users/me/myoutput.txt)" << std::endl;
+			std::cout << " .   [4] Optional arguments (must be all provided): first_index, last_index, period" << std::endl;
 			std::cout << " Call sequence: " << std::endl;
-			std::cout << "     " << argv[0] << " [input path+name] [chain index] [output filename]" << std::endl;
+			std::cout << "     " << argv[0] << " [input path+name] [chain index] [output filename] [Optional arg]" << std::endl;
 			exit(EXIT_FAILURE);
 
 }

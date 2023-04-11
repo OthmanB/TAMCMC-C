@@ -100,10 +100,11 @@ Func_info call_function(const VectorXd x,  const Func_info& model_info, const do
  //VectorXd optimum_lorentzian_calc_a1l_a2a3(const VectorXd& x, const VectorXd& y, const double H_l, const double fc_l, const double f_s1, const double f_s2, const double a2, const double a3, const double asym, const double gamma_l, const int l, const VectorXd& V, const double step, const double c);
 	}
 	if (model_info.func_name[0] == "optimum_lorentzian_calc_a1etaAlma3"){
-		// params: H_l,  fc_l,  f_s, eta0, epsilon_nl, [theta0, delta], a3, asym, gamma_l, inclination, l
+		// params: H_l,  fc_l,  a1,  a3, a5, eta0, epsilon_nl, [theta0, delta], asym, gamma_l,  inclination, l
 		l=(int)model_info.params[12];
 		V=amplitude_ratio(l, model_info.params[11]);
-		y=optimum_lorentzian_calc_a1etaAlma3(x, y, model_info.params[0], model_info.params[1], model_info.params[2],  model_info.params[3],  model_info.params[4],  model_info.params.segment(6,2), model_info.params[8], model_info.params[9], model_info.params[10], l, V, step, c); 
+		//optimum_lorentzian_calc_ajAlm(x, y,        H_l          ,          fc_l       ,           a1        ,           a3         ,           a5         ,         eta0         ,         epsilon_nl  ,            thetas                ,        asym         ,       gamma_l        ,         l            ,       V  , step, c);
+		y=optimum_lorentzian_calc_ajAlm(x, y, model_info.params[0], model_info.params[1], model_info.params[2],  model_info.params[3],  model_info.params[4],  model_info.params[5], model_info.params[6],    model_info.params.segment(7,2), model_info.params[9], model_info.params[10],         l            ,       V  , step, c);
 // VectorXd optimum_lorentzian_calc_a1etaAlma3(const VectorXd& x, const VectorXd& y,  const double H_l,  const double fc_l,  const double f_s, 
 	//	const double eta0, const double epsilon_nl, const VectorXd& thetas, const double a3,  const double asym,  const double gamma_l, const int l,  const VectorXd& V,  const double step, const double c);
 	}
@@ -234,16 +235,16 @@ Func_info get_model_info(std::string func_name, const bool ignore_error_msg){
 		struc.error=false;
 		i=i+1;
 	}	
-	if (func_name == "optimum_lorentzian_calc_a1etaAlma3" || func_name == "get_all"){
+	if (func_name == "optimum_lorentzian_calc_ajAlm" || func_name == "get_all"){
 		if (func_name != "get_all"){
 			struc.func_name[i]=func_name;
-			std::cout << " WARNING: THE FUNCTION " << func_name << " IS STILL EVOLVING " << std::endl;
+		//	std::cout << " WARNING: THE FUNCTION " << func_name << " IS STILL EVOLVING " << std::endl;
 		} else{
-			struc.func_name[i]="optimum_lorentzian_calc_a1etaAlma3";
+			struc.func_name[i]="optimum_lorentzian_calc_ajAlm";
 		}		
-		struc.params_names[i]="H_l,  fc_l,  f_s, eta0, epsilon_nl, theta0, delta, a3, asym, gamma_l, inclination, l";
+		struc.params_names[i]="H_l,  fc_l,  a1,  a3, a5, eta0, epsilon_nl, [theta0, delta], asym, gamma_l,  inclination, l";
 		struc.Nparams[i]=12;
-		struc.error=true;
+		struc.error=false;
 		i=i+1;
 	}	
 	if (func_name == "optimum_lorentzian_calc_aj" || func_name == "get_all"){

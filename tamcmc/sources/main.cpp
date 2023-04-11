@@ -115,8 +115,13 @@ int main(int argc, char* argv[]){
 		// ---- Begin to process all the requested objects ----
         for(int i=config_master.first_id_ind; i<=config_master.last_id_ind; i++){ // For each star
         	modelfile=config_master.cfg_models_dir +  config_master.table_ids[i].at(0) + ".model";
-        	franges=get_slices_range(modelfile, 0); // retrieve slice information from the model file and do not verbose (verbose=0)
-        	config_master.Nslices=franges.rows(); 
+        	if (config.modeling.prior_fct_name != "io_ajfit"){
+        		franges=get_slices_range(modelfile, 0); // retrieve slice information from the model file and do not verbose (verbose=0)
+        		config_master.Nslices=franges.rows(); 
+        	} else{
+        		config_master.Nslices=1;
+        		//std::cout << "Not doing franges " << std::endl;
+        	}
  			if(startslice<0){
 				config_master.first_slice_ind=0;			
         	} else{
@@ -137,7 +142,9 @@ int main(int argc, char* argv[]){
 					std::cout << "                       --------------------------------" << std::endl;
 					std::cout << "                       Processing Object " << i+1 << "/" << config_master.table_ids.size() << ": ";
 					std::cout << config_master.table_ids[i].at(0) << std::endl;
-					std::cout << "                         Frequency Slice " << s+1 << "/" << config_master.Nslices << std::endl;
+					if (config.modeling.prior_fct_name != "io_ajfit"){
+ 						std::cout << "                         Frequency Slice " << s+1 << "/" << config_master.Nslices << std::endl;
+					}
 					std::cout << "                                   Phase " << jj+1 << "/" << config_master.processing.size() << ": ";
 					std::cout << config_master.processing[jj] << std::endl;
 					std::cout << "                       --------------------------------" << std::endl;

@@ -1,0 +1,7 @@
+/Users/obenomar/Work/Benomar2022/Programs/TAMCMC-C-1.83.8/build/CMakeFiles/cpptamcmc.dir
+/Users/obenomar/Work/Benomar2022/Programs/TAMCMC-C-1.83.8/build/CMakeFiles/bin2txt.dir
+/Users/obenomar/Work/Benomar2022/Programs/TAMCMC-C-1.83.8/build/CMakeFiles/getstats.dir
+/Users/obenomar/Work/Benomar2022/Programs/TAMCMC-C-1.83.8/build/CMakeFiles/getmodel.dir
+/Users/obenomar/Work/Benomar2022/Programs/TAMCMC-C-1.83.8/build/CMakeFiles/testsolver_mm.dir
+/Users/obenomar/Work/Benomar2022/Programs/TAMCMC-C-1.83.8/build/CMakeFiles/edit_cache.dir
+/Users/obenomar/Work/Benomar2022/Programs/TAMCMC-C-1.83.8/build/CMakeFiles/rebuild_cache.dir

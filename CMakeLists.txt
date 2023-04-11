@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.4.1)
 
-project(cpptamcmc VERSION 1.3.1)
+project(cpptamcmc VERSION 1.7.0)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(Boost_USE_MULTITHREADED TRUE)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../bin)
 
 option(WITH_GSL "GSL Library" ON)
 option(WITH_OPENMP "OpenMP Library" ON)
@@ -63,6 +64,7 @@ set(HEADERS  #_COMMON
     tamcmc/headers/io_ms_global.h
     tamcmc/headers/io_local.h
     tamcmc/headers/io_asymptotic.h
+    tamcmc/headers/io_ajfit.h
     tamcmc/headers/models.h
     tamcmc/headers/stats_dictionary.h
     tamcmc/headers/config_presets.h
@@ -72,11 +74,15 @@ set(HEADERS  #_COMMON
     tamcmc/headers/string_handler.h
     tamcmc/headers/io_models.h
     tamcmc/headers/linspace.h
+    tamcmc/headers/acoefs.h
+    tamcmc/headers/polyfit.h
     external/ARMM/solver_mm.h
     external/ARMM/bump_DP.h
     external/ARMM/linfit.h
-    #external/integrate/ylm.h
-    external/integrate/activity.h
+    external/Alm/Alm_cpp/activity.h
+	#external/integrate/activity.h
+    external/spline/src/spline.h
+    tools/quick_samples_stats.h
     )
 
 #Bring the core program sources into the project
@@ -95,6 +101,7 @@ set(SOURCES_MAIN  #_COMMON
     tamcmc/sources/io_ms_global.cpp
     tamcmc/sources/io_local.cpp
     tamcmc/sources/io_asymptotic.cpp
+    tamcmc/sources/io_ajfit.cpp
     tamcmc/sources/models.cpp
     tamcmc/sources/stats_dictionary.cpp
     tamcmc/sources/config_presets.cpp
@@ -107,16 +114,19 @@ set(SOURCES_MAIN  #_COMMON
     tamcmc/sources/random_JB.cpp
     tamcmc/sources/io_models.cpp
     tamcmc/sources/linspace.cpp
+    tamcmc/sources/acoefs.cpp
+    tamcmc/sources/polyfit.cpp
     external/ARMM/solver_mm.cpp
     external/ARMM/bump_DP.cpp
     external/ARMM/linfit.cpp
-    #external/integrate/ylm.cpp
-    external/integrate/activity.cpp
+    #external/integrate/activity.cpp
+	external/Alm/Alm_cpp/activity.cpp
     )
  
 #Define the sources for the bin2txt program
 set(SOURCES_TOOLS_BIN2TXT
 	tools/bin2txt_params.cpp
+	tools/quick_samples_stats.cpp
 	tamcmc/sources/interpol.cpp
 	tamcmc/sources/diagnostics.cpp
 	tamcmc/sources/string_handler.cpp
@@ -142,17 +152,20 @@ set(SOURCES_TOOLS_GETMODEL
 	tamcmc/sources/io_ms_global.cpp
 	tamcmc/sources/io_local.cpp
 	tamcmc/sources/io_asymptotic.cpp
+	tamcmc/sources/io_ajfit.cpp
 	tamcmc/sources/noise_models.cpp
 	tamcmc/sources/priors_calc.cpp
 	tamcmc/sources/stats_dictionary.cpp
 	tamcmc/sources/derivatives_handler.cpp
 	tamcmc/sources/io_models.cpp
 	tamcmc/sources/linfit.cpp
+    tamcmc/sources/polyfit.cpp
 	tamcmc/sources/linspace.cpp
+	tamcmc/sources/acoefs.cpp
 	external/ARMM/solver_mm.cpp
 	external/ARMM/bump_DP.cpp
-	#external/integrate/ylm.cpp
-	external/integrate/activity.cpp
+	#external/integrate/activity.cpp
+	external/Alm/Alm_cpp/activity.cpp
         )
 
 #Define the sources for the testsolver_mm program
@@ -163,6 +176,7 @@ set(SOURCES_TOOLS_TESTSOLVER
 	external/ARMM/bump_DP.cpp
     	tamcmc/sources/interpol.cpp
    	tamcmc/sources/derivatives_handler.cpp
+    tamcmc/sources/polyfit.cpp
    	external/ARMM/linfit.cpp
 	external/ARMM/linspace.cpp
 	tamcmc/sources/noise_models.cpp
@@ -176,12 +190,20 @@ endif()
 
 if (WITH_OPENMP)
 	find_package(OpenMP)
+	#find_package(OPENMP)
 	if (OPENMP_FOUND)
 	    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 	    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 	    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 	else()
-		message(FATAL_ERROR "OpenMP not found. Use -DWITH_OPENMP=OFF to build without OpenMP")
+	      find_package(OPENMP)
+	      if (OPENMP_FOUND)
+           	 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+           	 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+           	 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+	      else()	
+	      	message(FATAL_ERROR "OpenMP not found. Use -DWITH_OPENMP=OFF to build without OpenMP")
+	      endif()
 	endif()
 endif()
 

@@ -1,0 +1,15 @@
+# Model file that contain all extra parameters required to compute the modeled aj
+# Warning: The function reading this expect EXACTLY this structure. Do no remove or swap any of the 'sections' 
+#          Only this header can be of arbitrary size
+! Dnu
+135.1
+! l
+1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2
+! nu_nl
+2425.654042 2559.390569 2693.554468 2828.379533 2963.579523 3098.425041 3233.539446 3368.975283 3504.702380 3641.066581 2352.306928 2485.844876 2619.761422 2754.537113 2889.776488 3024.925657 3160.107299 3295.447051 3431.243027 3567.369681
+! setups
+filter_type  	gate
+do_a2   		1
+do_a4   		1
+do_a6   		0
+do_CFonly               0

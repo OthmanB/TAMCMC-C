@@ -1,0 +1,66 @@
+\documentclass[10pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[english]{isodate}
+\usepackage[parfill]{parskip}
+\usepackage{natbib}
+\usepackage{url}
+
+% Journals
+\input{journals.tex}
+
+\begin{document}
+
+\begin{titlepage}
+   \vspace*{\stretch{1.0}}
+   \begin{center}
+      \Large\textbf{Instruction Manual for TAMCMC-C++}\\
+      \textbf{Version 1.3.1} \\
+      \large\textit{Othman Benomar}
+   \end{center}
+   \vspace*{\stretch{2.0}}
+\end{titlepage}
+
+\pagenumbering{Roman}
+\tableofcontents
+\newpage
+%\listoffigures
+%\newpage
+%\listoftables
+%\newpage
+\pagenumbering{arabic}
+
+
+\section{Purpose of TAMCMC-C++}
+
+	TAMCMC stands for Tempered Adaptive Markov Chain Monte Carlo and is a multipurpose code designed to analyse asteroseismic data. As the extension suggests, the code is written in C++, but is based on my PhD work\footnote{\url{http://www.theses.fr/2010PA112309}}, but is also described in \cite{Benomar2009}. The algorithm scheme is taken from \cite{atchade2006}. It is designed to
+	\begin{itemize}
+		\item Automatically adjust the covariance matrix of the proposal law in order to optimally sample a statistical criteria with a MCMC algorithm.
+		\item Use the local gradient to enhance the exploration properties of the algorithm. This is this 'Langevin' part of the algorithm that lead to the algorithm name: MALA (Metropolis-Hasting-Langevin Algorithm).   
+	\end{itemize}
+The current version of the code does not implement the 'Langevin' scheme, because the derivative is not known a priori when analysing seismic data. However, this might be implemented in the future.
+
+This version of the code is designed to perform power spectrum fitting of Main-sequence solar-like stars. It comes with a suite of models that allows to perform global fits of individual pulsations. Although this was not tested thoroughly, It has a also a module to handle the fit of mode envelopes, considering a Gaussian envelope over a noise background. 
+
+
+\section{Basic structure of the code and efficiency}
+The code is built so that most user do not require any coding skills for analysing basic asteroseismic data. Furthermore, if it is needed to add/modify models, this is fairly easy due to the modular structure of the code: The core computational part is independent from the model/priors/data/statistical criteria that should be used. Adding or Modifying those requires only to edit few files,
+\begin{itemize}
+	\item[-]  \textbf{\path{./tamcmc/sources/models.cpp}}  that contains all the models that must computed
+	\item[-] \textbf{\path{./tamcmc/sources/config.cpp} }   that contains the list of models, priors and statistics that are accepted.
+	\item[-] \textbf{\path{./tamcmc/sources/model_def.cpp} } that specify which function and what arguments must be used depending on the chosen model
+\end{itemize}
+
+TAMCMC-C++ is build such that it is highly efficient in sampling the pdf of a distribution. Parallelisation of the parallel chains is possible by OpenMP. Hence, when analysing typically $\approx 10^5$ data points\footnote{Typical number of the longest {\it Kepler} observations.} the typical time to compute 1 Million samples is of a couple of days on standard quad core CPU.
+
+\section{General setup}
+
+\section{Model setup}
+
+\section{External tools}
+
+\bibliographystyle{humannat}
+\bibliography{bib_othman}
+
+\end{document}

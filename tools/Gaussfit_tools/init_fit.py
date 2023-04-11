@@ -161,17 +161,17 @@ def inital_param_S0(numax, Amp, freq, spec_reg, fmin, fmax):
 	# LONG CADENCE
 	if stype == 'LC':
 		increment=2 # The incremental step to evaluate the noise background must be small for long cadence
+	nu2=np.min(f_smooth) + increment # second sample taken 50 microHz apart from 
+	#pos=np.where(np.bitwise_and(f_smooth >= nu2 , f_smooth <= nu2 + dnu_win))
+	pos, dnu_win_new=robust_where(f_smooth, nu2, dnu_win)
+	H2_2=np.mean(s_smooth[pos]) - B0
+	while (H2_2/H2 <= 0.5) or H2_2 <=0:
 		nu2=np.min(f_smooth) + increment # second sample taken 50 microHz apart from 
 		#pos=np.where(np.bitwise_and(f_smooth >= nu2 , f_smooth <= nu2 + dnu_win))
 		pos, dnu_win_new=robust_where(f_smooth, nu2, dnu_win)
 		H2_2=np.mean(s_smooth[pos]) - B0
-		while (H2_2/H2 <= 0.5) or H2_2 <=0:
-			nu2=np.min(f_smooth) + increment # second sample taken 50 microHz apart from 
-			#pos=np.where(np.bitwise_and(f_smooth >= nu2 , f_smooth <= nu2 + dnu_win))
-			pos, dnu_win_new=robust_where(f_smooth, nu2, dnu_win)
-			H2_2=np.mean(s_smooth[pos]) - B0
-			increment=increment*2
-		increment=increment/2	
+		increment=increment*2
+	increment=increment/2	
 	cpt=0.
 	force_exit=0 # Boolean switch that turns into 1 if Fnyquist is passed
 	while (H2_2/H2 >= 0.5) and cpt < 40 and (force_exit == 0): # as soon as the intensity has not decreased by at least half...
@@ -246,6 +246,72 @@ def inital_param_S1(file_guess_s1):
 	header=s[0]
 	params=np.asarray(s[1].split(), dtype=float)
 	return params, err
+
+def read_data_file(datafile, extend_to_0=False, extend_type='max'):
+# This function reads a data file, as per defined for the TAMCMC program
+	f=open(datafile, 'r')
+	data=f.read()
+	f.close()
+
+	txt=data.split('\n')
+	count=0
+	out=False
+	while out == False:
+		#print(txt[count])
+		if txt[count][0] !='#':
+			out=True
+		else:
+			count=count+1
+	nmodels=len(txt[count].split()) - 2
+	#
+	x=np.zeros(len(txt))
+	y=np.zeros(len(txt))
+	if nmodels > 0:
+		m=np.zeros((nmodels, len(txt)))
+	else:
+		print('No model found in the file... skipping it and returning -1')
+		m=-1
+	i=0
+	for t in txt[count:]:
+		line=t.split()
+		if len(line)>0:
+			x[i]=line[0]
+			y[i]=line[1]
+			for j in range(nmodels):
+				m[j,i]=line[2+j]
+			i=i+1
+	x=x[0:i-1]
+	y=y[0:i-1]
+	if extend_to_0 == True:
+		print('Warning: Extend to 0 is True: We will add datapoint using psf to the low range...')
+		resol=x[2]-x[1]
+		Nextra=int(np.floor(x.min()/resol)-1)
+		xextra=np.linspace(0, x.min()-resol, Nextra)
+		xnew=np.zeros(len(x) + len(xextra))
+		ynew=np.zeros(len(xnew))
+		xnew[0:Nextra]=xextra
+		xnew[Nextra:]=x
+		true_xmin=x.min()
+		if extend_type == 'max':
+			print('extension using the max all the data points ')
+			ynew[0:Nextra]=y[0:100].max()
+		if extend_type == 'mean':
+			print('extension using the mean of the lower freq 1microHz (or the first 10 bin) data points ')
+			pos=np.where(x<=x.min()+0.5)
+			#print('resol = ', resol)
+			#print("Ndata_low_range=",len(pos[0]))
+			if len(pos) <= 10:
+				#print(' Warning: The lower 0.5 microHz range has less than 10 data points... using the 10 lowest frequency data points...')
+				ynew[0:Nextra]=np.mean(y[0:10])
+				#ynew[0:Nextra]=np.max(y[0:10])
+			else:
+				ynew[0:Nextra]=np.mean(y[pos])
+		ynew[Nextra:]=y
+		x=xnew
+		y=ynew
+	if nmodels >0:
+		m=m[:,0:i-1]
+	return x,y, m, extend_to_0, true_xmin
 
 def do_data_file(freq, spec_reg, fileout, rebin=1):
 	'''
@@ -351,7 +417,7 @@ def do_model_file(init_param, relax_param, name_param, prior_param, name_prior, 
 		#exit()
 	return err
 
-def mode_initial_setup(spec_file, KIC_number, numax_guess, numax_uncertainty_guess, Amax_guess, outdir, fmin=0, fmax=5000, rebin=1, do_S1=" "):
+def mode_initial_setup(spec_file, KIC_number, numax_guess, numax_uncertainty_guess, Amax_guess, outdir, fmin=0, fmax=5000, rebin=1, do_S1=None, datatype='sav'):
 	'''
 		This function has for main role to guess what should be the initial
 		parameters for the fit of the noise background
@@ -366,13 +432,16 @@ def mode_initial_setup(spec_file, KIC_number, numax_guess, numax_uncertainty_gue
 						  BEWARE: This changes the statistics and thus errors in fitting. e.g. rebin = 2 ==>> p=2
 	'''
 	
-	d=readsav(spec_file)
-	freq=d['freq']
-	spec_reg=d['spec_reg']
+	if datatype == 'sav':
+		d=readsav(spec_file)
+		freq=d['freq']
+		spec_reg=d['spec_reg']
+	if datatype == 'data':
+		freq, spec_reg, models, extended, true_xmin=read_data_file(spec_file, extend_to_0=True)
+
 	freq=np.reshape(freq, freq.size)
 	spec_reg=np.reshape(spec_reg, spec_reg.size)
-
-	if do_S1==" ":
+	if do_S1==None:
 		init_param,err=inital_param_S0(numax_guess,Amax_guess,freq, spec_reg, fmin, fmax)		
 	else:
 		init_param,err=inital_param_S1(do_S1)
@@ -454,10 +523,18 @@ def mode_initial_setup(spec_file, KIC_number, numax_guess, numax_uncertainty_gue
 		prior_param[:,2]=[-9999            , -9999         , -9999        , -9999            ,  -9999   ,  -9999   ,  -9999                 , -9999           , -9999                                       , psigma[2] ]
 		prior_param[:,3]=[-9999            , -9999         , -9999        , -9999            ,  -9999   ,  -9999   ,  -9999                 , -9999           , -9999                                       , psigma[3] ]
 		# **************
-		err=do_data_file(freq, spec_reg, outdir + "/" + KIC_number+"_Gaussfit.data", rebin=rebin)
-		err=do_model_file(init_param, relax_param, name_param, prior_param, prior_name, outdir + "/" + KIC_number + "_Gaussfit.model", 
+		if extended == False: 
+			err=do_data_file(freq, spec_reg, outdir + "/" + KIC_number+"_Gaussfit.data", rebin=rebin)
+			err=do_model_file(init_param, relax_param, name_param, prior_param, prior_name, outdir + "/" + KIC_number + "_Gaussfit.model", 
    				      np.min(freq), np.max(freq), header="# File auto-generated by init_fit.py\n# Fit of Gaussian mode Envelope\n# ID:"+ str(KIC_number)+"\n")
+		else: # The low frequencies were artificial and we should ignore the lower Frequencies on the guess
+			pos=np.where(freq >= true_xmin)
+			err=do_data_file(freq[pos], spec_reg[pos], outdir + "/" + KIC_number+"_Gaussfit.data", rebin=rebin)
+			err=do_model_file(init_param, relax_param, name_param, prior_param, prior_name, outdir + "/" + KIC_number + "_Gaussfit.model", 
+   				      np.min(freq[pos]), np.max(freq[pos]), header="# File auto-generated by init_fit.py\n# Fit of Gaussian mode Envelope\n# ID:"+ str(KIC_number)+"\n")
 		# **************
+	else:
+		print('Error returned when attempting to get guesses')
 
 def do_from_starlist(starlist_file, outdir, rebin=1, dir_S1=" "):
 	'''
@@ -530,11 +607,57 @@ def show_formated_kiclist(starlist_file, rebin):
 		print(kic+"_Gaussfit    ", rebin , ";")
 
 def fast_test():
-	spec_file='/Volumes/home/import/usbdisk2tb-3.5inch/Level0-Inputs/ts_rgb/concatenated/TF_10528917.sav'
-	numax_guess=76
-	numax_uncertainty_guess=40
-	Amax_guess=5000
-	KIC_number='10528917'
-	outdir='/Users/obenomar/tmp/'
+	#spec_file='/Volumes/home/import/usbdisk2tb-3.5inch/Level0-Inputs/ts_rgb/concatenated/TF_10528917.sav'
+	#numax_guess=76
+	#numax_uncertainty_guess=76
+	#Amax_guess=5000
+	#KIC_number='10528917'
+	#outdir='/Users/obenomar/tmp/'
+	#
+	#2006.5-2010.5_incfix_fast.data
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/2006.5-2010.5_incfix_fast.data' # Not working due to cut in data
+	spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/RAW/spec_green_2006.51-2010.51.sav'
+	KIC_number='2006.5-2010.5'
+	
+	#2006.5-2011.5_incfix_fast
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/2006.5-2011.5_incfix_fast.data' # Not working due to cut in data
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/RAW/spec_green_2006.51-2011.51.sav'
+	#KIC_number='2006.5-2011.5'
+	
+	#20062011_incfix_fast
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/20062011_incfix_fast.data' # Not working due to cut in data
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/RAW/spec_green_2006.01-2011.01.sav'
+	#KIC_number='2006-2011'
+	
+	#2007-2011_incfix_fast
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/2007-2011_incfix_fast.data' # Not working due to cut in data
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/RAW/spec_green_2007.01-2011.01.sav'
+	#KIC_number='2007-2011'
+	
+	#2007-2012_incfix_fast
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/2007-2012_incfix_fast.data' # Not working due to cut in data
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/RAW/spec_green_2007.01-2012.01.sav'
+	#KIC_number='2007.5-2011.5'
+	
+	#2007.5-2011.5_incfix_fast
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/2007.5-2011.5_incfix_fast.data' # Not working due to cut in data
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/RAW/spec_green_2007.51-2011.51.sav'
+	#KIC_number='2007.5-2011.5'
+
+	#2007.5-2012_incfix_fast
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/2007.5-2012_incfix_fast.data' # Not working due to cut in data
+	#spec_file='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/RAW/spec_green_2007.51-2012.01.sav'
+	#KIC_number='2007.5-2012'
+	
+	numax_guess=3150.
+	numax_uncertainty_guess=60
+	Amax_guess=3
+	
+	outdir='/Users/obenomar/Work/tmp/Sun-analysis/inputs/Sep2022/TAMCMC_fit/Gaussfit/model/'
 	rebin=4
-	mode_initial_setup(spec_file, KIC_number, numax_guess, numax_uncertainty_guess, Amax_guess, outdir, fmin=0, fmax=5000, rebin=rebin)
+	extension=spec_file.split('.')[-1]
+	if extension == 'sav':
+		datatype='sav'
+	if extension == 'data':
+		datatype='data'
+	mode_initial_setup(spec_file, KIC_number, numax_guess, numax_uncertainty_guess, Amax_guess, outdir, fmin=0, fmax=10000, rebin=rebin, datatype=datatype)

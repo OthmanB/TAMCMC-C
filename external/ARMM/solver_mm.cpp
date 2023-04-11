@@ -516,7 +516,7 @@ Data_eigensols solve_mm_asymptotic_O2p(const long double Dnu_p, const long doubl
 	const int Nmmax=5000; //Ngmax+Npmax;
 	const int Nmax_attempts=4;
 	const double tol=2*resol; // Tolerance while searching for double solutions of mixed modes
-	const double sigma_g=0;  // FOR SOME REASON, WE FIND MULTIPLE SOLUTIONS WITHIN A NARROW RANGE WHEN USING SIGMA_G... SO IT TURNED IT OFF
+	//const double sigma_g=0;  // FOR SOME REASON, WE FIND MULTIPLE SOLUTIONS WITHIN A NARROW RANGE WHEN USING SIGMA_G... SO IT TURNED IT OFF
 
 	unsigned seed_p = std::chrono::system_clock::now().time_since_epoch().count();
 	//unsigned seed_g = std::chrono::system_clock::now().time_since_epoch().count();
@@ -568,13 +568,14 @@ Data_eigensols solve_mm_asymptotic_O2p(const long double Dnu_p, const long doubl
 	nu_g_all.resize(ng_max-ng_min);
 	for (int np=np_min; np<np_max; np++)
 	{
+		nu_p=asympt_nu_p(Dnu_p, np, epsilon, el, delta0l, alpha_p, nmax);
 		if (sigma_p == 0)
 		{
 			nu_p=asympt_nu_p(Dnu_p, np, epsilon, el, delta0l, alpha_p, nmax);
 		} else{
 			r = distrib_p(gen_p);
 			nu_p=asympt_nu_p(Dnu_p, np, epsilon, el, delta0l, alpha_p, nmax, r);
-		}
+		}		
 		nu_p_all[np-np_min]=nu_p;
 	}
 
@@ -594,11 +595,6 @@ Data_eigensols solve_mm_asymptotic_O2p(const long double Dnu_p, const long doubl
 	deriv_g.deriv.resize(nu_g_all.size());
 	deriv_g.deriv.setConstant(DPl);
 
-	//if (sigma_g != 0)
-	//{
-	//	deriv_g=Frstder_adaptive_reggrid(1e6 * nu_g_all.cwiseInverse());
-	//}
-
 	//std::cout << " np_min = " << np_min << std::endl;
 	//std::cout << " np_max = " << np_max << std::endl;
 	//std::cout << " ng_min = " << ng_min << std::endl;
@@ -617,17 +613,20 @@ Data_eigensols solve_mm_asymptotic_O2p(const long double Dnu_p, const long doubl
 			nu_g=nu_g_all[ng];
 			
 			// This is the local Dnu_p which differs from the average Dnu_p because of the curvature. The solver needs basically d(nu_p)/dnp , which is Dnu if O2 terms are 0.
-			if (sigma_p == 0){
+			//if (sigma_p == 0){
 				Dnu_p_local=Dnu_p*(1. + alpha_p*(np + np_min - nmax));
-			} else{ // Due to the randomisation from sigma_p, we need to evaluate the local Dnu by the means of the first derivative
-				Dnu_p_local=deriv_p.deriv[np];
-			} 
+			//} else{ // Due to the randomisation from sigma_p, we need to evaluate the local Dnu by the means of the first derivative
+			//	Dnu_p_local=deriv_p.deriv[np];
+			//} 
 			//if (sigma_g == 0){
 				DPl_local=DPl; // The solver needs here d(nu_g)/dng. Here we assume no core glitches so that it is the same as DPl. 	
 			//} else{ // Due to the randomisation from sigma_g, we need to evaluate the local DPl by the means of the first derivative
 			//	DPl_local=deriv_g.deriv[ng-ng_min];
 			//}
-			sols_iter=solver_mm(nu_p, nu_g, Dnu_p_local, DPl_local, q, nu_p - 3.*Dnu_p/4, nu_p + 3.*Dnu_p/4, resol, returns_axis, verbose, fact);
+			//std::cout << " Dnu_p = " << Dnu_p <<  "     np = " << np <<  "   np_min =" << np_min << "    np_max =" << np_max << std::endl;
+			//std::cout << "Dnu_p_local = " << Dnu_p_local << std::endl;
+			//std::cout << "DPl_local = " << DPl_local << std::endl;
+			sols_iter=solver_mm(nu_p, nu_g, Dnu_p_local, DPl_local, q, nu_p - 1.75*Dnu_p, nu_p + 1.75*Dnu_p, resol, returns_axis, verbose, fact);
 			if (verbose == true)
 			{
 				std::cout << "=========================================="  << std::endl;
@@ -721,12 +720,10 @@ Data_eigensols solve_mm_asymptotic_O2from_l0(const VectorXd& nu_l0_in, const int
 	const int Nmmax=5000; //Ngmax+Npmax;
 	//const int Nmax_attempts=4;
 	const double tol=2*resol; // Tolerance while searching for double solutions of mixed modes
-	//const double sigma_g=0;  // FOR SOME REASON, WE FIND MULTIPLE SOLUTIONS WITHIN A NARROW RANGE WHEN USING SIGMA_G... SO IT TURNED IT OFF
-
-	//unsigned seed_p = std::chrono::system_clock::now().time_since_epoch().count();
+	unsigned seed_p = std::chrono::system_clock::now().time_since_epoch().count();
 	//unsigned seed_g = std::chrono::system_clock::now().time_since_epoch().count();
-	//std::default_random_engine gen_p(seed_p); //, gen_g(seed_g);
-	//std::normal_distribution<double> distrib_p(0.,sigma_p);
+	std::default_random_engine gen_p(seed_p); //, gen_g(seed_g);
+	std::normal_distribution<double> distrib_p(0.,sigma_p);
 	//std::normal_distribution<double> distrib_g(0.,sigma_g);
 
 	//bool success;
@@ -992,7 +989,6 @@ Data_eigensols solve_mm_asymptotic_O2from_l0_DEV(const VectorXd& nu_l0_in, const
 //	nu_p_all: Frequencies for the l modes.
 //  nu_l0_in: Frequencies for the l=0 modes ... Used to derive Dnu 
 //	el: Degree of the mode
-//	delta0l: first order shift related to core structure (and to D0)
 //	alpha_p: Second order shift relate to the mode curvature
 //	nmax: radial order at numax
 //	DPl: average Period spacing of the g modes
@@ -1003,7 +999,7 @@ Data_eigensols solve_mm_asymptotic_O2from_l0_DEV(const VectorXd& nu_l0_in, const
 //  resol: Control the grid resolution. Might be set to the resolution of the spectrum
 //  returns_pg_freqs: If true, returns the values for calculated p and g modes
 //  verbose: If true, print the solution on screen 
-Data_eigensols solve_mm_asymptotic_O2from_nupl(const VectorXd& nu_p_all, const int el, const long double delta0l, 
+Data_eigensols solve_mm_asymptotic_O2from_nupl(const VectorXd& nu_p_all, const int el, //const long double delta0l, 
     const long double DPl, const long double alpha, const long double q, const long double sigma_p, 
 	const long double resol, bool returns_pg_freqs=true, bool verbose=false, const long double freq_min=0, const long double freq_max=1e6)
 {
@@ -1012,19 +1008,16 @@ Data_eigensols solve_mm_asymptotic_O2from_nupl(const VectorXd& nu_p_all, const i
 	const int Nmmax=5000; //Ngmax+Npmax;
 	//const int Nmax_attempts=4;
 	const double tol=2*resol; // Tolerance while searching for double solutions of mixed modes
-	//const double sigma_g=0;  // FOR SOME REASON, WE FIND MULTIPLE SOLUTIONS WITHIN A NARROW RANGE WHEN USING SIGMA_G... SO IT TURNED IT OFF
-
-	//unsigned seed_p = std::chrono::system_clock::now().time_since_epoch().count();
+	unsigned seed_p = std::chrono::system_clock::now().time_since_epoch().count();
 	//unsigned seed_g = std::chrono::system_clock::now().time_since_epoch().count();
-	//std::default_random_engine gen_p(seed_p); //, gen_g(seed_g);
-	//std::normal_distribution<double> distrib_p(0.,sigma_p);
+	std::default_random_engine gen_p(seed_p); //, gen_g(seed_g);
+	std::normal_distribution<double> distrib_p(0.,sigma_p);
 	//std::normal_distribution<double> distrib_g(0.,sigma_g);
 
 	//bool success;
 	int np, ng, s0m, ng_min, ng_max;//, np_min, np_max, attempts;
 	double nu_p, nu_g, Dnu_p, epsilon, Dnu_p_local, DPl_local, fmin, fmax; // Dnu_p_local and DPl_local are important if modes does not follow exactly the asymptotic relation.
 	double fact=0.04;  // Default factor
-	//double r;
 
 	VectorXi test;
 	VectorXd tmp, fit, nu_g_all, nu_m_all(Nmmax), results(Nmmax);	
@@ -1036,8 +1029,6 @@ Data_eigensols solve_mm_asymptotic_O2from_nupl(const VectorXd& nu_p_all, const i
 	tmp=linspace(0, nu_p_all.size()-1, nu_p_all.size());
 	fit=linfit(tmp, nu_p_all); // fit[0] is the slope ==> Dnu and fit[1] is the ordinate at origin ==> fit[1]/fit[0] = epsilon
 	Dnu_p=fit[0];
-	//epsilon=fit[1]/fit[0];
-	//epsilon=epsilon - floor(epsilon);
 
 	fmin=nu_p_all.minCoeff() - Dnu_p; // Range for setting the number of g modes 
 	fmax=nu_p_all.maxCoeff() + Dnu_p;

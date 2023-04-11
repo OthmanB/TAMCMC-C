@@ -1,0 +1,10 @@
+# File that contains observables for the aj fit
+# First Column: index j of aj
+# Second Column: aj coefficient
+# Third Column: the uncertainty
+1      0.000000       9.828325  
+2     86.3148795     18.6632977318
+3     0.000000       0.000000
+4     5.0089         10.476192 
+5     0.000000       0.000000
+6     0.000000       0.000000

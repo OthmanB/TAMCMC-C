@@ -74,6 +74,7 @@ struct MCMC_files{
 	std::string ID;
 	double Dnu;
 	double numax;
+	double err_numax;
 	double C_l;
 	VectorXi els;
 	VectorXd freq_range;
@@ -83,7 +84,8 @@ struct MCMC_files{
 	std::vector<bool> relax_freq, relax_gamma, relax_H;
 
 	//std::vector<double> hyper_priors;
-	VectorXd hyper_priors;
+	MatrixXd hyper_priors; // Col 0 is the fref_bias, Col 1-5 Are for the prior parameters
+	std::vector<std::string> hyper_priors_names; // This gets the prior name (U, GU, G, etc..). Check io_ms_global to see how this is read
 	MatrixXd eigen_params;
 	VectorXd noise_params;
 	MatrixXd noise_s2;
@@ -91,6 +93,17 @@ struct MCMC_files{
 	std::vector<std::string> common_names;
 	std::vector<std::string> common_names_priors;
 	MatrixXd modes_common;
+};
+
+struct aj_files{
+	std::string filter_type;
+	double Dnu;
+	VectorXd els;
+	VectorXd nu_nl;
+	bool do_a2;
+	bool do_a4;
+	bool do_a6;
+	bool do_CFonly;
 };
 
 // Structure that keep information of the derivatives

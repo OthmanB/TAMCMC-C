@@ -254,14 +254,18 @@ void MALA::init_proposal(const VectorXd vars, const std::vector<std::string> var
 		for(int j=0; j<s_inerror.size();j++){
 			if(var_names[i] == s_inerror[j]){
 				error[i]=vars[i]*fracerr[j] + offseterr[j];
+				//std::cout << "   -----     Found! ------" << std::endl;
+				//std::cout << "      vars[" << i << "]=" << vars[i] << "  fracerr[" << j << "] =" << fracerr[j] <<  "  offseterr[" << j << "]=" << offseterr[j] << std::endl;
+				//std::cout << "   -----------------------" << std::endl;
 			}
 		}
 	}
+	std::cout << " -- " << std::endl;
     for(long i=0; i<vars.size(); i++){
         std::cout << " var[" << i << "]=" << vars[i] <<"   ===> err[" << i << "]=" << error[i]  <<  std::endl;
     }
 
-	std::cout << " ---------------------------------------------------------------" << std::endl;
+   std::cout << " ---------------------------------------------------------------" << std::endl;
 	std::cout << " Initializing the matrix of covariance and the scaling factor..." << std::endl;
         error=error.array().square();
 	cov0=error.asDiagonal();
@@ -336,6 +340,8 @@ VectorXd MALA::new_prop_values(const VectorXd& vars, int m){
 /*
  * This function generate new samples according to the current proposal law
 */
+	bool is_finite=true;
+	int c;
 	VectorXd ran, shift(Nvars);
 	MatrixXd tmpmat;
 
@@ -347,7 +353,17 @@ VectorXd MALA::new_prop_values(const VectorXd& vars, int m){
 	
 	// ***** Update of the proposal laws *****
 	ran=vars + Lchol*Eigen::Map<VectorXd>(y, epsilon2.rows()); // Compute the multivariate distribution and project it into the parameter space
-
+	
+	c=0;
+	while (is_finite == true && c<ran.size()){
+		is_finite=std::isfinite(ran[c]);
+		if (is_finite == false){
+			std::cout << "Warning : Generation of a new vector lead to non-finite value: Recomputing..." << std::endl;
+			y = r8vec_normal_01 ( epsilon2.rows(), &seed );
+			ran=vars + Lchol*Eigen::Map<VectorXd>(y, epsilon2.rows()); // Compute the multivariate distribution and project it into the parameter space	
+		}
+		c=c+1;
+	}
 	delete y;
 return ran;
 }
