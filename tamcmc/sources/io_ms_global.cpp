@@ -12,7 +12,8 @@
 #include <vector>
 #include <string>
 #include "data.h" // contains the structure Data
-//#include "string_handler.h"
+#include "../../external/Alm/Alm_cpp/data.h" // Structures specific for the GSL interpolation
+#include "../../external/Alm/Alm_cpp/Alm_interpol.h"
 #include "io_ms_global.h"
 #include "io_models.h"
 #include "function_rot.h"
@@ -499,7 +500,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
         		do_avg_a1n=1;
         		aj_switch=5;  //Case for 2x(a1,a3,a5, epsilon) + theta0 + delta + eta0 switch + 1 asymetry
         		extra_priors[9]=8; // used in priors_calc.cpp 
-            }
+	        }
        	if(all_in.model_fullname == "model_MS_Global_aj_HarveyLike"){
         		//Previously corresponding to average_a1nl     bool    0    0
         		do_a11_eq_a12=1;            		
@@ -1301,7 +1302,7 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	plength[9]=Inc_in.inputs.size();
 	// -- Extend the parameter vector if decompose_Alm if necessary (see further for the parameter filling) --
 	if (all_in.model_fullname == "model_MS_Global_ajAlm_HarveyLike"){
-		plength[10]=4; // This is trunc_c and do_amp + decompose_Alm + filter_type;
+		plength[10]=4; // This is trunc_c and do_amp + decompose_Alm;
 	}else{
 		plength[10]=2; // This is trunc_c and do_amp;
 	}	
@@ -1356,10 +1357,14 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	io_calls.fill_param(&all_in, "Switch for fit of Amplitudes or Heights", "Fix", do_amp, inputs_MS_global.modes_common.row(0), p0,1);
 
 	if (all_in.model_fullname == "model_MS_Global_ajAlm_HarveyLike"){
-		p0=plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8] + all_in.plength[9] + 2;
+		p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + 
+						all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + 
+						all_in.plength[7] + all_in.plength[8] + all_in.plength[9] + 2;
 		io_calls.fill_param(&all_in, "decompose_Alm", "Fix", decompose_Alm, inputs_MS_global.modes_common.row(0), p0,1);
 		// Handling the filter type
-		p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8] + all_in.plength[9] + 3;
+		p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + 
+						all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + 
+						all_in.plength[7] + all_in.plength[8] + all_in.plength[9] + 3;
 		if (filter_type == "gate"){ // gate is coded by 0
 			io_calls.fill_param(&all_in, "filter_type", "Fix", 0, tmpXd, p0, 0);
 		}

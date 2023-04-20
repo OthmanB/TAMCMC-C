@@ -8,6 +8,7 @@
 #include <Eigen/Dense>
 #include "activity.h"
 #include "linspace.h"
+#include "bilinear_interpol.h"
 
 using Eigen::VectorXd;
 using Eigen::VectorXi;
@@ -93,13 +94,6 @@ VectorXd gate_filter(const VectorXd theta, const long double theta0, const long 
 		   (theta[i] >= (M_PI - theta0 - delta/2) && theta[i] <= (M_PI - theta0 + delta/2)) ) {
 		   	F[i]=1;
 		   }
-		 //if (distance<=distance_critic && theta[i] >=(theta0+delta/2) && theta[i] <=(M_PI-theta0-delta/2)){
-		 //	std::cout << "distance: " << distance << std::endl;
-		 //	std::cout << "(theta0+delta/2) =" << (theta0+delta/2) << std::endl;
-		 //	std::cout << "(M_PI-theta0-delta/2) =" << M_PI-theta0-delta/2<< std::endl;
-		 //	std::cout << "theta[i] =" << theta[i] << std::endl;
-		 //	std::cout << "---------------" << std::endl; 
-		 //}
 	}
 	return F;
 }
@@ -135,7 +129,6 @@ VectorXd triangle_filter(const VectorXd theta, const long double theta0, const l
 		//std::cout << 'Warning: You use the function in the range above Pi/2' << std::endl;
 		//std::cout <<  '        Suitable only for visualisation or debug purpose' << std::endl;
 		// Lower part: Between 0<theta<theta0
-		//g1bis=np.where(np.bitwise_and(theta <= np.pi - theta0, theta >=np.pi/2))[0]
 		a=2/delta; // The slope
 		b=1- a*(M_PI - theta0);
 		for (int i=0; i<theta.size(); i++){
@@ -144,7 +137,6 @@ VectorXd triangle_filter(const VectorXd theta, const long double theta0, const l
 			}
 		}
 		// Higher part: Between theta0<theta<np.pi/2
-		//g2=np.where(np.bitwise_and(theta > np.pi - theta0, theta <=np.pi))[0]
 		a=-2/delta;
 		b=1-a*(M_PI - theta0 );
 		for (int i=0; i<theta.size(); i++){
@@ -255,7 +247,6 @@ long double Alm(const int l, const int m, const long double theta0, const long d
 long double Alm_deg(const int l, const int m, const long double theta0, const long double delta, std::string ftype){
 
 	_2D::GQ::GaussLegendreQuadrature<double,64> integrate;
-	//_2D::GQ::GaussLegendreQuadrature<double,16> integrate;
 	const long double theta_min=0; // Default for ftype='gate'
 	const long double theta_max=M_PI/2;
 	const long double phi_min=0;

@@ -2,6 +2,7 @@
 #include <math.h>
 #include <Eigen/Dense>
 #include "function_rot.h"
+#include "../../external/Alm/Alm_cpp/data.h"
 # include <iostream>
 # include <iomanip>
 #include <string>
@@ -43,6 +44,10 @@ VectorXd optimum_lorentzian_calc_aj(const VectorXd& x, const VectorXd& y, const 
         const double eta0, const double asym, const double gamma_l, const int l, const VectorXd& V, const double step, const double c);
 
 VectorXd build_l_mode_ajAlm(const VectorXd& x_l, const double H_l, const double fc_l, const double a1, const double a3, const double a5, 
-    const double eta0, const double epsilon_nl, const VectorXd& thetas, const double asym, const double gamma_l, const int l, const VectorXd& V, const std::string filter_type);
+    const double eta0, const double epsilon_nl, const VectorXd& thetas, 
+    const double asym, const double gamma_l, const int l, const VectorXd& V, 
+    const std::string filter_type, const gsl_funcs);
 VectorXd optimum_lorentzian_calc_ajAlm(const VectorXd& x, const VectorXd& y,  const double H_l,  const double fc_l,  const double a1, const double a3, const double a5, 
-		const double eta0, const double epsilon_nl, const VectorXd& thetas,  const double asym,  const double gamma_l, const int l,  const VectorXd& V,  const double step, const double c, const std::string filter_type);
+		const double eta0, const double epsilon_nl, const VectorXd& thetas,  
+                const double asym,  const double gamma_l, const int l,  const VectorXd& V,  
+                const double step, const double c, const std::string filter_type, const gsl_funcs);

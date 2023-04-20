@@ -42,9 +42,11 @@ Model_def::Model_def(Config *config, const VectorXd& Tcoefs, const bool verbose)
 	relax=config->modeling.inputs.relax;
 	plength=config->modeling.inputs.plength;
 	extra_priors=config->modeling.inputs.extra_priors;
-
 	likelihood_params=config->modeling.likelihood_params;
 
+	// Load external data
+	extra_data=config->modeling.extra_data; // These data must be a structure for eg. interpolation tables
+	
 	Nparams=plength.sum();
 	params.resize(Nmodels, Nparams);
 
@@ -287,7 +289,7 @@ VectorXd Model_def::call_model(Data *data_struc, int m, bool outparams){
 			return model_MS_Global_a1a2a3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams); // Added on 18 Jan 2021: Handles the a2 coefficient with n free
 			break;
 		case 21:
-			return model_MS_Global_ajAlm_HarveyLike(params.row(m), plength, (*data_struc).x, outparams); // Added on 31 Mar 2021: describes asphericity using a2_CF + a2_AR (see Gizon 2002, AN)
+			return model_MS_Global_ajAlm_HarveyLike(params.row(m), plength, (*data_struc).x, outparams, extra_data); // Added on 31 Mar 2021: describes asphericity using a2_CF + a2_AR (see Gizon 2002, AN)
 			break;
  		case 22: // model_RGB_asympt_a1etaa3_AppWidth_HarveyLike handled by io_asymptotic.cpp (based on model_MS_Globla with Appourchaux 2016, but with ARMM for mixed modes). This model differs from similar others in the fact that it has a lot of hyperparameters for the mixed modes
 			return model_RGB_asympt_a1etaa3_AppWidth_HarveyLike(params.row(m), plength, (*data_struc).x, outparams);
