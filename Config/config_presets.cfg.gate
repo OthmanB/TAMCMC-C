@@ -16,19 +16,19 @@
 #      
 # main directory for all outputs data. Subdirectories diags, diags/pdfs, restore and outputs will be created within that directory and within the subdirectory table_ids[index_ids, 0]
      #cfg_out_dir=/Users/obenomar/Work/tmp/Siddarth_2022_new/data/outputs/Gaussian/;
-     cfg_out_dir=/Users/obenomar/tmp/outputs/;
+     cfg_out_dir=/Users/obenomar/Work/dev/outputs/;
 #
 #Configuration that will be executed for each given ID. You can put as many phase as you wish. Allowed phase name: Burn-in, Learning, Acquire, ptest
 # Inputs/Outputs restore files might have for syntax: [ID]_restore_[process].dat. process is 'B' (Burn-in) or 'L' (Learning) or 'A' (Acquire)
    processing      = Burn-in  , Learning , Acquire;  Names of the processed phase. Each phase corresponds to a preconfigured setup. This is also defining the input_root_name variable
-   Nsamples        = 50000     , 300000  , 60000;   Number of samples processed at each phase
-   c0              =  1.7      ,  1.7  ,    0;     
-   restore         =  0       ,  1    ,    2;     0= No restore, 1=Restore only the last values, 2=Restore last values and covariance matrix, 3=Restore all and append existing files
+   Nsamples        = 5000     ,  40000  , 60000;   Number of samples processed at each phase
+   c0              =  0.5      ,  0.5  ,    0;     
+   restore         =  0       ,  2    ,    2;     0= No restore, 1=Restore only the last values, 2=Restore last values and covariance matrix, 3=Restore all and append existing files
    core_out        =  B       ,  L    ,    A;   gives the suffix for output files. typical syntax: [ID]_[data_type]_[out_core].* [data_type] can be: 'restore' or output data filenames
    core_in         =  B       ,  B    ,    L;
 
    start_index_processing=0; This is the index of the processing step at which we begin... useful if we want to go directly to an e.g Acquire phase (previous phase must exist)
-   last_index_processing=1; This is the last index of the processing step... useful if we want to compute only e.g. Burn-in + Learning.
+   last_index_processing=0; This is the last index of the processing step... useful if we want to compute only e.g. Burn-in + Learning.
 
 # Here is a table that contains informations on the processes. Names of configuration files should match the IDs
 # This is used to create automatically the cfg_models_name (extension .model) and the cfg_model_file (extension .data)
