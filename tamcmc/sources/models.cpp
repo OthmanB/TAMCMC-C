@@ -1871,7 +1871,7 @@ VectorXd model_MS_Global_ajAlm_HarveyLike(const VectorXd& params, const VectorXi
     MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
     int Line=0; // will be used to trim the mode_params table where suited
     aj.setZero();
-    outparams=true;
+    //outparams=true;
     /*
        -------------------------------------------------------
        ------- Gathering information about the modes ---------
