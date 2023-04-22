@@ -108,16 +108,6 @@ struct aj_files{
 	bool do_CFonly;
 };
 
-struct aj_files{
-	std::string filter_type;
-	double Dnu;
-	VectorXd els;
-	VectorXd nu_nl;
-	bool do_a2;
-	bool do_a4;
-	bool do_a6;
-	bool do_CFonly;
-};
 
 // Structure that keep information of the derivatives
 struct Deriv_out{
