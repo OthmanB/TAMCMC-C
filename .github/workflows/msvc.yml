@@ -20,7 +20,6 @@ env:
   # Path to the CMake build directory.
   build: '${{ github.workspace }}/build'
   EIGEN3_INCLUDE_DIR: /usr/include/eigen3
-  CMAKE_BUILD_DIR: /home/runner/work/TAMCMC-C/TAMCMC-C/build
 
 permissions:
   contents: read
@@ -60,10 +59,12 @@ jobs:
         # Provide a unique ID to access the sarif output path
         id: run-analysis
         with:
-          compileCommands: ../compile_commands.json
+          cmakeBuildDirectory: ${{ env.build }}
+          #compileCommands: ../compile_commands.json
           #cmakeBuildDirectory: ${{ env.build }}
           # Ruleset file that will determine what checks will be run
           ruleset: NativeRecommendedRules.ruleset
+          #cmakeBuildDirectory: '/home/runner/work/TAMCMC-C/TAMCMC-C/build'
 
       # Upload SARIF file to GitHub Code Scanning Alerts
       - name: Upload SARIF to GitHub
