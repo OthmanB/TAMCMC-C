@@ -19,6 +19,7 @@ on:
 env:
   # Path to the CMake build directory.
   build: '${{ github.workspace }}/build'
+  EIGEN3_INCLUDE_DIR: /usr/include/eigen3
 
 permissions:
   contents: read
@@ -43,8 +44,6 @@ jobs:
           sudo apt-get install -y libeigen3-dev
           sudo apt-get install -y libboost-all-dev
           sudo apt-get install libgsl-dev
-        env:
-          EIGEN3_INCLUDE_DIR: /usr/include/eigen3
           
       - name: Configure CMake
         #run: cmake -B ${{ env.build }}
