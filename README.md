@@ -1,5 +1,6 @@
 # README #
 
+[![CMake](https://github.com/OthmanB/TAMCMC-C/actions/workflows/cmake.yml/badge.svg)](https://github.com/OthmanB/TAMCMC-C/actions/workflows/cmake.yml)
 
 ### TAMCMC C++ repository ###
 
