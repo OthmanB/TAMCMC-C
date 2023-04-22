@@ -20,6 +20,7 @@ env:
   # Path to the CMake build directory.
   build: '${{ github.workspace }}/build'
   EIGEN3_INCLUDE_DIR: /usr/include/eigen3
+  CMAKE_BUILD_DIR: /home/runner/work/TAMCMC-C/TAMCMC-C/build
 
 permissions:
   contents: read
@@ -48,10 +49,12 @@ jobs:
       - name: Configure CMake
         #run: cmake -B ${{ env.build }}
         run: cmake -B ${{ env.build }} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug -S /home/runner/work/TAMCMC-C/TAMCMC-C
+        working-directory: ${{ inputs.workingDirectory }}
+            
       # Build is not required unless generated source files are used
       # - name: Build CMake
       #   run: cmake --build ${{ env.build }}
-
+    
       - name: Initialize MSVC Code Analysis
         uses: microsoft/msvc-code-analysis-action@04825f6d9e00f87422d6bf04e1a38b1f3ed60d99
         # Provide a unique ID to access the sarif output path
