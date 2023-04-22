@@ -1,19 +1,14 @@
 #include <Eigen/Dense>
 #include <iostream>
+#include <vector>
 
 using Eigen::VectorXd;
 
-/*
+
 // Taken from https://stackoverflow.com/questions/27028226/python-linspace-in-c
-template<typename T>
-std::vector<double> linspace(T start_in, T end_in, int num_in)
+std::vector<double> linspace_vec(const long double start, const long double end, const long num)
 {
-
   std::vector<double> linspaced;
-
-  double start = static_cast<double>(start_in);
-  double end = static_cast<double>(end_in);
-  double num = static_cast<double>(num_in);
 
   if (num == 0) { return linspaced; }
   if (num == 1) 
@@ -33,7 +28,6 @@ std::vector<double> linspace(T start_in, T end_in, int num_in)
   return linspaced;
 }
 // -----
-*/
 
 // My linspace function
 VectorXd linspace(const long double start_in, const long double end_in, const long num_in)

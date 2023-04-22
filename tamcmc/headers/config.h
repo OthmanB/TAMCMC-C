@@ -19,6 +19,10 @@
 #include "io_local.h"
 #include "io_asymptotic.h"
 #include "io_ajfit.h"
+#include "../../external/Alm/Alm_cpp/data.h"
+#include "../../external/Alm/Alm_cpp/Alm_interpol.h"
+//#include "../../external/Alm/Alm_cpp/bilinear_interpol.h"
+
 
 //using namespace std;
 
@@ -87,6 +91,7 @@ class Config{
 			std::string cfg_model_file; // Contains the initial guesses and the priors in an ASCII format. To each model_fct_name, a given format is expected
 			int slice_ind; // Index of the subset of data that should be analysed (setting e.g. the frequency range when multiple ranges are requested)
 			Input_Data inputs;
+			external_data extra_data; // Any kind of data that we want to access for the model definition and that is static (ie interpolation grids for Alm)
 		};
 		struct Data_cfg{ // all the configuration required for the Data
 			bool verbose_data; // Should we show them on screen before proceeding?

@@ -257,8 +257,15 @@ def integrate_Alm_gate(l, m, theta0, delta, phi_range=[0, 2*np.pi]):
 	return result
 
 def Alm_cpp(l, theta0, delta, ftype, raw=False, Alm_path='cpp_prg/'):
+	# Function updated on 15/04/2023: To accomodate the new option format 
+	# of the Alm program
 	try:
-		process = Popen([Alm_path + "./Alm", str(l), str(theta0), str(delta), ftype], stdout=PIPE, stderr=PIPE)
+		print([Alm_path + "./Alm", "-d ", l,
+		   	"--theta0", theta0, "--delta", delta, 
+			"-f", ftype])
+		process = Popen([Alm_path + "./Alm", "-d", str(l),
+		   	"--theta0", str(theta0), "--delta", str(delta), 
+			"-f", ftype], stdout=PIPE, stderr=PIPE)
 		(output, err) = process.communicate()
 		exit_code = process.wait()
 		#print(output)

@@ -4,17 +4,18 @@
 # include <Eigen/Dense>
 #include "models.h"
 #include "noise_models.h"
+#include "data.h"
+
 #include "../../external/ARMM/solver_mm.h"
 #include "../../external/ARMM/bump_DP.h"
 #include "../../external/Alm/Alm_cpp/activity.h"
+#include "../../external/Alm/Alm_cpp/Alm_interpol.h"
+#include "../../external/Alm/Alm_cpp/data.h"
 #include "acoefs.h"
 #include "interpol.h"
 #include "linfit.h"
 #include "polyfit.h"
 #include "../../external/spline/src/spline.h"
-//#include "linspace.h"
-//#include "Qlm.h"
-//#include <cmath>
 
 using Eigen::VectorXd;
 using Eigen::VectorXi;
@@ -1801,9 +1802,7 @@ VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& p
 }
 
 
-
-
-VectorXd model_MS_Global_ajAlm_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams) // Added on 31 Mar 2021
+VectorXd model_MS_Global_ajAlm_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams, external_data extra_data) // Added on 31 Mar 2021
     {
     /* Model of the power spectrum of a Main sequence solar-like star
      * Make use of Gizon 2002, AN 323, 251 for describing the perturbation from Active Region on a2
@@ -1813,7 +1812,7 @@ VectorXd model_MS_Global_ajAlm_HarveyLike(const VectorXd& params, const VectorXi
      * Warning: Although we have Nfli terms, all these MUST have same size, provided that 0<i<lmax. 
      *          Size MUST be 0 otherwise (this check is not made in this function)    
      */
-
+    //outparams=true;
     const double step=x[1]-x[0]; // used by the function that optimise the lorentzian calculation
     const long double pi = M_PI; //3.141592653589793238462643383279502884L;  
  
@@ -1831,9 +1830,31 @@ VectorXd model_MS_Global_ajAlm_HarveyLike(const VectorXd& params, const VectorXi
     const int Nf=Nfl0+Nfl1+Nfl2+Nfl3;
     const double trunc_c=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc];
     const bool do_amp=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc+1];
-    const int decompose_Alm=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc+2]; // TO VERIFY THE SLOT
-    const std::string filter_type="gate";
-
+    const int decompose_Alm=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc+2]; // Kind of decomposition, if any
+    const int filter_code=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc+3]; // To decide what filter is used
+ 
+    std::string filter_type;
+    gsl_funcs Alm_interp;
+    switch (filter_code)
+    {
+    case 0:
+        filter_type="gate";
+        Alm_interp=extra_data.Alm_interp_gate;
+        break;
+    case 1:
+        filter_type="gauss";
+        Alm_interp=extra_data.Alm_interp_gauss;
+        break;
+    case 2:
+        filter_type="triangle";
+        Alm_interp=extra_data.Alm_interp_triangle;
+        break;    
+    default:
+        std::cerr << "Unreconized filter_code value (" << filter_code << std::endl;
+        std::exit(EXIT_FAILURE);
+        break;
+    }
+    
     double inclination;
     
     VectorXd xfit, rfit, aj(6);
@@ -1850,7 +1871,7 @@ VectorXd model_MS_Global_ajAlm_HarveyLike(const VectorXd& params, const VectorXi
     MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
     int Line=0; // will be used to trim the mode_params table where suited
     aj.setZero();
-    outparams=true;
+    //outparams=true;
     /*
        -------------------------------------------------------
        ------- Gathering information about the modes ---------
@@ -1926,21 +1947,24 @@ VectorXd model_MS_Global_ajAlm_HarveyLike(const VectorXd& params, const VectorXi
         //eta0=0; // FOR TEST PURPOSE ONLY
         switch (decompose_Alm){
             case -1:
-                model_final=optimum_lorentzian_calc_ajAlm(x, model_final, Hl1, fl1, a1, a3, a5, eta0, epsilon_nl, thetas, asym, Wl1, 1, ratios_l1, step, trunc_c);
+                model_final=optimum_lorentzian_calc_ajAlm(x, model_final, Hl1, fl1, a1, a3, a5, eta0, epsilon_nl, thetas, asym, Wl1, 1, ratios_l1, step, trunc_c, filter_type, Alm_interp);
                 break;
             // do_a2, do_a4, do_a6
             case 0: // decompose_Alm = 0 ==> do_a2=true, do_a4=true, do_a6=true
-                aj=decompose_Alm_fct(1, fl1, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
+                aj=decompose_Alm_fct_GSLgrid(1, fl1, eta0, a1, epsilon_nl, thetas, filter_type, Alm_interp); // Use a grid to generate and decompose
+                //aj=decompose_Alm_fct(1, fl1, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
                 //std::cout << "l=1   thetas=" << thetas.transpose()  << "    epsilon_nl=" << epsilon_nl << "   odds aj=" << aj.transpose() << std::endl;
                 model_final=optimum_lorentzian_calc_aj(x, model_final, Hl1, fl1, a1, aj[1], a3, aj[3], a5,aj[5], eta0, asym, Wl1, 1, ratios_l1, step, trunc_c);   
                 break; 
             case 1:  // decompose_Alm = 1 ==> do_a2=true, do_a4=true, do_a6=false
-                aj=decompose_Alm_fct(1, fl1, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
+                aj=decompose_Alm_fct_GSLgrid(1, fl1, eta0, a1, epsilon_nl, thetas, filter_type, Alm_interp); // Use a grid to generate and decompose
+                //aj=decompose_Alm_fct(1, fl1, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
                 aj[5]=0;
                 model_final=optimum_lorentzian_calc_aj(x, model_final, Hl1, fl1, a1, aj[1], a3, aj[3], a5, 0, eta0, asym, Wl1, 1, ratios_l1, step, trunc_c);   
                 break; 
             case 2:  // decompose_Alm = 1 ==> do_a2=true, do_a4=false, do_a6=false
-                aj=decompose_Alm_fct(1, fl1, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
+                aj=decompose_Alm_fct_GSLgrid(1, fl1, eta0, a1, epsilon_nl, thetas, filter_type, Alm_interp); // Use a grid to generate and decompose
+                //aj=decompose_Alm_fct(1, fl1, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
                 aj[3]=0; aj[5]=0;
                 model_final=optimum_lorentzian_calc_aj(x, model_final, Hl1, fl1, a1, aj[1], a3, 0, a5, 0, eta0, asym, Wl1, 1, ratios_l1, step, trunc_c);   
                 break; 
@@ -1968,20 +1992,23 @@ VectorXd model_MS_Global_ajAlm_HarveyLike(const VectorXd& params, const VectorXi
         epsilon_nl=epsilon_terms[0] + epsilon_terms[1]*(fl2*1e-3); //two terms: one constant term + one linear in nu, after a11 
         switch (decompose_Alm){
             case -1:
-                model_final=optimum_lorentzian_calc_ajAlm(x, model_final, Hl2, fl2, a1, a3, a5, eta0, epsilon_nl, thetas, asym, Wl2, 2, ratios_l2, step, trunc_c);
+                model_final=optimum_lorentzian_calc_ajAlm(x, model_final, Hl2, fl2, a1, a3, a5, eta0, epsilon_nl, thetas, asym, Wl2, 2, ratios_l2, step, trunc_c, filter_type, Alm_interp);
                 break;
             // do_a2, do_a4, do_a6
             case 0: // decompose_Alm = 0 ==> do_a2=true, do_a4=true, do_a6=true
-                aj=decompose_Alm_fct(2, fl2, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
+                aj=decompose_Alm_fct_GSLgrid(2, fl2, eta0, a1, epsilon_nl, thetas, filter_type, Alm_interp); // Use a grid to generate and decompose
+                //aj=decompose_Alm_fct(2, fl2, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
                 model_final=optimum_lorentzian_calc_aj(x, model_final, Hl2, fl2, a1, aj[1], a3, aj[3], a5,aj[5], eta0, asym, Wl2, 2, ratios_l2, step, trunc_c);   
                 break; 
             case 1:  // decompose_Alm = 1 ==> do_a2=true, do_a4=true, do_a6=false
-                aj=decompose_Alm_fct(2, fl2, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
+                aj=decompose_Alm_fct_GSLgrid(2, fl2, eta0, a1, epsilon_nl, thetas, filter_type, Alm_interp); // Use a grid to generate and decompose
+                //aj=decompose_Alm_fct(2, fl2, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
                 aj[5]=0;
                 model_final=optimum_lorentzian_calc_aj(x, model_final, Hl2, fl2, a1, aj[1], a3, aj[3], a5, 0, eta0, asym, Wl2, 2, ratios_l2, step, trunc_c);   
                 break; 
             case 2:  // decompose_Alm = 1 ==> do_a2=true, do_a4=false, do_a6=false
-                aj=decompose_Alm_fct(2, fl2, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
+                aj=decompose_Alm_fct_GSLgrid(2, fl2, eta0, a1, epsilon_nl, thetas, filter_type, Alm_interp); // Use a grid to generate and decompose
+                //aj=decompose_Alm_fct(2, fl2, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
                 aj[3]=0; aj[5]=0;
                 model_final=optimum_lorentzian_calc_aj(x, model_final, Hl2, fl2, a1, aj[1], a3, 0, a5, 0, eta0, asym, Wl2, 2, ratios_l2, step, trunc_c);   
                 break; 
@@ -2009,20 +2036,23 @@ VectorXd model_MS_Global_ajAlm_HarveyLike(const VectorXd& params, const VectorXi
         epsilon_nl=epsilon_terms[0] + epsilon_terms[1]*(fl3*1e-3); //two terms: one constant term + one linear in nu, after a11  
         switch (decompose_Alm){
             case -1:
-                model_final=optimum_lorentzian_calc_ajAlm(x, model_final, Hl3, fl3, a1, a3, a5, eta0, epsilon_nl, thetas, asym, Wl3, 3, ratios_l3, step, trunc_c);
+                model_final=optimum_lorentzian_calc_ajAlm(x, model_final, Hl3, fl3, a1, a3, a5, eta0, epsilon_nl, thetas, asym, Wl3, 3, ratios_l3, step, trunc_c, filter_type, Alm_interp);
                 break;
             // do_a2, do_a4, do_a6
             case 0: // decompose_Alm = 0 ==> do_a2=true, do_a4=true, do_a6=true
-                aj=decompose_Alm_fct(3, fl3, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
+                aj=decompose_Alm_fct_GSLgrid(3, fl3, eta0, a1, epsilon_nl, thetas, filter_type, Alm_interp); // Use a grid to generate and decompose                
+                //aj=decompose_Alm_fct(3, fl3, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
                 model_final=optimum_lorentzian_calc_aj(x, model_final, Hl3, fl3, a1, aj[1], a3, aj[3], a5,aj[5], eta0, asym, Wl3, 3, ratios_l3, step, trunc_c);   
                 break; 
             case 1:  // decompose_Alm = 1 ==> do_a2=true, do_a4=true, do_a6=false
-                aj=decompose_Alm_fct(3, fl3, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
+                aj=decompose_Alm_fct_GSLgrid(3, fl3, eta0, a1, epsilon_nl, thetas, filter_type, Alm_interp); // Use a grid to generate and decompose                
+                //aj=decompose_Alm_fct(3, fl3, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
                 aj[5]=0;
                 model_final=optimum_lorentzian_calc_aj(x, model_final, Hl3, fl3, a1, aj[1], a3, aj[3], a5, 0, eta0, asym, Wl3, 3, ratios_l3, step, trunc_c);   
                 break; 
             case 2:  // decompose_Alm = 1 ==> do_a2=true, do_a4=false, do_a6=false
-                aj=decompose_Alm_fct(3, fl3, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
+                aj=decompose_Alm_fct_GSLgrid(3, fl3, eta0, a1, epsilon_nl, thetas, filter_type, Alm_interp); // Use a grid to generate and decompose                
+                //aj=decompose_Alm_fct(3, fl3, eta0, a1, epsilon_nl, thetas, filter_type); // Generate fl1(m) and decompose it to get aj coefficients. decompose_Alm contains the rule to apply: do we use a2? a4? a6? )
                 aj[3]=0; aj[5]=0;
                 model_final=optimum_lorentzian_calc_aj(x, model_final, Hl3, fl3, a1, aj[1], a3, 0, a5, 0, eta0, asym, Wl3, 3, ratios_l3, step, trunc_c);   
                 break; 
@@ -2066,8 +2096,6 @@ VectorXd model_MS_Global_ajAlm_HarveyLike(const VectorXd& params, const VectorXi
         noise(Nharvey, 0) = noise_params(c); // White noise 
         write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
     }
-    
-    //exit(EXIT_SUCCESS);
     return model_final;
 }
 
@@ -6837,6 +6865,24 @@ VectorXd decompose_Alm_fct(const int l, const long double fc_l, const long doubl
             nu_nlm[m+l] = nu_nlm[m+l] + fc_l*eta0*Qlm(l,m)*pow(a1*1e-6,2);
         } 
         nu_nlm[m+l]=nu_nlm[m+l] + fc_l*epsilon_nl*Alm(l, m, thetas[0], thetas[1], filter_type);
+    }
+    //std::cout << " Alm(l, m, thetas[0], thetas[1], filter_type) = " << Alm(l, m, thetas[0], thetas[1], filter_type) << std::endl;
+    //std::cout << " epsilon_nl = " << epsilon_nl << std::endl;
+    //std::cout << "fc_l= " << fc_l << "  nu_nlm =" << nu_nlm.transpose() << std::endl;
+    aj=eval_acoefs(l, nu_nlm);
+    return aj;
+}
+
+VectorXd decompose_Alm_fct_GSLgrid(const int l, const long double fc_l, const long double eta0, 
+                const long double a1, const long double epsilon_nl, const VectorXd& thetas, 
+                const std::string filter_type, const gsl_funcs interp_data){
+    VectorXd aj, nu_nlm(2*l+1);
+    for (int m=-l; m<=l; m++){
+        nu_nlm[m+l]=fc_l;
+        if (eta0 > 0){
+            nu_nlm[m+l] = nu_nlm[m+l] + fc_l*eta0*Qlm(l,m)*pow(a1*1e-6,2);
+        } 
+        nu_nlm[m+l]=nu_nlm[m+l] + fc_l*epsilon_nl*Alm_interp_iter_preinitialised(l, m, thetas[0], thetas[1], filter_type, interp_data);
     }
     //std::cout << " Alm(l, m, thetas[0], thetas[1], filter_type) = " << Alm(l, m, thetas[0], thetas[1], filter_type) << std::endl;
     //std::cout << " epsilon_nl = " << epsilon_nl << std::endl;

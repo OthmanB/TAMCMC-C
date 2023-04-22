@@ -12,7 +12,8 @@
 #include <vector>
 #include <string>
 #include "data.h" // contains the structure Data
-//#include "string_handler.h"
+#include "../../external/Alm/Alm_cpp/data.h" // Structures specific for the GSL interpolation
+#include "../../external/Alm/Alm_cpp/Alm_interpol.h"
 #include "io_ms_global.h"
 #include "io_models.h"
 #include "function_rot.h"
@@ -155,33 +156,7 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 	}
     
 	// -------------------------------------
-	
-/*
-	i=0;
-	cpt=0;
-	iMS_global.hyper_priors.resize(50);
-	if(verbose == 1) {std::cout << " - Hyper priors:" << std::endl;}
-	while ((out < 4) && !cfg_session.eof()){ // the priors, until we reach the next # symbol
-			std::getline(cfg_session, line0);
-			line0=strtrim(line0);
-			char0=strtrim(line0.substr(0, 1));
-			if (char0 != "#"){
-				iMS_global.hyper_priors[i]=str_to_dbl(line0);
-				cpt=cpt+1;
-			} else{
-				 out=out+1;
-			}
-			i=i+1;
-	  }
-	  iMS_global.hyper_priors.conservativeResize(cpt);
-	  if(verbose == 1) {
-		std::cout << iMS_global.hyper_priors.transpose() << std::endl;
-	  }
-*/
-// Modified on 18 Aug 2022 to handle an array of values for the hyper priors
-// This was specifically redesigned to handle spline fitting with hyper parameters
-// The assumed structure is: 
-//   value for x-axis, prior type, prior_parameters
+
 	i=0;
 	cpt=0;
 	if(verbose == 1) {std::cout << " - Hyper priors:" << std::endl;}
@@ -321,7 +296,7 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 	cpt=0;
 	iMS_global.modes_common.resize(50,5);
 	iMS_global.modes_common.setConstant(-9999); // up to 10 variables and 4 prior parameters
-	while ( (out < 9) && !cfg_session.eof() ){ // the initial values for the common parameters + priors, until we reach the 9th # symbol
+	while ( (out <9) && !cfg_session.eof() ){ // the initial values for the common parameters + priors, until we reach the 9th # symbol
 			line0=strtrim(line0);
 			char0=strtrim(line0.substr(0, 1));
 			word=strsplit(line0," \t");
@@ -343,19 +318,34 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
 			i=i+1;
 			std::getline(cfg_session, line0);
 	}
+	line0=strtrim(line0);
+	if (line0.empty() == false){ // Process the last line, data are found on it
+		char0=strtrim(line0.substr(0, 1));
+		word=strsplit(line0," \t");
+		if (char0 != "#"){
+			word=strsplit(line0," \t");
+			iMS_global.common_names.push_back(strtrim(word[0]));
+			iMS_global.common_names_priors.push_back(strtrim(word[1]));
+ 			word.erase(word.begin()); // erase the slot containing the keyword name
+			word.erase(word.begin()); // erase the slot containing the type of prior/switch
+			a=arrstr_to_Xdarrdbl(word);
+				
+			for(int k=0; k<a.size();k++){
+				iMS_global.modes_common(cpt, k)=a[k];
+			}
+		}
+	}
 
 	iMS_global.modes_common.conservativeResize(iMS_global.common_names.size(), 5);
-
-	if(verbose == 1) {
+	//if(verbose == 1) {
 		std::cout << " - Common parameters for modes:" << std::endl;
 		for(i=0; i<iMS_global.common_names.size();i++){
 			std::cout << "  " << iMS_global.common_names[i] << "  ";
 			std::cout << "  " << iMS_global.common_names_priors[i] << "  ";
 			std::cout << "  " << iMS_global.modes_common.row(i) << std::endl;
 		}
-	}
-    
-	// -------------------------------------
+	//}
+ 	// -------------------------------------
    cfg_session.close();
    } else {
    		std::cout << "Unable to open the file: " << cfg_model_file << std::endl;
@@ -364,7 +354,7 @@ MCMC_files read_MCMC_file_MS_Global(const std::string cfg_model_file, const bool
    		std::cout << "The program will exit now" << std::endl;
    		exit(EXIT_FAILURE);
    }
-    
+   
    //exit(EXIT_SUCCESS);  
    return iMS_global;
 }
@@ -383,7 +373,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 	const double Hmin=1, Hmax=10000; // Define the default lower and upper boundary for the Jeffreys priors applied to heights
 	const std::vector<double> Vl{1, 1.5, 0.53, 0.08};
 	double rho=pow(inputs_MS_global.Dnu/Dnu_sun,2.) * rho_sun;
-	double Dnl=0.75, trunc_c=-1;
+	double trunc_c=-1;
 	double numax=inputs_MS_global.numax;
 	double err_numax=inputs_MS_global.err_numax;
 	
@@ -402,6 +392,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 	std::vector<bool> f_relax, h_relax, w_relax; 
 	std::vector<int> rf_el, rw_el, rh_el;
 	std::vector<std::string> tmpstr_vec;
+	std::string filter_type;
 
 	std::string tmpstr_h, tmpstr;
 	
@@ -509,7 +500,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
         		do_avg_a1n=1;
         		aj_switch=5;  //Case for 2x(a1,a3,a5, epsilon) + theta0 + delta + eta0 switch + 1 asymetry
         		extra_priors[9]=8; // used in priors_calc.cpp 
-            }
+	        }
        	if(all_in.model_fullname == "model_MS_Global_aj_HarveyLike"){
         		//Previously corresponding to average_a1nl     bool    0    0
         		do_a11_eq_a12=1;            		
@@ -542,9 +533,10 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 				do_amp=inputs_MS_global.modes_common(i,0);
 				std::cout << "Using do_amp = " << do_amp << std::endl;
 			}
-
-        }
- 
+		}
+		if(inputs_MS_global.common_names[i] == "filter_type" ){  // Identify the Alm filter_type, if present
+			filter_type=inputs_MS_global.common_names_priors[i];
+		}
     }
     if(all_in.model_fullname == " "){
     	std::cout << "Model name empty. Cannot proceed. Check that the .model file contains the model_fullname variable." << std::endl;
@@ -858,8 +850,7 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 			} else{
 				trunc_c=inputs_MS_global.modes_common(i,0); // This value is added to the input vector at the end of this function.
 			}
-		}	
-
+		}
 		// --- Frequencies ---
 		if(inputs_MS_global.common_names[i] == "Frequency" || inputs_MS_global.common_names[i] == "frequency"){ 
 			if(inputs_MS_global.common_names_priors[i] == "GUG" || inputs_MS_global.common_names_priors[i] == "Uniform"){
@@ -1159,7 +1150,6 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
             bool_a1sini=1;
 		}
 	}
-
 if (aj_switch == 1 && a2_param_count !=3){
 	std::cout << " Invalid number of constraints for a2: Please set a2_0, a2_1 and a2_2" <<std::endl;
 	exit(EXIT_SUCCESS); 
@@ -1312,7 +1302,7 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	plength[9]=Inc_in.inputs.size();
 	// -- Extend the parameter vector if decompose_Alm if necessary (see further for the parameter filling) --
 	if (all_in.model_fullname == "model_MS_Global_ajAlm_HarveyLike"){
-		plength[10]=3; // This is trunc_c and do_amp + decompose_Alm;
+		plength[10]=4; // This is trunc_c and do_amp + decompose_Alm;
 	}else{
 		plength[10]=2; // This is trunc_c and do_amp;
 	}	
@@ -1367,8 +1357,27 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	io_calls.fill_param(&all_in, "Switch for fit of Amplitudes or Heights", "Fix", do_amp, inputs_MS_global.modes_common.row(0), p0,1);
 
 	if (all_in.model_fullname == "model_MS_Global_ajAlm_HarveyLike"){
-		p0=plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + all_in.plength[7] + all_in.plength[8] + all_in.plength[9] + 2;
+		p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + 
+						all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + 
+						all_in.plength[7] + all_in.plength[8] + all_in.plength[9] + 2;
 		io_calls.fill_param(&all_in, "decompose_Alm", "Fix", decompose_Alm, inputs_MS_global.modes_common.row(0), p0,1);
+		// Handling the filter type
+		p0=all_in.plength[0] + all_in.plength[1] + all_in.plength[2] + all_in.plength[3] + 
+						all_in.plength[4] + all_in.plength[5] + all_in.plength[6] + 
+						all_in.plength[7] + all_in.plength[8] + all_in.plength[9] + 3;
+		if (filter_type == "gate"){ // gate is coded by 0
+			io_calls.fill_param(&all_in, "filter_type", "Fix", 0, tmpXd, p0, 0);
+		}
+		if (filter_type == "gauss"){ // gauss is coded by 1
+			io_calls.fill_param(&all_in, "filter_type", "Fix", 1, tmpXd, p0, 0);
+		}
+		if (filter_type == "triangle"){ // triangle is coded by 2
+			io_calls.fill_param(&all_in, "filter_type", "Fix", 2, tmpXd, p0, 0);
+		}
+		if (filter_type != "gate" && filter_type != "gauss" && filter_type != "triangle"){
+			std::cerr << " Error: Unrecognized filter type: " << filter_type << " You must have filter_type = gate or gauss or triangle" << std::endl;
+			exit(EXIT_SUCCESS);
+		}
 	}
 
 	if(verbose == 1){

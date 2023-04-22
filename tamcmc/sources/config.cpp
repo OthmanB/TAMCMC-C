@@ -16,6 +16,9 @@
 #include "config.h"
 #include "io_ms_global.h"
 #include "string_handler.h"
+#include "../../external/Alm/Alm_cpp/data.h"
+#include "../../external/Alm/Alm_cpp/Alm_interpol.h"
+//#include "../../external/Alm/Alm_cpp/bilinear_interpol.h"
 
 Config::Config(std::string current_path, std::string cfg_file_in, std::string cfg_file_errors, 
 			   std::string cfg_models_ctrl_file_in, std::string cfg_priors_ctrl_file_in, std::string cfg_likelihoods_ctrl_file_in,
@@ -64,12 +67,91 @@ Config::Config(std::string current_path, std::string cfg_file_in, std::string cf
 	modeling.primepriors_list_ctrl=listoutputs.strarr;
 
 	modeling.slice_ind=0; // Default there is only one slice of data that is analysed
-	
-//	for(int i=0; i< modeling.primepriors_case_list_ctrl.size(); i++){
-//		std::cout << 	 modeling.primepriors_case_list_ctrl[i] << "   " << modeling.primepriors_list_ctrl[i] << std::endl;
-//	}
 	data.data.xrange.resize(2);
 	data.data.xrange.setConstant(-9999); // Initialize the data range to a dummy value easily recognizable
+	
+	// --- Loading external data for the modeling, such as interpolation grids ---
+	
+	// Handling the GSL interpolator pointer
+	const std::string grid_dir="external/Alm/data/Alm_grids_CPP/1deg_grids/"; // Using the provided 1 degree grid
+	gsl_funcs funcs_data;
+	GridData_Alm_fast grids;
+	try{
+		grids=loadAllData(grid_dir, "gate");
+		// Pre-initialisation of the grid into gsl : Flattening + gsl init
+		funcs_data.flat_grid_A10=flatten_grid(grids.A10);
+		funcs_data.flat_grid_A11=flatten_grid(grids.A11);
+		funcs_data.flat_grid_A20=flatten_grid(grids.A20);
+		funcs_data.flat_grid_A21=flatten_grid(grids.A21);
+		funcs_data.flat_grid_A22=flatten_grid(grids.A22);
+		funcs_data.flat_grid_A30=flatten_grid(grids.A30);
+		funcs_data.flat_grid_A31=flatten_grid(grids.A31);
+		funcs_data.flat_grid_A32=flatten_grid(grids.A32);
+		funcs_data.flat_grid_A33=flatten_grid(grids.A33);
+		funcs_data.interp_A10=init_2dgrid(funcs_data.flat_grid_A10);
+		funcs_data.interp_A11=init_2dgrid(funcs_data.flat_grid_A11);
+		funcs_data.interp_A20=init_2dgrid(funcs_data.flat_grid_A20);
+		funcs_data.interp_A21=init_2dgrid(funcs_data.flat_grid_A21);
+		funcs_data.interp_A22=init_2dgrid(funcs_data.flat_grid_A22);
+		funcs_data.interp_A30=init_2dgrid(funcs_data.flat_grid_A30);
+		funcs_data.interp_A31=init_2dgrid(funcs_data.flat_grid_A31);
+		funcs_data.interp_A32=init_2dgrid(funcs_data.flat_grid_A32);
+		funcs_data.interp_A33=init_2dgrid(funcs_data.flat_grid_A33);
+		modeling.extra_data.Alm_interp_gate=funcs_data;
+		//
+		grids=loadAllData(grid_dir, "gauss");
+		// Pre-initialisation of the grid into gsl : Flattening + gsl init
+		funcs_data.flat_grid_A10=flatten_grid(grids.A10);
+		funcs_data.flat_grid_A11=flatten_grid(grids.A11);
+		funcs_data.flat_grid_A20=flatten_grid(grids.A20);
+		funcs_data.flat_grid_A21=flatten_grid(grids.A21);
+		funcs_data.flat_grid_A22=flatten_grid(grids.A22);
+		funcs_data.flat_grid_A30=flatten_grid(grids.A30);
+		funcs_data.flat_grid_A31=flatten_grid(grids.A31);
+		funcs_data.flat_grid_A32=flatten_grid(grids.A32);
+		funcs_data.flat_grid_A33=flatten_grid(grids.A33);
+		funcs_data.interp_A10=init_2dgrid(funcs_data.flat_grid_A10);
+		funcs_data.interp_A11=init_2dgrid(funcs_data.flat_grid_A11);
+		funcs_data.interp_A20=init_2dgrid(funcs_data.flat_grid_A20);
+		funcs_data.interp_A21=init_2dgrid(funcs_data.flat_grid_A21);
+		funcs_data.interp_A22=init_2dgrid(funcs_data.flat_grid_A22);
+		funcs_data.interp_A30=init_2dgrid(funcs_data.flat_grid_A30);
+		funcs_data.interp_A31=init_2dgrid(funcs_data.flat_grid_A31);
+		funcs_data.interp_A32=init_2dgrid(funcs_data.flat_grid_A32);
+		funcs_data.interp_A33=init_2dgrid(funcs_data.flat_grid_A33);
+		modeling.extra_data.Alm_interp_gauss=funcs_data;
+		grids=loadAllData(grid_dir, "triangle");
+		// Pre-initialisation of the grid into gsl : Flattening + gsl init
+		funcs_data.flat_grid_A10=flatten_grid(grids.A10);
+		funcs_data.flat_grid_A11=flatten_grid(grids.A11);
+		funcs_data.flat_grid_A20=flatten_grid(grids.A20);
+		funcs_data.flat_grid_A21=flatten_grid(grids.A21);
+		funcs_data.flat_grid_A22=flatten_grid(grids.A22);
+		funcs_data.flat_grid_A30=flatten_grid(grids.A30);
+		funcs_data.flat_grid_A31=flatten_grid(grids.A31);
+		funcs_data.flat_grid_A32=flatten_grid(grids.A32);
+		funcs_data.flat_grid_A33=flatten_grid(grids.A33);
+		funcs_data.interp_A10=init_2dgrid(funcs_data.flat_grid_A10);
+		funcs_data.interp_A11=init_2dgrid(funcs_data.flat_grid_A11);
+		funcs_data.interp_A20=init_2dgrid(funcs_data.flat_grid_A20);
+		funcs_data.interp_A21=init_2dgrid(funcs_data.flat_grid_A21);
+		funcs_data.interp_A22=init_2dgrid(funcs_data.flat_grid_A22);
+		funcs_data.interp_A30=init_2dgrid(funcs_data.flat_grid_A30);
+		funcs_data.interp_A31=init_2dgrid(funcs_data.flat_grid_A31);
+		funcs_data.interp_A32=init_2dgrid(funcs_data.flat_grid_A32);
+		funcs_data.interp_A33=init_2dgrid(funcs_data.flat_grid_A33);
+		modeling.extra_data.Alm_interp_triangle=funcs_data;
+	}
+	catch (exception& e) {
+		std::cerr << "Error: " << e.what() << "\n";
+		std::cerr << "       It is possible that the grid files do not exist in the pointed directory" << std::endl;
+		std::cerr << "       grid_dir is set to (relative path):" << grid_dir << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	catch (...) {
+		std::cerr << "Exception of unknown type in io_ms_global.cpp when attempting to load the Alm grid!\n";
+		exit(EXIT_FAILURE);
+	}
 	// ------------------------------------------------------------
 }
 
