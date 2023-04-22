@@ -1,0 +1,482 @@
+[
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/main.cpp.o -c tamcmc/sources/main.cpp",
+  "file": "tamcmc/sources/main.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/main.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/MALA.cpp.o -c tamcmc/sources/MALA.cpp",
+  "file": "tamcmc/sources/MALA.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/MALA.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/matrices.cpp.o -c tamcmc/sources/matrices.cpp",
+  "file": "tamcmc/sources/matrices.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/matrices.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/outputs.cpp.o -c tamcmc/sources/outputs.cpp",
+  "file": "tamcmc/sources/outputs.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/outputs.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/build_lorentzian.cpp.o -c tamcmc/sources/build_lorentzian.cpp",
+  "file": "tamcmc/sources/build_lorentzian.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/build_lorentzian.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/derivatives_handler.cpp.o -c tamcmc/sources/derivatives_handler.cpp",
+  "file": "tamcmc/sources/derivatives_handler.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/derivatives_handler.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/interpol.cpp.o -c tamcmc/sources/interpol.cpp",
+  "file": "tamcmc/sources/interpol.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/interpol.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/model_def.cpp.o -c tamcmc/sources/model_def.cpp",
+  "file": "tamcmc/sources/model_def.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/model_def.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/priors_calc.cpp.o -c tamcmc/sources/priors_calc.cpp",
+  "file": "tamcmc/sources/priors_calc.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/priors_calc.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/config.cpp.o -c tamcmc/sources/config.cpp",
+  "file": "tamcmc/sources/config.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/config.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/diagnostics.cpp.o -c tamcmc/sources/diagnostics.cpp",
+  "file": "tamcmc/sources/diagnostics.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/diagnostics.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/io_ms_global.cpp.o -c tamcmc/sources/io_ms_global.cpp",
+  "file": "tamcmc/sources/io_ms_global.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/io_ms_global.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/io_local.cpp.o -c tamcmc/sources/io_local.cpp",
+  "file": "tamcmc/sources/io_local.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/io_local.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/io_asymptotic.cpp.o -c tamcmc/sources/io_asymptotic.cpp",
+  "file": "tamcmc/sources/io_asymptotic.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/io_asymptotic.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/io_ajfit.cpp.o -c tamcmc/sources/io_ajfit.cpp",
+  "file": "tamcmc/sources/io_ajfit.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/io_ajfit.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/models.cpp.o -c tamcmc/sources/models.cpp",
+  "file": "tamcmc/sources/models.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/models.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/stats_dictionary.cpp.o -c tamcmc/sources/stats_dictionary.cpp",
+  "file": "tamcmc/sources/stats_dictionary.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/stats_dictionary.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/config_presets.cpp.o -c tamcmc/sources/config_presets.cpp",
+  "file": "tamcmc/sources/config_presets.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/config_presets.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/function_rot.cpp.o -c tamcmc/sources/function_rot.cpp",
+  "file": "tamcmc/sources/function_rot.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/function_rot.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/likelihoods.cpp.o -c tamcmc/sources/likelihoods.cpp",
+  "file": "tamcmc/sources/likelihoods.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/likelihoods.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/noise_models.cpp.o -c tamcmc/sources/noise_models.cpp",
+  "file": "tamcmc/sources/noise_models.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/noise_models.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/string_handler.cpp.o -c tamcmc/sources/string_handler.cpp",
+  "file": "tamcmc/sources/string_handler.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/string_handler.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/ben_timer.cpp.o -c tamcmc/sources/ben_timer.cpp",
+  "file": "tamcmc/sources/ben_timer.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/ben_timer.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/multivariate_cholesky.cpp.o -c tamcmc/sources/multivariate_cholesky.cpp",
+  "file": "tamcmc/sources/multivariate_cholesky.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/multivariate_cholesky.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/random_JB.cpp.o -c tamcmc/sources/random_JB.cpp",
+  "file": "tamcmc/sources/random_JB.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/random_JB.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/io_models.cpp.o -c tamcmc/sources/io_models.cpp",
+  "file": "tamcmc/sources/io_models.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/io_models.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/linspace.cpp.o -c tamcmc/sources/linspace.cpp",
+  "file": "tamcmc/sources/linspace.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/linspace.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/acoefs.cpp.o -c tamcmc/sources/acoefs.cpp",
+  "file": "tamcmc/sources/acoefs.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/acoefs.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/tamcmc/sources/polyfit.cpp.o -c tamcmc/sources/polyfit.cpp",
+  "file": "tamcmc/sources/polyfit.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/tamcmc/sources/polyfit.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/external/ARMM/solver_mm.cpp.o -c external/ARMM/solver_mm.cpp",
+  "file": "external/ARMM/solver_mm.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/external/ARMM/solver_mm.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/external/ARMM/bump_DP.cpp.o -c external/ARMM/bump_DP.cpp",
+  "file": "external/ARMM/bump_DP.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/external/ARMM/bump_DP.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/external/ARMM/linfit.cpp.o -c external/ARMM/linfit.cpp",
+  "file": "external/ARMM/linfit.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/external/ARMM/linfit.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/external/Alm/Alm_cpp/activity.cpp.o -c external/Alm/Alm_cpp/activity.cpp",
+  "file": "external/Alm/Alm_cpp/activity.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/external/Alm/Alm_cpp/activity.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/external/Alm/Alm_cpp/Alm_interpol.cpp.o -c external/Alm/Alm_cpp/Alm_interpol.cpp",
+  "file": "external/Alm/Alm_cpp/Alm_interpol.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/external/Alm/Alm_cpp/Alm_interpol.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/cpptamcmc.dir/external/Alm/Alm_cpp/bilinear_interpol.cpp.o -c external/Alm/Alm_cpp/bilinear_interpol.cpp",
+  "file": "external/Alm/Alm_cpp/bilinear_interpol.cpp",
+  "output": "CMakeFiles/cpptamcmc.dir/external/Alm/Alm_cpp/bilinear_interpol.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/bin2txt.dir/tools/bin2txt_params.cpp.o -c tools/bin2txt_params.cpp",
+  "file": "tools/bin2txt_params.cpp",
+  "output": "CMakeFiles/bin2txt.dir/tools/bin2txt_params.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/bin2txt.dir/tools/quick_samples_stats.cpp.o -c tools/quick_samples_stats.cpp",
+  "file": "tools/quick_samples_stats.cpp",
+  "output": "CMakeFiles/bin2txt.dir/tools/quick_samples_stats.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/bin2txt.dir/tamcmc/sources/interpol.cpp.o -c tamcmc/sources/interpol.cpp",
+  "file": "tamcmc/sources/interpol.cpp",
+  "output": "CMakeFiles/bin2txt.dir/tamcmc/sources/interpol.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/bin2txt.dir/tamcmc/sources/diagnostics.cpp.o -c tamcmc/sources/diagnostics.cpp",
+  "file": "tamcmc/sources/diagnostics.cpp",
+  "output": "CMakeFiles/bin2txt.dir/tamcmc/sources/diagnostics.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/bin2txt.dir/tamcmc/sources/string_handler.cpp.o -c tamcmc/sources/string_handler.cpp",
+  "file": "tamcmc/sources/string_handler.cpp",
+  "output": "CMakeFiles/bin2txt.dir/tamcmc/sources/string_handler.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getstats.dir/tools/read_stats.cpp.o -c tools/read_stats.cpp",
+  "file": "tools/read_stats.cpp",
+  "output": "CMakeFiles/getstats.dir/tools/read_stats.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getstats.dir/tamcmc/sources/string_handler.cpp.o -c tamcmc/sources/string_handler.cpp",
+  "file": "tamcmc/sources/string_handler.cpp",
+  "output": "CMakeFiles/getstats.dir/tamcmc/sources/string_handler.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tools/getmodel.cpp.o -c tools/getmodel.cpp",
+  "file": "tools/getmodel.cpp",
+  "output": "CMakeFiles/getmodel.dir/tools/getmodel.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/models.cpp.o -c tamcmc/sources/models.cpp",
+  "file": "tamcmc/sources/models.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/models.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/model_def.cpp.o -c tamcmc/sources/model_def.cpp",
+  "file": "tamcmc/sources/model_def.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/model_def.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/string_handler.cpp.o -c tamcmc/sources/string_handler.cpp",
+  "file": "tamcmc/sources/string_handler.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/string_handler.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/config.cpp.o -c tamcmc/sources/config.cpp",
+  "file": "tamcmc/sources/config.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/config.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/function_rot.cpp.o -c tamcmc/sources/function_rot.cpp",
+  "file": "tamcmc/sources/function_rot.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/function_rot.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/likelihoods.cpp.o -c tamcmc/sources/likelihoods.cpp",
+  "file": "tamcmc/sources/likelihoods.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/likelihoods.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/build_lorentzian.cpp.o -c tamcmc/sources/build_lorentzian.cpp",
+  "file": "tamcmc/sources/build_lorentzian.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/build_lorentzian.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/interpol.cpp.o -c tamcmc/sources/interpol.cpp",
+  "file": "tamcmc/sources/interpol.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/interpol.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/matrices.cpp.o -c tamcmc/sources/matrices.cpp",
+  "file": "tamcmc/sources/matrices.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/matrices.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/io_ms_global.cpp.o -c tamcmc/sources/io_ms_global.cpp",
+  "file": "tamcmc/sources/io_ms_global.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/io_ms_global.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/io_local.cpp.o -c tamcmc/sources/io_local.cpp",
+  "file": "tamcmc/sources/io_local.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/io_local.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/io_asymptotic.cpp.o -c tamcmc/sources/io_asymptotic.cpp",
+  "file": "tamcmc/sources/io_asymptotic.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/io_asymptotic.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/io_ajfit.cpp.o -c tamcmc/sources/io_ajfit.cpp",
+  "file": "tamcmc/sources/io_ajfit.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/io_ajfit.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/noise_models.cpp.o -c tamcmc/sources/noise_models.cpp",
+  "file": "tamcmc/sources/noise_models.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/noise_models.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/priors_calc.cpp.o -c tamcmc/sources/priors_calc.cpp",
+  "file": "tamcmc/sources/priors_calc.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/priors_calc.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/stats_dictionary.cpp.o -c tamcmc/sources/stats_dictionary.cpp",
+  "file": "tamcmc/sources/stats_dictionary.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/stats_dictionary.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/derivatives_handler.cpp.o -c tamcmc/sources/derivatives_handler.cpp",
+  "file": "tamcmc/sources/derivatives_handler.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/derivatives_handler.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/io_models.cpp.o -c tamcmc/sources/io_models.cpp",
+  "file": "tamcmc/sources/io_models.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/io_models.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/linfit.cpp.o -c tamcmc/sources/linfit.cpp",
+  "file": "tamcmc/sources/linfit.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/linfit.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/polyfit.cpp.o -c tamcmc/sources/polyfit.cpp",
+  "file": "tamcmc/sources/polyfit.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/polyfit.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/linspace.cpp.o -c tamcmc/sources/linspace.cpp",
+  "file": "tamcmc/sources/linspace.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/linspace.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/tamcmc/sources/acoefs.cpp.o -c tamcmc/sources/acoefs.cpp",
+  "file": "tamcmc/sources/acoefs.cpp",
+  "output": "CMakeFiles/getmodel.dir/tamcmc/sources/acoefs.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/external/ARMM/solver_mm.cpp.o -c external/ARMM/solver_mm.cpp",
+  "file": "external/ARMM/solver_mm.cpp",
+  "output": "CMakeFiles/getmodel.dir/external/ARMM/solver_mm.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/external/ARMM/bump_DP.cpp.o -c external/ARMM/bump_DP.cpp",
+  "file": "external/ARMM/bump_DP.cpp",
+  "output": "CMakeFiles/getmodel.dir/external/ARMM/bump_DP.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/external/Alm/Alm_cpp/activity.cpp.o -c external/Alm/Alm_cpp/activity.cpp",
+  "file": "external/Alm/Alm_cpp/activity.cpp",
+  "output": "CMakeFiles/getmodel.dir/external/Alm/Alm_cpp/activity.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/external/Alm/Alm_cpp/Alm_interpol.cpp.o -c external/Alm/Alm_cpp/Alm_interpol.cpp",
+  "file": "external/Alm/Alm_cpp/Alm_interpol.cpp",
+  "output": "CMakeFiles/getmodel.dir/external/Alm/Alm_cpp/Alm_interpol.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -I/opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/getmodel.dir/external/Alm/Alm_cpp/bilinear_interpol.cpp.o -c external/Alm/Alm_cpp/bilinear_interpol.cpp",
+  "file": "external/Alm/Alm_cpp/bilinear_interpol.cpp",
+  "output": "CMakeFiles/getmodel.dir/external/Alm/Alm_cpp/bilinear_interpol.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -isystem /opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/testsolver_mm.dir/tools/test_solver.cpp.o -c tools/test_solver.cpp",
+  "file": "tools/test_solver.cpp",
+  "output": "CMakeFiles/testsolver_mm.dir/tools/test_solver.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -isystem /opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/testsolver_mm.dir/tamcmc/sources/string_handler.cpp.o -c tamcmc/sources/string_handler.cpp",
+  "file": "tamcmc/sources/string_handler.cpp",
+  "output": "CMakeFiles/testsolver_mm.dir/tamcmc/sources/string_handler.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -isystem /opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/testsolver_mm.dir/external/ARMM/solver_mm.cpp.o -c external/ARMM/solver_mm.cpp",
+  "file": "external/ARMM/solver_mm.cpp",
+  "output": "CMakeFiles/testsolver_mm.dir/external/ARMM/solver_mm.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -isystem /opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/testsolver_mm.dir/external/ARMM/bump_DP.cpp.o -c external/ARMM/bump_DP.cpp",
+  "file": "external/ARMM/bump_DP.cpp",
+  "output": "CMakeFiles/testsolver_mm.dir/external/ARMM/bump_DP.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -isystem /opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/testsolver_mm.dir/tamcmc/sources/interpol.cpp.o -c tamcmc/sources/interpol.cpp",
+  "file": "tamcmc/sources/interpol.cpp",
+  "output": "CMakeFiles/testsolver_mm.dir/tamcmc/sources/interpol.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -isystem /opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/testsolver_mm.dir/tamcmc/sources/derivatives_handler.cpp.o -c tamcmc/sources/derivatives_handler.cpp",
+  "file": "tamcmc/sources/derivatives_handler.cpp",
+  "output": "CMakeFiles/testsolver_mm.dir/tamcmc/sources/derivatives_handler.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -isystem /opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/testsolver_mm.dir/tamcmc/sources/polyfit.cpp.o -c tamcmc/sources/polyfit.cpp",
+  "file": "tamcmc/sources/polyfit.cpp",
+  "output": "CMakeFiles/testsolver_mm.dir/tamcmc/sources/polyfit.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -isystem /opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/testsolver_mm.dir/external/ARMM/linfit.cpp.o -c external/ARMM/linfit.cpp",
+  "file": "external/ARMM/linfit.cpp",
+  "output": "CMakeFiles/testsolver_mm.dir/external/ARMM/linfit.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -isystem /opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/testsolver_mm.dir/external/ARMM/linspace.cpp.o -c external/ARMM/linspace.cpp",
+  "file": "external/ARMM/linspace.cpp",
+  "output": "CMakeFiles/testsolver_mm.dir/external/ARMM/linspace.cpp.o"
+},
+{
+  "directory": "build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DTAMCMC_WITH_GSL -I/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3 -Itamcmc/headers -isystem /opt/homebrew/include -O3 -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/testsolver_mm.dir/tamcmc/sources/noise_models.cpp.o -c tamcmc/sources/noise_models.cpp",
+  "file": "tamcmc/sources/noise_models.cpp",
+  "output": "CMakeFiles/testsolver_mm.dir/tamcmc/sources/noise_models.cpp.o"
+}
+]
