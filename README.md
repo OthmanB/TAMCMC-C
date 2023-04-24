@@ -8,9 +8,9 @@ Programs to perform asteroseismic analysis using a MCMC optinmisation algorithm.
 The algorithm implementation is based on the IDL implementation of my code described in Benomar et al. (2009), see http://adsabs.harvard.edu/abs/2009A%26A...506...15B
 This implementation is itself based on the Metropolis-Hasting-Langevin scheme described in Atchade Y. (2006), see https://link.springer.com/article/10.1007/s11009-006-8550-0
 
-* Version 1.4.1, read the file CHANGELOG.md for a full list of the code history.
-	The current implementation focuses on the asteroseismic analysis (individual pulsations) of main sequence stars. For other stars, one would need to write
-	dedicated functions, but the code is modular so that only minimal effort is required to do so. The version 1.4.0 distinguish itself from previous version by the fact you have the possibility to carry out local fit through the model_name = 'model_MS_local_basic' 
+* Version 1.84.0, read the file CHANGELOG.md for a full list of the code history.
+	The current implementation focuses on the asteroseismic analysis (individual pulsations) of solar-like stars. For other stars, one would need to write
+	dedicated functions, but the code is modular so that only minimal effort is required to do so. The version 1.84.0 distinguish itself from previous version by the fact you have the possibility to use a grid to compute the Alm coefficient (see Benomar+2023 for a definition of Alm, submited). Alm coefficient from a grid were property-based tested to determine the precision of the approach in function of the used grid: A grid of 1 degree mesh lead to an error << 0.5% in most cases for Alm with gain in computation time of ~50x when compared to a direct solving approach.
 	
 * Future implementations should incorporate C++ version of my codes (currently in Python or IDL) to prepare the configuration files (*.model and *.data)
 
