@@ -16,11 +16,6 @@
 #include <sys/types.h>
 
 bool do_grids(int argc, char** argv) {
-    const double theta_min = 0;
-    const double theta_max = M_PI/2;
-    const double delta_min = 0;
-    const double delta_max = M_PI/4;
-
     // Declare the supported options.
     boost::program_options::options_description desc("Allowed options");
     desc.add_options()
@@ -55,6 +50,10 @@ bool do_grids(int argc, char** argv) {
         const int lmax = vm["lmax"].as<int>();
         const std::string filter_type = vm["ftype"].as<std::string>();
         const bool verbose = vm["verbose"].as<bool>();
+        const double theta_min = 0;
+        const double theta_max = M_PI/2;
+        const double delta_min = 0;
+        const double delta_max = M_PI/4 + resol*2; // Added on 27/04/2023: As a margin of security on the edge, we add 2*resol. This because we do some rounding when prioritising the resolution
         
         // Create directory if it does not already exist
         struct stat info;
