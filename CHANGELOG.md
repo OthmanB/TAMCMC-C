@@ -1,5 +1,8 @@
 # Version history #
 
+### v1.84.1 Patch ###
+  - Update Alm external module to v1.2.1: Solving the edge case of delta ~ pi/4
+
 ### v1.84 Major Improvment ###
   - I have added a new variable called external_data into the Config Class. This is a structure that contain other structures for handling any external data that is required for the model computation. Like a grid. This can significantly speed up some of the models if used wisely
   - The new external_data structure is used to load the 1degree resolution grid for Alm gate, triangle and gauss. 
