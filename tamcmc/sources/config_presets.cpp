@@ -129,6 +129,11 @@ void Config_presets::apply_presets(Config *cfg, const bool verbose){
 		// We define the name of the data file
 		cfg->data.data_file=cfg_models_dir + table_ids[current_id_ind].at(0) + ".data";
 	
+		// Added on 1st July 2023: We define variables required for reading tabulated .priors files, if these are provided
+		cfg->modeling.cfg_model_dir=cfg_models_dir;
+		cfg->modeling.input_root_name= table_ids[current_id_ind].at(0);
+		// -
+
 		// We set the Number of samples and the damping coeficient for the Learning phases
 		cfg->outputs.Nsamples=Nsamples[current_process_ind];
 		cfg->MALA.c0=c0[current_process_ind];

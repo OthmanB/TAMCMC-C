@@ -9,7 +9,8 @@
 #include "build_lorentzian.h"
 #include <iostream>
 #include <iomanip>
-#include "../../external/integrate/activity.h"
+#include "../../external/Alm/Alm_cpp/activity.h"
+#include "../../external/Alm/Alm_cpp/Alm_interpol.h"
 #include "acoefs.h"
 using Eigen::VectorXd;
 using Eigen::VectorXi;
@@ -150,7 +151,8 @@ return result;
 }
 
 VectorXd build_l_mode_ajAlm(const VectorXd& x_l, const double H_l, const double fc_l, const double a1, const double a3, const double a5, 
-    const double eta0, const double epsilon_nl, const VectorXd& thetas, const double asym, const double gamma_l, const int l, const VectorXd& V){
+    const double eta0, const double epsilon_nl, const VectorXd& thetas, const double asym, const double gamma_l, const int l, 
+    const VectorXd& V, const std::string filter_type, const gsl_funcs interp_funcs){
 /*
  * This model includes:
  *      - Asymetry of Lorentzian asym
@@ -159,7 +161,7 @@ VectorXd build_l_mode_ajAlm(const VectorXd& x_l, const double H_l, const double 
  *             Currently we use a hard-coded filter type "gate" which is rough but match the Gizon paper. "gauss" is also available and might be our final choice.
  *             Once we could compare the method adapted from Gizon works on global fits
  */
-    const std::string filter_type="gate"; // The alternative is also "gauss" to have more smooth edges for the Activity effect
+    //const std::string filter_type="gate"; // The alternative is also "gauss" to have more smooth edges for the Activity effect
     const long Nxl=x_l.size();
     VectorXd profile(Nxl), tmp(Nxl), tmp2(Nxl), result(Nxl), asymetry(Nxl);
     double nu_nlm;
@@ -171,7 +173,11 @@ VectorXd build_l_mode_ajAlm(const VectorXd& x_l, const double H_l, const double 
             if (eta0 > 0){
                 nu_nlm = nu_nlm + fc_l*eta0*Qlm(l,m)*pow(a1*1e-6,2);
             } 
-            nu_nlm=nu_nlm + fc_l*epsilon_nl*Alm(l, m, thetas[0], thetas[1], filter_type); // Adding the Activity terms
+            if(filter_type == "gauss"){
+                nu_nlm=nu_nlm + fc_l*epsilon_nl*Alm(l, m, thetas[0], thetas[1], filter_type); // Adding the Activity terms
+            } else{
+                nu_nlm=nu_nlm + fc_l*epsilon_nl*Alm_interp_iter_preinitialised(l, m, thetas[0], thetas[1], filter_type, interp_funcs); // Adding the Activity terms
+            }
             profile=(x_l - tmp.setConstant(nu_nlm)).array().square();
             profile=4*profile/pow(gamma_l,2);
         } else{
@@ -499,7 +505,9 @@ VectorXd optimum_lorentzian_calc_a1etaa3(const VectorXd& x, const VectorXd& y, c
 return y_out;
 }
 
-VectorXd optimum_lorentzian_calc_ajAlm(const VectorXd& x, const VectorXd& y, const double H_l, const double fc_l, const double a1, const double a3, const double a5, const double eta0, const double epsilon_nl, const VectorXd& thetas, const double asym, const double gamma_l, const int l, const VectorXd& V, const double step, const double c){
+VectorXd optimum_lorentzian_calc_ajAlm(const VectorXd& x, const VectorXd& y, const double H_l, const double fc_l, const double a1, 
+    const double a3, const double a5, const double eta0, const double epsilon_nl, const VectorXd& thetas, const double asym, 
+    const double gamma_l, const int l, const VectorXd& V, const double step, const double c, const std::string filter_type, gsl_funcs interp_funcs){
 /*
     function that calculates the lorentzian on a optimized range of frequency. It returns a Vector of same size as the original vector x
     that contains the lorentzian model.
@@ -512,7 +520,7 @@ VectorXd optimum_lorentzian_calc_ajAlm(const VectorXd& x, const VectorXd& y, con
     ivals=set_imin_imax(x, l, fc_l, gamma_l, a1, c, step);    
     x_l=x.segment(ivals[0], ivals[1]-ivals[0]);
  
-    m0=build_l_mode_ajAlm(x_l, H_l, fc_l, a1, a3, a5, eta0, epsilon_nl, thetas, asym, gamma_l, l, V);
+    m0=build_l_mode_ajAlm(x_l, H_l, fc_l, a1, a3, a5, eta0, epsilon_nl, thetas, asym, gamma_l, l, V, filter_type, interp_funcs);
     y_out.segment(ivals[0], ivals[1]-ivals[0])= y_out.segment(ivals[0], ivals[1]-ivals[0]) + m0;
 return y_out;
 }

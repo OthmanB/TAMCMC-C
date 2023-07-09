@@ -19,6 +19,10 @@
 #include "io_local.h"
 #include "io_asymptotic.h"
 #include "io_ajfit.h"
+#include "../../external/Alm/Alm_cpp/data.h"
+#include "../../external/Alm/Alm_cpp/Alm_interpol.h"
+//#include "../../external/Alm/Alm_cpp/bilinear_interpol.h"
+
 
 //using namespace std;
 
@@ -78,7 +82,7 @@ class Config{
 			std::string model_fct_name;
 			std::string likelihood_fct_name;
 			std::string prior_fct_name;
-
+	
 			int model_fct_name_switch; // the names are encoded into integers so that we can use the switch statement. See Config::convert_model_fct_name_to_switch()
 			int likelihood_fct_name_switch; // See Config::convert_likelihood_fct_name_to_switch() for further details
 			int prior_fct_name_switch; // See Config::convert_prior_fct_name_to_switch()
@@ -87,11 +91,17 @@ class Config{
 			std::string cfg_model_file; // Contains the initial guesses and the priors in an ASCII format. To each model_fct_name, a given format is expected
 			int slice_ind; // Index of the subset of data that should be analysed (setting e.g. the frequency range when multiple ranges are requested)
 			Input_Data inputs;
+			external_data extra_data; // Any kind of data that we want to access for the model definition and that is static (ie interpolation grids for Alm)
+			
+			// Added 1st Jul 2023
+			std::string cfg_model_dir; // Directory where the *.priors files will be looked for. Might be the same as the .model and .data files
+			std::string input_root_name;  // The root of the names of the inputs file(e.g. the star identifier such as the KIC number)
 		};
 		struct Data_cfg{ // all the configuration required for the Data
 			bool verbose_data; // Should we show them on screen before proceeding?
 			std::string data_file; // The file containing all the data
 			std::string type_data;
+			// -
 			int x_col;
 			int y_col;
 			int ysig_col;
@@ -213,6 +223,7 @@ class Config{
 		inline bool file_exists(const std::string& name); 
 		Data_Nd read_data_ascii_Ncols(const std::string file_in_name, const std::string delimiter, const bool verbose_data); // The main function to read ASCII files
 		std::string format_line(const std::string str);
+		std::vector<std::string> listMatchingFiles(const std::string& directory, const std::string& prefix, const std::string& extension);	// Used to List files of extension '.priors' that define custom tabulated priors
 		void read_restore_files();
 		void read_inputs_files(); // Function that is in charge of handling the input files. These contain the initial values for the parameters as well as the priors
 		void read_inputs_prior_Simple_Matrix(); // Procedure that reads simple configuration file, organized as a Matrix of information. See Config.cpp for further details

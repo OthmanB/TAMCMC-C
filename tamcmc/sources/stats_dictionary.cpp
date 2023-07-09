@@ -10,8 +10,11 @@
  *       - Uniform-Gaussian
  *       - Gaussian-Uniform
  *       - Gaussian-Uniform-Gaussian
+ *       - Tabulated
  *
  *  Created on: 09 Apr 2016
+ *  Updated on: 24 Jun 2023 : Adding tabulated function interpolation
+ * 
  *      Author: obenomar
  */
 
@@ -19,11 +22,12 @@
 #include <iomanip>
 #include <math.h>
 #include <Eigen/Dense>
+#include "interpol.h"
 
 # define PIl          3.141592653589793238462643383279502884L /* pi */
 
 //using Eigen::MatrixXd;
-//using Eigen::VectorXd;
+using Eigen::VectorXd;
 //using Eigen::VectorXi;
 
 // Note: These priors are handled using the 'case' statement. CASE 0 IS THE USER-DEFINED CASE (MEANS NO PRIOR USED)
@@ -241,6 +245,52 @@ C=log(std::abs(b_max-b_min)+0.5*sqrt(2*PIl)*(sigma1 + sigma2)); // The normalisa
 return logP-C;
 }
 
+
+long double logP_tabulated(const VectorXd& tab_x, const VectorXd& logtab_y, const long double x, const bool normalise){
+/* 
+ * Calculates the log probability for a tabulated function of the log-probability
+ * Linear interpolation is performed in order to get logP
+ * Inputs are logtables
+ * If the norm of the logprobability is provided, it is used (optional argument).
+ *  Otherwise, it is calculated here using the trapezoidal approximation
+ * 
+ * CORRESPONDS TO CASE 8 IN THE MAIN PROGRAM
+ *
+*/
+const int Nx=tab_x.size();
+long double logP, C;
+int i0=0, i1=1;
+
+logP=lin_interpol(tab_x, logtab_y, x);
+if(normalise == false){
+	C=0;
+	for(int i=0; i<Nx-1; i++){
+		// rectangular approximation
+		double dy=(std::exp(logtab_y[i0]) + std::exp(logtab_y[i1]))/2;  // Computation of the intergral by the area method
+		double dx=tab_x[i1] - tab_x[i0];
+		C=C + dx*dy;
+		i0=i1;
+		i1=i1+1;
+	}
+}
+//std::cout << " logP = " << logP << std::endl;
+//std::cout << " C =" << C << std::endl;
+return logP-log(C);
+}
+
+long double logP_tabulated_2d(const Eigen::MatrixXd& tab_xy, const long double x, const long double y, const bool normalise){
+/* 
+ * Calculates the log probability for a 2D tabulated function of the log-probability
+ * Bi-Linear interpolation is performed in order to get logP
+ * Inputs are logtables
+ * If the norm of the logprobability is provided, it is used (optional argument).
+ *  Otherwise, it is calculated here using the trapezoidal approximation
+ * 
+ * CORRESPONDS TO CASE 8 IN THE MAIN PROGRAM
+ *
+*/
+
+}
 
 /*
 //// Test function

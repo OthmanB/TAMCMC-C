@@ -12,6 +12,7 @@
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
+MatrixXd** initialize_3dVarMatrix(const int depth, const VectorXd Nrows, const VectorXd Ncols);
 MatrixXd** initialize_3dMatrix(const int depth, const int Nrows, const int Ncols);
 MatrixXd** initset_3dMatrix(const MatrixXd& m_init, const int depth);
 void set_3dMatrix(MatrixXd** matrix3d, const MatrixXd& m_in, const int position);

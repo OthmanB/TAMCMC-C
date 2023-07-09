@@ -181,12 +181,17 @@ Input_Data build_init_ajfit(const aj_files i_ajfit, const double a1_obs){
 		all_in.model_fullname = "model_ajfit";
 		priors_epsilon_nl0 << 1e-3, 1e-2, -9999, -9999; // FOR JEFFREYS
 		priors_theta0 << 0, 90, -9999, -9999; // FOR UNIFORM
-		priors_delta  << 10, 45, -9999, -9999; // FOR JEFFREYS
+		priors_delta  << 10, 45, -9999, -9999; 
+		if (i_ajfit.filter_type == "gate"){ // gate is coded by 0
+			priors_delta  << 10, 45, -9999, -9999;// FOR JEFFREYS DEFAULT (gate and triangle case). gauss requires smaller range (3 times smaller)
+		} else{
+			priors_delta  << 3, 45, -9999, -9999; // The sigma of a gauss function is approx 3-5 times smaller than the pure slope of a triangle function
+		}
 		plength[0]=3; // First epsilon_nl0 / theta0 / delta
 		plength[1]=2; // Second Dnu and a1 for the centrifugal term
 		plength[2]=i_ajfit.els.size();
 		plength[3]=i_ajfit.nu_nl.size();
-		plength[4]=4;
+		plength[4]=5;
 		if(plength[2] != plength[3]){
 			std::cout << " ERROR: The number of els and the number of nu_nl do not match inside the model file!" << std::endl;
 			std::cout << "        Please check your model file " << std::endl;
@@ -224,7 +229,22 @@ Input_Data build_init_ajfit(const aj_files i_ajfit, const double a1_obs){
 		io_calls.fill_param(&all_in, "do_a6", "Fix", i_ajfit.do_a6, tmpXd, p0, 0);
 		p0= 5 + 2*i_ajfit.els.size() + 3;
 		io_calls.fill_param(&all_in, "do_CFonly", "Fix", i_ajfit.do_CFonly, tmpXd, p0, 0);
-	 	std::cout << " ----------------- Configuration summary -------------------" << std::endl;
+	 	// Handling the filter type
+		p0= 5 + 2*i_ajfit.els.size() + 4;
+		if (i_ajfit.filter_type == "gate"){ // gate is coded by 0
+			io_calls.fill_param(&all_in, "filter_type", "Fix", 0, tmpXd, p0, 0);
+		}
+		if (i_ajfit.filter_type == "gauss"){ // gauss is coded by 1
+			io_calls.fill_param(&all_in, "filter_type", "Fix", 1, tmpXd, p0, 0);
+		}
+		if (i_ajfit.filter_type == "triangle"){ // triangle is coded by 2
+			io_calls.fill_param(&all_in, "filter_type", "Fix", 2, tmpXd, p0, 0);
+		}
+		if (i_ajfit.filter_type != "gate" && i_ajfit.filter_type != "gauss" && i_ajfit.filter_type != "triangle"){
+			std::cout << " Error: Unrecognized filter type. You must have filter_type = gate or gauss or triangle" << std::endl;
+			exit(EXIT_SUCCESS);
+		}
+		std::cout << " ----------------- Configuration summary -------------------" << std::endl;
 		std::cout << " Model Name = " << all_in.model_fullname << std::endl;		
 		std::cout << " -----------------------------------------------------------" << std::endl;
 		std::cout << " ---------- Configuration of the input vectors -------------" << std::endl;

@@ -4,8 +4,9 @@
 #pragma once
 //#include "noise_models.h"
 #include "build_lorentzian.h"
-//#include "interpol.h"
-//#include "function_rot.h"
+#include <vector>
+#include "../../external/Alm/Alm_cpp/data.h"
+#include "data.h"
 
 using Eigen::VectorXi;
 using Eigen::VectorXd;
@@ -13,6 +14,9 @@ using Eigen::VectorXd;
 double eta0_fct(const VectorXd& fl0_all);
 double eta0_fct(const double Dnu_obs);
 VectorXd decompose_Alm_fct(const int l, const long double fc_l, const long double eta0, const long double a1, const long double epsilon_nl, const VectorXd& thetas, const std::string filter_type);
+VectorXd decompose_Alm_fct_GSLgrid(const int l, const long double fc_l, const long double eta0, 
+                const long double a1, const long double epsilon_nl, const VectorXd& thetas, 
+                const std::string filter_type, const gsl_funcs interp_data);
 VectorXd decompose_CFonly(const int l, const long double fc_l, const long double eta0, const long double a1);
 
 VectorXd model_ajfit(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams=false);
@@ -50,10 +54,13 @@ VectorXd model_MS_Global_a1nl_a2a3_HarveyLike(const VectorXd& params, const Vect
 VectorXd model_MS_Global_a1a2a3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams=false); // Added on 18 Jan 2021: Handles the a2 coefficient with 2 terms : a constant term + 1 slope term in nu
 
 VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams=false); // Added on 18 Jan 2021: Handles the a2 coefficient with 2 terms : a constant term + 1 slope term in nu
-VectorXd model_MS_Global_ajAlm_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams); // Added on 31 Mar 2021
+VectorXd model_MS_Global_ajAlm_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams, external_data); // Added on 31 Mar 2021
 
 void write_star_params(const VectorXd& spec_params, const VectorXd& raw_params, const VectorXi& plength, const MatrixXd& mode_params, const MatrixXd& noise_params, const std::string file_out, const std::string modelname, const std::string name_params);
-
+void write_star_params_mixed(const VectorXd& spec_params, const VectorXd& raw_params, const VectorXi& plength, const MatrixXd& mode_params, const MatrixXd& noise_params, 
+    const std::string file_out, const std::string modelname, const std::string name_params, const MatrixXd& mixed_mode_params, const std::string mixed_mode_name_params,
+    const VectorXd global_mixed_mode_params, const std::vector<std::string> global_mixed_mode_name_params, VectorXd nu_p, VectorXd nu_g);
+            
 bool debug(const VectorXd& model, const long double Hl, const long double fl, const long double a1, const long double eta, const long double a3,
                const long double asym, const long double Wl, const long double el, const long double step, const double inclination, const VectorXd& ratios,
                const long double trunc_c, bool exit_c=true);

@@ -186,7 +186,7 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 				}
 				i0=i0+Nfl[el];
 			}
-			if (thetas_terms[0] < thetas_terms[1]/2){
+			if (thetas_terms[0] < thetas_terms[1]/2 && thetas_terms[0] > 90 - thetas_terms[1]/2){ // Second condition added on 27 Dec
 				f=-INFINITY;
 				goto end;
 			}
@@ -698,20 +698,25 @@ return f;
 long double priors_ajfit(const VectorXd& params, const VectorXi& params_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch){
 	const double theta0=params[1];
 	const double delta=params[2];
+	const int filter=params[params_length.segment(0,4).sum()+4];
 	long double f=0;
 	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
-	// In the case of a 'gate' prior, We have to exclude theta0 < delta/2 by design because theta_min = theta0 - delta/2  must be in [0,Pi/2]	
-	if (theta0 < delta/2){
-		f=-INFINITY;
+
+	// In the case of a 'gate' prior (filter =0), We have to exclude theta0 < delta/2 by design because theta_min = theta0 - delta/2  must be in [0,Pi/2]	
+	if (filter == 0){
+		if (theta0 < delta/2 && theta0 > 90. - delta/2){ // Added the second condition on 27 Dec 2022
+			f=-INFINITY;
+		}
 	}
 	return f;
 }
 
-long double apply_generic_priors(const VectorXd& params, const MatrixXd& priors_params, const VectorXi& priors_names_switch){
+long double apply_generic_priors(const VectorXd& params, const MatrixXd& priors_params, const VectorXi& priors_names_switch, const tabpriors& priors_tables){
 /*
  * This function apply the generic priors, that are defined in the configuration file and that have been translated into
  * The constant priors_params (the parameters that define the priors) and into priors_names_switch (translation of 
  * priors_names into integers in order to be handled by the switch / case statement.
+ * Added on 27 June: priors_params: A matrix that contain the table of priors that should be loaded in the io cpp of the model. The content should be {(x1,y1),(x2,y2), ..., (xn,yn)}
  *
 */
 	int i;
@@ -795,7 +800,32 @@ long double apply_generic_priors(const VectorXd& params, const MatrixXd& priors_
 			  //std::cout << "  " << "priors_params(1, " << i << ")=" << priors_params(1, i) << std::endl;
 			  //std::cout << "    pena=" << pena  << std::endl;	  
 			  break;
-			case 11: // Case Auto: No Prior Applied here --> The user must set his own prior
+			case 11: // tabulated prior
+				//const std::vector<Data_Nd>& priors_params
+				/*
+				//The content should be {(x0,y0),(x1,y1), ..., (xn,yn)}
+				// priors_params[0,i] : must contain the block. block 0 --> (x0,y0). block 2 --> (x2,y2) 
+				 // priors_params[1,i]: must contain 0 / 1 = normalise. If 0, do not normalise (faster... normalisation must be done before-hand).
+				if (priors_tables[i].data != MatrixXd()){ // priors_tables is an optional argument of the function
+					pena= pena + logP_tabulated(priors_params[i].data.col(priors_params[i].data[0,i]*2), priors_params[i].data.col(priors_params[i].data[0,i]*2 +1), params[i], priors_params[i].data[1,i]);
+				} else{
+					throw std::runtime_error("Error: priors_tables cannot be empty when using 'tabulated' priors!");
+				}
+				*/
+				break;
+			case 12: // 2D tabulated prior
+				/*
+				//The content should be the full matrix of the 2D PDF for parameters (i,j) 
+				 // priors_params[1,i]: must contain 0 / 1 = normalise. If 0, do not normalise (faster... normalisation must be done before-hand).
+				int j=priors_params[1,i]; // The location of the second parameter that has 
+				if (priors_params.data != MatrixXd()){ // priors_tables is an optional argument of the function
+					pena= pena + logP_tabulated_2d(priors_params.data, params[i], params[j], priors_params.data[1,i]);
+				} else{
+					throw std::runtime_error("Error: priors_tables cannot be empty when using 'tabulated' priors!");
+				}
+				*/
+				break;
+			case 13: // Case Auto: No Prior Applied here --> The user must set his own prior... Useful if using a 2D tabulated prior
 			  //std::cout << "CASE 10" << std::endl;
 			  //std::cout << "[" << i << "] Auto, pena=" << pena << std::endl;
 			  break;

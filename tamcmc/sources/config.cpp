@@ -16,6 +16,9 @@
 #include "config.h"
 #include "io_ms_global.h"
 #include "string_handler.h"
+#include "../../external/Alm/Alm_cpp/data.h"
+#include "../../external/Alm/Alm_cpp/Alm_interpol.h"
+//#include "../../external/Alm/Alm_cpp/bilinear_interpol.h"
 
 Config::Config(std::string current_path, std::string cfg_file_in, std::string cfg_file_errors, 
 			   std::string cfg_models_ctrl_file_in, std::string cfg_priors_ctrl_file_in, std::string cfg_likelihoods_ctrl_file_in,
@@ -64,13 +67,96 @@ Config::Config(std::string current_path, std::string cfg_file_in, std::string cf
 	modeling.primepriors_list_ctrl=listoutputs.strarr;
 
 	modeling.slice_ind=0; // Default there is only one slice of data that is analysed
-	
-//	for(int i=0; i< modeling.primepriors_case_list_ctrl.size(); i++){
-//		std::cout << 	 modeling.primepriors_case_list_ctrl[i] << "   " << modeling.primepriors_list_ctrl[i] << std::endl;
-//	}
 	data.data.xrange.resize(2);
 	data.data.xrange.setConstant(-9999); // Initialize the data range to a dummy value easily recognizable
+	
+	// --- Loading external data for the modeling, such as interpolation grids ---
+	
+	// Handling the GSL interpolator pointer
+	const std::string grid_dir="external/Alm/data/Alm_grids_CPP/1deg_grids/"; // Using the provided 1 degree grid
+	gsl_funcs funcs_data;
+	GridData_Alm_fast grids;
+	try{
+		grids=loadAllData(grid_dir, "gate");
+		// Pre-initialisation of the grid into gsl : Flattening + gsl init
+		funcs_data.flat_grid_A10=flatten_grid(grids.A10);
+		funcs_data.flat_grid_A11=flatten_grid(grids.A11);
+		funcs_data.flat_grid_A20=flatten_grid(grids.A20);
+		funcs_data.flat_grid_A21=flatten_grid(grids.A21);
+		funcs_data.flat_grid_A22=flatten_grid(grids.A22);
+		funcs_data.flat_grid_A30=flatten_grid(grids.A30);
+		funcs_data.flat_grid_A31=flatten_grid(grids.A31);
+		funcs_data.flat_grid_A32=flatten_grid(grids.A32);
+		funcs_data.flat_grid_A33=flatten_grid(grids.A33);
+		funcs_data.interp_A10=init_2dgrid(funcs_data.flat_grid_A10);
+		funcs_data.interp_A11=init_2dgrid(funcs_data.flat_grid_A11);
+		funcs_data.interp_A20=init_2dgrid(funcs_data.flat_grid_A20);
+		funcs_data.interp_A21=init_2dgrid(funcs_data.flat_grid_A21);
+		funcs_data.interp_A22=init_2dgrid(funcs_data.flat_grid_A22);
+		funcs_data.interp_A30=init_2dgrid(funcs_data.flat_grid_A30);
+		funcs_data.interp_A31=init_2dgrid(funcs_data.flat_grid_A31);
+		funcs_data.interp_A32=init_2dgrid(funcs_data.flat_grid_A32);
+		funcs_data.interp_A33=init_2dgrid(funcs_data.flat_grid_A33);
+		modeling.extra_data.Alm_interp_gate=funcs_data;
+		//
+		/*
+		grids=loadAllData(grid_dir, "gauss");
+		// Pre-initialisation of the grid into gsl : Flattening + gsl init
+		funcs_data.flat_grid_A10=flatten_grid(grids.A10);
+		funcs_data.flat_grid_A11=flatten_grid(grids.A11);
+		funcs_data.flat_grid_A20=flatten_grid(grids.A20);
+		funcs_data.flat_grid_A21=flatten_grid(grids.A21);
+		funcs_data.flat_grid_A22=flatten_grid(grids.A22);
+		funcs_data.flat_grid_A30=flatten_grid(grids.A30);
+		funcs_data.flat_grid_A31=flatten_grid(grids.A31);
+		funcs_data.flat_grid_A32=flatten_grid(grids.A32);
+		funcs_data.flat_grid_A33=flatten_grid(grids.A33);
+		funcs_data.interp_A10=init_2dgrid(funcs_data.flat_grid_A10);
+		funcs_data.interp_A11=init_2dgrid(funcs_data.flat_grid_A11);
+		funcs_data.interp_A20=init_2dgrid(funcs_data.flat_grid_A20);
+		funcs_data.interp_A21=init_2dgrid(funcs_data.flat_grid_A21);
+		funcs_data.interp_A22=init_2dgrid(funcs_data.flat_grid_A22);
+		funcs_data.interp_A30=init_2dgrid(funcs_data.flat_grid_A30);
+		funcs_data.interp_A31=init_2dgrid(funcs_data.flat_grid_A31);
+		funcs_data.interp_A32=init_2dgrid(funcs_data.flat_grid_A32);
+		funcs_data.interp_A33=init_2dgrid(funcs_data.flat_grid_A33);
+		modeling.extra_data.Alm_interp_gauss=funcs_data;
+		*/
+		modeling.extra_data.Alm_interp_gauss={};
+		grids=loadAllData(grid_dir, "triangle");
+		// Pre-initialisation of the grid into gsl : Flattening + gsl init
+		funcs_data.flat_grid_A10=flatten_grid(grids.A10);
+		funcs_data.flat_grid_A11=flatten_grid(grids.A11);
+		funcs_data.flat_grid_A20=flatten_grid(grids.A20);
+		funcs_data.flat_grid_A21=flatten_grid(grids.A21);
+		funcs_data.flat_grid_A22=flatten_grid(grids.A22);
+		funcs_data.flat_grid_A30=flatten_grid(grids.A30);
+		funcs_data.flat_grid_A31=flatten_grid(grids.A31);
+		funcs_data.flat_grid_A32=flatten_grid(grids.A32);
+		funcs_data.flat_grid_A33=flatten_grid(grids.A33);
+		funcs_data.interp_A10=init_2dgrid(funcs_data.flat_grid_A10);
+		funcs_data.interp_A11=init_2dgrid(funcs_data.flat_grid_A11);
+		funcs_data.interp_A20=init_2dgrid(funcs_data.flat_grid_A20);
+		funcs_data.interp_A21=init_2dgrid(funcs_data.flat_grid_A21);
+		funcs_data.interp_A22=init_2dgrid(funcs_data.flat_grid_A22);
+		funcs_data.interp_A30=init_2dgrid(funcs_data.flat_grid_A30);
+		funcs_data.interp_A31=init_2dgrid(funcs_data.flat_grid_A31);
+		funcs_data.interp_A32=init_2dgrid(funcs_data.flat_grid_A32);
+		funcs_data.interp_A33=init_2dgrid(funcs_data.flat_grid_A33);
+		modeling.extra_data.Alm_interp_triangle=funcs_data;
+	}
+	catch (exception& e) {
+		std::cerr << "Error: " << e.what() << "\n";
+		std::cerr << "       It is possible that the grid files do not exist in the pointed directory" << std::endl;
+		std::cerr << "       grid_dir is set to (relative path):" << grid_dir << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	catch (...) {
+		std::cerr << "Exception of unknown type in io_ms_global.cpp when attempting to load the Alm grid!\n";
+		exit(EXIT_FAILURE);
+	}
 	// ------------------------------------------------------------
+
 }
 
 Config::Config(){ // The empty constructor
@@ -87,7 +173,66 @@ void Config::setup(const int slice_ind){
     Data_Nd data_in=read_data_ascii_Ncols(data.data_file, delimiter, data.verbose_data);
     data.data_all=data_in; // save the whole data file into the configuration class
     
-    // ---- Reading the model-specific configuration files ----
+	// --- Read tabulated priors if provided ---
+	// Added on 1st July
+	//    - Find priors files
+	try{
+		std::cout << "   Searching directory for custom tabulated priors..." << std::endl;
+		std::cout << "           - Searched directory =" << modeling.cfg_model_dir << std::endl;
+		std::vector<std::string> priors_files=listMatchingFiles(modeling.cfg_model_dir, modeling.input_root_name, ".priors");
+		std::cout << "           - Number of priors files = " << priors_files.size() << std::endl;
+		if (priors_files.size() != 0){
+			std::cout << "           - Files found: " << std::endl;
+			for(int i=0; i<priors_files.size();i++){
+				std::cout << "              ["<< i << "] " << priors_files[i] << std::endl;
+			}
+			std::cout << "           - Loading files..." << std::endl;
+			tabpriors priors_tab_set;
+			priors_tab_set.depth=priors_files.size();
+			//    - Extract their global information and initialise the matrix of tabulated data
+			priors_tab_set.Ncols=VectorXd(0);
+			priors_tab_set.Nrows=VectorXd(0);
+			for (int i=0; i<priors_tab_set.depth;i++){
+				Data_Nd prior_tab=read_data_ascii_Ncols(priors_files[i], delimiter, false);
+				priors_tab_set.headers.push_back(prior_tab.header);
+				priors_tab_set.labels.push_back(prior_tab.labels);
+				priors_tab_set.Ncols.conservativeResize(priors_tab_set.Ncols.size() + 1); 
+				priors_tab_set.Nrows.conservativeResize(priors_tab_set.Nrows.size() + 1);
+				priors_tab_set.Ncols[priors_tab_set.Ncols.size()-1]=prior_tab.data.cols();
+				priors_tab_set.Nrows[priors_tab_set.Nrows.size()-1]=prior_tab.data.rows();
+			}
+			priors_tab_set.data_3d=initialize_3dVarMatrix(priors_tab_set.depth, priors_tab_set.Nrows, priors_tab_set.Ncols);
+			//      - Fill the data in the form of 3D matrices
+			for (int i=0; i<priors_tab_set.depth;i++){
+				Data_Nd prior_tab=read_data_ascii_Ncols(priors_files[i], delimiter, false);
+				set_3dMatrix(priors_tab_set.data_3d, prior_tab.data, i);
+			}
+			std::cout << "            Done." << std::endl;
+			
+		} else{
+			std::cout << "        - - - - - - - - - - - - - - -  " << std::endl;
+			std::cout << "        No tabulated priors found for configuration: " << modeling.input_root_name << std::endl;
+			std::cout << "        Proceeding without" << std::endl;
+			std::cout << "        - - - - - - - - - - - - - - -  " << std::endl;
+		}
+	} catch (exception& e){
+			std::cerr << "Error: " << e.what() << "\n";
+			std::cerr << "   Check that the modeling.input_root_name and the modeling.cfg_model_dir variables are properly defined" << std::endl;
+			std::cerr << "      - modeling.input_root_name =" << modeling.input_root_name << std::endl;
+			std::cerr << "      - modeling.cfg_model_dir =" << modeling.cfg_model_dir << std::endl;
+			std::cerr << "   Check the syntax of the files. It : " << std::endl;
+			std::cerr << "      - Must have a header marked by a '#'" << std::endl;
+			std::cerr << "      - May have a label marked by a '!'" << std::endl;
+			std::cerr << "      - May have a unit marked by a '*'" << std::endl;
+			exit(EXIT_FAILURE);
+	}	
+	
+	exit(EXIT_SUCCESS);
+    // ALL SEEMS OK UNTIL HERE 
+	// WE NOW NEED TO WORK ON PRIORS_CALC
+	//                AND ON THE BUILD FUNCTIONS 
+	
+	// ---- Reading the model-specific configuration files ----
 	modeling.slice_ind=slice_ind;
     std::cout << " ---------- " << std::endl;
     read_inputs_files(); // Here we read the configuration files (e.g. the .MCMC file)
@@ -120,13 +265,10 @@ void Config::setup(const int slice_ind){
 			exit(EXIT_FAILURE);
 		}
 		imax=imin;
-		//while(imax<data_in.data.rows() && data_in.data(imax, data.x_col)<data.data.xrange[1]){
 		while(imax<data.data_all.data.rows() && data.data_all.data(imax, data.x_col)<data.data.xrange[1]){
 			imax=imax+1.;
 		}
-		//if(imax > data_in.data.rows()){
 		if(imax > data.data_all.data.rows()){
-			//imax=data_in.data.rows();
 			imax=data.data_all.data.rows();
 			std::cout << "Warning: Found that xmax > max(data.x) OR xmax < xmin" << std::endl;
 			std::cout << "         ==> xmax fixed to max(data.x)" << std::endl;
@@ -137,15 +279,10 @@ void Config::setup(const int slice_ind){
 	}
 
 	if(data.x_col >=0){
-		//data.data.x=data_in.data.col(data.x_col).segment(imin, imax-imin);
 		data.data.x=data.data_all.data.col(data.x_col).segment(imin, imax-imin);
-		//data.data.xlabel=data_in.labels[data.x_col];
 		data.data.xlabel=data.data_all.labels[data.x_col];
-		//data.data.xunit=data_in.units[data.x_col];
 		data.data.xunit=data.data_all.units[data.x_col];		
 	}
-	//std::cout << "data.data.x.minCoeff()=" << data.data.x.minCoeff() << std::endl;
-	//std::cout << "data.data.x.maxCoeff()=" << data.data.x.maxCoeff() << std::endl;
 	
 	if(data.y_col >=0){
 		std::cout << "Importing data...";
@@ -234,6 +371,8 @@ void Config::reset(){
 	modeling.likelihood_fct_name="";
 	modeling.prior_fct_name="";
 	modeling.likelihood_params=0; // Parameters that could define the likelihood. e.g., in the case of a chi(2,2p) statistics (chi22p function), we need p
+	modeling.cfg_model_dir=""; // Contains the directory at which we look for the model. Used to look at .priors files (custom tabulated priors)
+	modeling.input_root_name=""; // The root of the names of the inputs file (e.g. the star identifier such as the KIC number)
 	modeling.cfg_model_file=""; // Contains the initial guesses and the priors in an ASCII format. To each model_fct_name, a given format is expected
 	modeling.inputs.inputs_names.resize(0);
 	modeling.inputs.priors_names.resize(0);
@@ -335,6 +474,25 @@ void Config::reset(){
 
 	std::cout << "Initial configuration parameters, re-initialised to 0/0-sized values/vectors" << std::endl;
 
+}
+
+std::vector<std::string> Config::listMatchingFiles(const std::string& directory, const std::string& prefix, const std::string& extension){	// Used to List files of extension '.priors' that define custom tabulated priors
+    std::vector<std::string> matchingFiles;
+    std::filesystem::directory_iterator endIterator;
+
+    for (std::filesystem::directory_iterator dirIter(directory); dirIter != endIterator; ++dirIter)
+    {
+        if (std::filesystem::is_regular_file(dirIter->path()))
+        {
+            std::string fileName = dirIter->path().filename().string();
+            if (fileName.find(prefix) == 0 && fileName.find(extension) == fileName.length() - extension.length())
+            {
+                //matchingFiles.push_back(fileName);
+				matchingFiles.push_back(dirIter->path().string());
+            }
+        }
+    }
+    return matchingFiles;
 }
 
 void Config::read_inputs_priors_MS_Global(){
@@ -587,16 +745,19 @@ Data_Nd Config::read_data_ascii_Ncols(const std::string file_in_name, const std:
     int data_Maxsize=1000000;
  
     std::ifstream file_in;
-    std::cout << "Reading the Data File..." << std::endl;
-    std::cout << "  Assumptions for the data file: " << std::endl;
-    std::cout << "       - header lines appear on the top of the file and are indicated by a # for first character. The header is however optional (then no # are found)" << std::endl;
-    std::cout << "       - labels appear in one single line that is just after the  header and is indicated by a ! for first character. Labels are optional (then no ! are found)" << std::endl;
-    std::cout << "       - units appear in one single line that is just after the  labels or the header (if the labels are missing) and is indicated by a * for first character. Units are optional (then no * are found)" << std::endl;
-    std::cout << "       - Maximum number of lines for the data: " << data_Maxsize << std::endl;
-    file_in.open(file_in_name.c_str());
+    if(verbose_data == true){
+		std::cout << "Reading the Data File..." << std::endl;
+    	std::cout << "  Assumptions for the data file: " << std::endl;
+    	std::cout << "       - header lines appear on the top of the file and are indicated by a # for first character. The header is however optional (then no # are found)" << std::endl;
+    	std::cout << "       - labels appear in one single line that is just after the  header and is indicated by a ! for first character. Labels are optional (then no ! are found)" << std::endl;
+    	std::cout << "       - units appear in one single line that is just after the  labels or the header (if the labels are missing) and is indicated by a * for first character. Units are optional (then no * are found)" << std::endl;
+    	std::cout << "       - Maximum number of lines for the data: " << data_Maxsize << std::endl;
+	}
+	file_in.open(file_in_name.c_str());
     if (file_in.is_open()) {
-	std::cout << "...processing lines" << std::endl;
-
+		if(verbose_data == true){
+			std::cout << "...processing lines" << std::endl;
+		}
 		// [1] Get the header
 		cpt=0;
 		std::getline(file_in, line0);
@@ -614,10 +775,14 @@ Data_Nd Config::read_data_ascii_Ncols(const std::string file_in_name, const std:
 				
 				cpt=cpt+1;
 			}
-			std::cout << "   [1] " << cpt << " header lines found..." << std::endl;
+			if(verbose_data == true){
+				std::cout << "   [1] " << cpt << " header lines found..." << std::endl;
+			}
 		} else{
 			header.push_back("");
-			std::cout << "   [1] Header not found. Header vector set to a blank vector<string> of size 1. Pursuing operations..." << std::endl;
+			if(verbose_data == true){
+				std::cout << "   [1] Header not found. Header vector set to a blank vector<string> of size 1. Pursuing operations..." << std::endl;
+			}
 		}
 
 		// [2] Read the labels... these are expected just after the header... If not found, then labels is left blank of size 1
@@ -628,11 +793,14 @@ Data_Nd Config::read_data_ascii_Ncols(const std::string file_in_name, const std:
 		if(subline0 == "!"){
 			
 			labels=strsplit(strtrim(line0.substr(1,std::string::npos)), " \t"); // remove either when you found a white space or a tabulation
-			std::cout << "   [2] " << labels.size() << " labels found..." << std::endl;
-
+			if(verbose_data == true){
+				std::cout << "   [2] " << labels.size() << " labels found..." << std::endl;
+			}
 			for(int i=0; i<labels.size();i++){
 				labels[i]=strtrim(labels[i]); // remove spaces at begining/end of each substring
-				std::cout << "         - " << labels[i] << std::endl;
+				if(verbose_data == true){
+					std::cout << "         - " << labels[i] << std::endl;
+				}
 			}
 
 		} else {
@@ -641,7 +809,9 @@ Data_Nd Config::read_data_ascii_Ncols(const std::string file_in_name, const std:
 			labels.push_back(""); // label for y2
 			labels.push_back(""); // label for y3
 			labels.push_back(""); // label for y4
-			std::cout << "   [2] No labels found. Label vector set to a blank vector<string> of size 5. Pursuing operations..." << std::endl;
+			if(verbose_data == true){
+				std::cout << "   [2] No labels found. Label vector set to a blank vector<string> of size 5. Pursuing operations..." << std::endl;
+			}
 		}
 		
 		// [3] Read the units... these are expected just after the labels... If not found, then units is left blank of size 1
@@ -652,10 +822,14 @@ Data_Nd Config::read_data_ascii_Ncols(const std::string file_in_name, const std:
 		subline0=subline0.c_str();
 		if(subline0 == "*"){
 			units=strsplit(strtrim(line0.substr(1,std::string::npos)), " \t"); 
-			std::cout << "   [3] " << units.size() << " units found..." << std::endl;
+			if(verbose_data == true){
+				std::cout << "   [3] " << units.size() << " units found..." << std::endl;
+			}
 			for(int i=0; i<units.size();i++){
 				units[i]=strtrim(units[i]);
-				std::cout << "         - " << units[i] << std::endl;
+				if(verbose_data == true){
+					std::cout << "         - " << units[i] << std::endl;
+				}
 			}
 		} else {
  			units.push_back(""); // unit for x
@@ -663,11 +837,15 @@ Data_Nd Config::read_data_ascii_Ncols(const std::string file_in_name, const std:
 			units.push_back(""); // label for y2
 			units.push_back(""); // label for y3
 			units.push_back(""); // label for y4
-			std::cout << "   [3] No units found. Units vector set to a blank vector<string> of size 5." << std::endl;
+			if(verbose_data == true){
+				std::cout << "   [3] No units found. Units vector set to a blank vector<string> of size 5." << std::endl;
+			}
 		}
 
 		// [4] Read the data...
-		std::cout <<  "   [4] Now processing the data..." << std::endl;
+		if(verbose_data == true){
+			std::cout <<  "   [4] Now processing the data..." << std::endl;
+		}
 		if (labels[0] != "" || units[0] != ""){  // case where we need to read a new line before looping
 			std::getline(file_in, line0);
 		} 
@@ -676,8 +854,11 @@ Data_Nd Config::read_data_ascii_Ncols(const std::string file_in_name, const std:
 		data_str=strsplit(strtrim(line0), " \t"); 
 		if (Nrows == 0) {
 			data.resize(data_Maxsize, data_str.size());
+			data.setZero();
 		}
+		tmp_val=0;
 		for(int i=0; i<data_str.size();i++){
+			//std::cout << " data_str[i] =" << data_str[i] << std::endl;
 			if ( ! (std::istringstream(data_str[i]) >> tmp_val) ){tmp_val = nan("");} // If the number can be converted, then tmp_val=value. Otherwise tmp_val = NaN
 			data(Nrows, i)=tmp_val;		
 		}
@@ -685,13 +866,15 @@ Data_Nd Config::read_data_ascii_Ncols(const std::string file_in_name, const std:
 		std::getline(file_in, line0);
 		Nrows=Nrows+1;
 	    }
-	file_in.close();
-	data.conservativeResize(Nrows, data_str.size());
-	std::cout << "         - Number of lines found: " << Nrows << std::endl;
-	std::cout << "         - Number of columns found: " << data_str.size() << std::endl;
-	std::cout << "      ----------------" << std::endl;
-     } else {
-	msg_handler(cfg_file, "openfile", "Config::read_data_ascii_Ncols()", "Could not open the configuration file!", 1);
+		file_in.close();
+		data.conservativeResize(Nrows, data_str.size());
+		if(verbose_data == true){
+			std::cout << "         - Number of lines found: " << Nrows << std::endl;
+			std::cout << "         - Number of columns found: " << data_str.size() << std::endl;
+			std::cout << "      ----------------" << std::endl;
+		}
+	 } else {
+		msg_handler(cfg_file, "openfile", "Config::read_data_ascii_Ncols()", "Could not open the configuration file!", 1);
      }
 
      all_data_out.data=data;
@@ -1027,7 +1210,7 @@ void Config::read_cfg_file(bool verbose){
 					if (word[0] == "cfg_model_file"){ 
 						keyword_found=1;
 						modeling.cfg_model_file=word[1];
-						if(verbose ==1){std::cout << "      cfg_model_file= " << modeling. cfg_model_file << std::endl;}
+						if(verbose ==1){std::cout << "      cfg_model_file= " << modeling.cfg_model_file << std::endl;}
 					}
 					// After all keywords see whether we detected a known keyword
 					if (keyword_found == 0 && char0 != "!" && line0 != "/END" ){

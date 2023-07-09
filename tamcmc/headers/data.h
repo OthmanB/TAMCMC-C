@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include "gnuplot-iostream.h"
+#include "../../external/Alm/Alm_cpp/data.h" // To load interpolation grids
 
 //using namespace std;
 
@@ -93,6 +94,7 @@ struct MCMC_files{
 	std::vector<std::string> common_names;
 	std::vector<std::string> common_names_priors;
 	MatrixXd modes_common;
+	//std::string filter_type; // For Alm models only
 };
 
 struct aj_files{
@@ -105,6 +107,7 @@ struct aj_files{
 	bool do_a6;
 	bool do_CFonly;
 };
+
 
 // Structure that keep information of the derivatives
 struct Deriv_out{
@@ -147,85 +150,18 @@ struct Data_Basic{
 	VectorXi vecXi; // Case number
 };
 
-
-// ----------------------------------------
-// ----- For mixed modes calculation ------
-// ----------------------------------------
-/*struct Data_2vectXd{
-	VectorXd vecXd1;
-	VectorXd vecXd2;		
+struct external_data{ // A structure designed as a container for any kind of additional static data that can be called by models
+	gsl_funcs Alm_interp_gate; // Table for Alm interpolations for band of activity
+	gsl_funcs Alm_interp_gauss; // Table for Alm interpolations for gauss activity zone
+	gsl_funcs Alm_interp_triangle; // Table for Alm interpolations for triangular activity zone
 };
 
-// For simulations only, we use a template to derive height and widths of modes
-struct template_file{
-	std::string ID_ref;
-	double numax_ref;
-	double Dnu_ref; 
-	double epsilon_ref;
-	MatrixXd data_ref;
+// Used to keep in memory all of the information from that tabulated priors provided by the user (if any)
+struct tabpriors{
+    int depth; // number prior tables
+    VectorXd Nrows; 
+    VectorXd Ncols;
+    MatrixXd** data_3d; // Contain submatrices. Each of them was read from a file and give the prior table (either 1D or Nd)
+	std::vector<std::vector<std::string>> headers;
+	std::vector<std::vector<std::string>> labels;
 };
-
-struct Data_coresolver{
-	VectorXd nu_m, ysol, nu,pnu, gnu; //
-};
-
-struct Data_eigensols{
-	VectorXd nu_p, nu_g, nu_m, dnup, dPg; // The two last ones are derivatives of nu_p ~ Dnu and 1/nu_g ~ DPl
-};
-
-struct Data_eigensols_all{
-	VectorXd nu_l0;
-};
-
-struct Data_rot2zone{
-	long double rot_core, rot_env;
-};
-
-struct Cfg_synthetic_star{
-	long double Teff_star; 
-	long double numax_star;
-	long double Dnu_star;
-	long double epsilon_star;
-	long double delta0l_percent_star;
-	long double beta_p_star;
-	long double alpha_p_star;
-	long double nmax_star;
-	long double DPl_star;
-	long double alpha_g_star;
-	long double q_star;
-	long double fmin; 
-	long double fmax;
-	long double maxHNR_l0;
-	VectorXd noise_params_harvey_like;
-	long double Gamma_max_l0;
-	long double rot_env_input;
-	long double rot_ratio_input; 
-	long double rot_core_input;
-	std::string output_file_rot;
-	VectorXd Vl;
-	long double H0_spread;
-	std::string filetemplate;
-	long double sigma_p;
-	long double sigma_m;
-};
-
-struct Params_synthetic_star{
-	VectorXd nu_l0;
-	VectorXd nu_p_l1;
-	VectorXd nu_g_l1; 
-	VectorXd nu_m_l1;
-	VectorXd nu_l2;
-	VectorXd nu_l3;
-	VectorXd width_l0;
-	VectorXd width_l1;
-	VectorXd width_l2; 
-	VectorXd width_l3;
-	VectorXd height_l0;
-	VectorXd height_l1;
-	VectorXd height_l2;
-	VectorXd height_l3;
-	VectorXd a1_l1;
-	VectorXd a1_l2; 
-	VectorXd a1_l3;
-};
-*/
