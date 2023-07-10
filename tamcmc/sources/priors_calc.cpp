@@ -23,7 +23,9 @@ using Eigen::VectorXd;
 using Eigen::VectorXi;
 using Eigen::MatrixXd;
 
-long double priors_MS_Global(const VectorXd& params, const VectorXi& params_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch, const VectorXd& extra_priors){
+long double priors_MS_Global(const VectorXd& params, const VectorXi& params_length, 
+				const MatrixXd& priors_params, const VectorXi& priors_names_switch, 
+				const VectorXd& extra_priors, const tabpriors& tabulated_priors){
 
 	long double f=0;
 
@@ -270,7 +272,7 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 	//std::cout << "[3]  f=" << f << std::endl;
 
 	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
-	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
+	f=f + apply_generic_priors(params, priors_params, priors_names_switch, tabulated_priors);
 	//std::cout << "[4] f=" << f << std::endl;
 
 	// Determine the large separation
@@ -313,7 +315,9 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 return f;
 } 
 
-long double priors_asymptotic(const VectorXd& params, const VectorXi& params_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch, const VectorXd& extra_priors){
+long double priors_asymptotic(const VectorXd& params, const VectorXi& params_length, 
+					const MatrixXd& priors_params, const VectorXi& priors_names_switch, 
+					const VectorXd& extra_priors, const tabpriors& tabulated_priors){
 	// The priors_asymptotic() function is basically the same as the prior_ms_global() but:
 	//    (1) Need to exclude l=1 from the smoothing
 	//    (2) Replace a3/a1 ratio by a3/rot_env (A slight change for the a3 index because we have Snlm= [rot_env, rot_core, eta, a3, asym] here instead of [a1, eta, a3, asym]
@@ -409,7 +413,7 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 	//std::cout << "[3.2] f =" << f << std::endl;
 
 	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
-	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
+	f=f + apply_generic_priors(params, priors_params, priors_names_switch, tabulated_priors);
 	//std::cout << "[4] f =" << f << std::endl;
 
 	// ----- Add a positivity condition on inclination -------
@@ -540,7 +544,9 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 	return f;
 }
 
-long double priors_local(const VectorXd& params, const VectorXi& params_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch, const VectorXd& extra_priors){
+long double priors_local(const VectorXd& params, const VectorXi& params_length, 
+				const MatrixXd& priors_params, const VectorXi& priors_names_switch, 
+				const VectorXd& extra_priors, const tabpriors& tabulated_priors){
 
 	long double f=0;
 
@@ -593,7 +599,7 @@ long double priors_local(const VectorXd& params, const VectorXi& params_length, 
 	//double Dnu, d02, scoef, a1, alfa, b, fmax, Q11, max_b, el, em;
 	
  	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
-	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
+	f=f + apply_generic_priors(params, priors_params, priors_names_switch, tabulated_priors);
 	// ----- Add a positivity condition on inclination -------
 	// The prior could return values -90<i<90. We want it to give only 0<i<90
 	//f=f+logP_uniform(0., 90., params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise]);
@@ -659,11 +665,12 @@ return f;
 
 
 //long double priors_Test_Gaussian(const VectorXd params, const VectorXi param_length, const MatrixXd priors_params, const std::vector<std::string> priors_names){
-long double priors_Test_Gaussian(const VectorXd& params, const VectorXi& params_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch){
+long double priors_Test_Gaussian(const VectorXd& params, const VectorXi& params_length, 
+				const MatrixXd& priors_params, const VectorXi& priors_names_switch, const tabpriors& tabulated_priors){
 
 	long double f=0;
 
-	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
+	f=f + apply_generic_priors(params, priors_params, priors_names_switch, tabulated_priors);
 
 	//// More rigid strategy... How much time is spent on the cases ??
 	//for(i=0; i<params.size(); i++){
@@ -674,7 +681,8 @@ return f;
 } 
 
 //long double priors_Test_Gaussian(const VectorXd params, const VectorXi param_length, const MatrixXd priors_params, const std::vector<std::string> priors_names){
-long double priors_Harvey_Gaussian(const VectorXd& params, const VectorXi& params_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch){
+long double priors_Harvey_Gaussian(const VectorXd& params, const VectorXi& params_length, 
+			const MatrixXd& priors_params, const VectorXi& priors_names_switch, const tabpriors& tabulated_priors){
 
 	long double f=0;
 	// Stello2009 scaling relation between Dnu and numax to remove spurious spiky fits
@@ -689,18 +697,21 @@ long double priors_Harvey_Gaussian(const VectorXd& params, const VectorXi& param
 		//std::cout << "f = " << f << std::endl;
 		goto end;
 	}
-	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
+	f=f + apply_generic_priors(params, priors_params, priors_names_switch, tabulated_priors);
 	end:
 
 return f;
 } 
 
-long double priors_ajfit(const VectorXd& params, const VectorXi& params_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch){
+long double priors_ajfit(const VectorXd& params, const VectorXi& params_length, 
+			const MatrixXd& priors_params, const VectorXi& priors_names_switch,
+			const tabpriors& tabulated_priors){
+
 	const double theta0=params[1];
 	const double delta=params[2];
 	const int filter=params[params_length.segment(0,4).sum()+4];
 	long double f=0;
-	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
+	f=f + apply_generic_priors(params, priors_params, priors_names_switch, tabulated_priors);
 
 	// In the case of a 'gate' prior (filter =0), We have to exclude theta0 < delta/2 by design because theta_min = theta0 - delta/2  must be in [0,Pi/2]	
 	if (filter == 0){
@@ -801,19 +812,40 @@ long double apply_generic_priors(const VectorXd& params, const MatrixXd& priors_
 			  //std::cout << "    pena=" << pena  << std::endl;	  
 			  break;
 			case 11: // tabulated prior
+				std::cout << " CASE 11" << std::endl;
+				// Expected structure inside the model file: 
+				//    [parameter]              Tabulated         [initial_guess]        [table_index]    [x-col]    [y-col]  
+				// Here :
+				//     [parameter] refers to the name of the parameter. e.g Inclination
+				//     [table_index] refers to the index number of the file. The user has the responsibility to designed x-col and y-col
 				//const std::vector<Data_Nd>& priors_params
-				/*
 				//The content should be {(x0,y0),(x1,y1), ..., (xn,yn)}
 				// priors_params[0,i] : must contain the block. block 0 --> (x0,y0). block 2 --> (x2,y2) 
 				 // priors_params[1,i]: must contain 0 / 1 = normalise. If 0, do not normalise (faster... normalisation must be done before-hand).
-				if (priors_tables[i].data != MatrixXd()){ // priors_tables is an optional argument of the function
-					pena= pena + logP_tabulated(priors_params[i].data.col(priors_params[i].data[0,i]*2), priors_params[i].data.col(priors_params[i].data[0,i]*2 +1), params[i], priors_params[i].data[1,i]);
+				if (priors_tables.empty == false){ // priors_tables is an optional argument of the function
+				    MatrixXd mat=*priors_tables.data_3d[int(priors_params(0,i))];
+					std::cout << "Table index = " << priors_params(0,i) << std::endl;
+					std::cout << "Table = " << mat << std::endl;
+					std::cout << "x-col index = " << priors_params(1,i) << std::endl;
+					std::cout << "y-col index = " << priors_params(2,i) << std::endl;
+					std::cout << "x-col = " << mat.col(priors_params(1,i)) << std::endl;
+					std::cout << "y-col = " << mat.col(priors_params(2,i)) << std::endl;
+					std::cout << "param val =" << params[i] << std::endl;
+				   //long double logP_tabulated(              const VectorXd& tab_x                             ,        const VectorXd& logtab_y              , const long double x, const bool normalise)
+					pena= pena + logP_tabulated(mat.col(int(priors_params(1,i))), mat.col(int(priors_params(2,i))), params[i], false);
+					std::cout << "Pena = " << logP_tabulated(mat.col(priors_params(1,i)), mat.col(priors_params(2,i)), params[i], false) << std::endl;
+					exit(EXIT_SUCCESS);
 				} else{
-					throw std::runtime_error("Error: priors_tables cannot be empty when using 'tabulated' priors!");
+					throw std::runtime_error("Error: Custom tabulated priors (priors_tables) cannot be empty when using 'tabulated' priors!");
 				}
-				*/
 				break;
 			case 12: // 2D tabulated prior
+				// Expected structure inside the model file: 
+				//    [parameter1]-[parameter2]              Tabulated_2D         [table_index]            [x-col]          [y-col]
+				// Here :
+				//     [parameter] refers to the name of the parameter. e.g Inclination
+				//     [table_index] refers to the index number of the file. It is up to the user to be careful by pointing to the correct file
+
 				/*
 				//The content should be the full matrix of the 2D PDF for parameters (i,j) 
 				 // priors_params[1,i]: must contain 0 / 1 = normalise. If 0, do not normalise (faster... normalisation must be done before-hand).

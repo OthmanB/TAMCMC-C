@@ -96,6 +96,7 @@ class Config{
 			// Added 1st Jul 2023
 			std::string cfg_model_dir; // Directory where the *.priors files will be looked for. Might be the same as the .model and .data files
 			std::string input_root_name;  // The root of the names of the inputs file(e.g. the star identifier such as the KIC number)
+			//tabpriors priors_data; // [INSIDE 'inputs' now] tabulated prior are loaded here. Note that this is model-dependent and must be reset for each star
 		};
 		struct Data_cfg{ // all the configuration required for the Data
 			bool verbose_data; // Should we show them on screen before proceeding?

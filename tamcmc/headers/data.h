@@ -35,6 +35,19 @@ struct Data{
 		std::vector<std::string> header; // Any kind of information that is useful. e.g. if it is a test, model info + model inputs. Any header (In ASCII, marked by #), will be put there.
 };
 
+
+// Used to keep in memory all of the information from that tabulated priors provided by the user (if any)
+struct tabpriors{
+	bool empty = true; // defined if it was used or not
+    int depth; // number prior tables
+    VectorXd Nrows; 
+    VectorXd Ncols;
+    MatrixXd** data_3d; // Contain submatrices. Each of them was read from a file and give the prior table (either 1D or Nd)
+	std::vector<std::vector<std::string>> headers;
+	std::vector<std::vector<std::string>> labels;
+};
+
+
 struct Input_Data{
 	std::string model_fullname; // The fullname of the model that is going to be processed
 	std::vector<std::string> inputs_names;
@@ -45,6 +58,7 @@ struct Input_Data{
 	MatrixXd priors;
 	VectorXi plength;
 	VectorXd extra_priors; // Contains extra parameters that could be used for priors
+	tabpriors tabulated_priors; // Contains all table of priors given by the users in the *.priors files
 };
 
 // A Generic structure that helps to encapsulate a Matrix of information along with some metadata
@@ -154,14 +168,4 @@ struct external_data{ // A structure designed as a container for any kind of add
 	gsl_funcs Alm_interp_gate; // Table for Alm interpolations for band of activity
 	gsl_funcs Alm_interp_gauss; // Table for Alm interpolations for gauss activity zone
 	gsl_funcs Alm_interp_triangle; // Table for Alm interpolations for triangular activity zone
-};
-
-// Used to keep in memory all of the information from that tabulated priors provided by the user (if any)
-struct tabpriors{
-    int depth; // number prior tables
-    VectorXd Nrows; 
-    VectorXd Ncols;
-    MatrixXd** data_3d; // Contain submatrices. Each of them was read from a file and give the prior table (either 1D or Nd)
-	std::vector<std::vector<std::string>> headers;
-	std::vector<std::vector<std::string>> labels;
 };

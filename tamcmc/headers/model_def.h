@@ -54,6 +54,7 @@ class Model_def{
 		VectorXi plength; // 1D because invariant over Nmodels
 		VectorXd extra_priors;
 		external_data extra_data; // Any data that could be useful for the models. Each data usecase should be encapsulated into it's own structure in this one
+		tabpriors tabulated_priors; // Added on 10 Jul 2023 to handle custom tabulated priors
 	public:
 		MatrixXd params; // could be 2D because could varies over Nmodels
 		MatrixXd vars; // could be 2D because could varies over Nmodels

@@ -173,8 +173,24 @@ void Config::setup(const int slice_ind){
     Data_Nd data_in=read_data_ascii_Ncols(data.data_file, delimiter, data.verbose_data);
     data.data_all=data_in; // save the whole data file into the configuration class
     
+	// ---- Reading the model-specific configuration files ----
+	modeling.slice_ind=slice_ind;
+    std::cout << " ---------- " << std::endl;
+    read_inputs_files(); // Here we read the configuration files (e.g. the .MCMC file)
+    std::cout << "       - Converting prior names into integers..." << std::endl;
+    modeling.inputs.priors_names_switch=convert_priors_names_to_switch(modeling.inputs.priors_names);
+    std::cout << "       - Converting model function names into integers..." << std::endl;
+    modeling.model_fct_name_switch=convert_model_fct_name_to_switch(modeling.model_fct_name);
+    std::cout << "       - Converting  likelihood function names into integers..." << std::endl;
+    modeling.likelihood_fct_name_switch=convert_likelihood_fct_name_to_switch(modeling.likelihood_fct_name);
+    std::cout << "       - Converting prior function names into integers..." << std::endl;
+    modeling.prior_fct_name_switch=convert_prior_fct_name_to_switch(modeling.prior_fct_name);
+	
 	// --- Read tabulated priors if provided ---
 	// Added on 1st July
+	// This section update the modeling.inputs structure (of type Input_Data) by adding to it the tabulated_priors. 
+	// This must be done here, hafter 'read_inputs_files()' is done, as that function generate the Input_Data, specific to a model
+	// While the prior data are somewhat 'external' to the model.
 	//    - Find priors files
 	try{
 		std::cout << "   Searching directory for custom tabulated priors..." << std::endl;
@@ -187,26 +203,26 @@ void Config::setup(const int slice_ind){
 				std::cout << "              ["<< i << "] " << priors_files[i] << std::endl;
 			}
 			std::cout << "           - Loading files..." << std::endl;
-			tabpriors priors_tab_set;
-			priors_tab_set.depth=priors_files.size();
+			modeling.inputs.tabulated_priors.depth=priors_files.size();
 			//    - Extract their global information and initialise the matrix of tabulated data
-			priors_tab_set.Ncols=VectorXd(0);
-			priors_tab_set.Nrows=VectorXd(0);
-			for (int i=0; i<priors_tab_set.depth;i++){
+			modeling.inputs.tabulated_priors.Ncols=VectorXd(0);
+			modeling.inputs.tabulated_priors.Nrows=VectorXd(0);
+			for (int i=0; i<modeling.inputs.tabulated_priors.depth;i++){
 				Data_Nd prior_tab=read_data_ascii_Ncols(priors_files[i], delimiter, false);
-				priors_tab_set.headers.push_back(prior_tab.header);
-				priors_tab_set.labels.push_back(prior_tab.labels);
-				priors_tab_set.Ncols.conservativeResize(priors_tab_set.Ncols.size() + 1); 
-				priors_tab_set.Nrows.conservativeResize(priors_tab_set.Nrows.size() + 1);
-				priors_tab_set.Ncols[priors_tab_set.Ncols.size()-1]=prior_tab.data.cols();
-				priors_tab_set.Nrows[priors_tab_set.Nrows.size()-1]=prior_tab.data.rows();
+				modeling.inputs.tabulated_priors.headers.push_back(prior_tab.header);
+				modeling.inputs.tabulated_priors.labels.push_back(prior_tab.labels);
+				modeling.inputs.tabulated_priors.Ncols.conservativeResize(modeling.inputs.tabulated_priors.Ncols.size() + 1); 
+				modeling.inputs.tabulated_priors.Nrows.conservativeResize(modeling.inputs.tabulated_priors.Nrows.size() + 1);
+				modeling.inputs.tabulated_priors.Ncols[modeling.inputs.tabulated_priors.Ncols.size()-1]=prior_tab.data.cols();
+				modeling.inputs.tabulated_priors.Nrows[modeling.inputs.tabulated_priors.Nrows.size()-1]=prior_tab.data.rows();
 			}
-			priors_tab_set.data_3d=initialize_3dVarMatrix(priors_tab_set.depth, priors_tab_set.Nrows, priors_tab_set.Ncols);
+			modeling.inputs.tabulated_priors.data_3d=initialize_3dVarMatrix(modeling.inputs.tabulated_priors.depth, modeling.inputs.tabulated_priors.Nrows, modeling.inputs.tabulated_priors.Ncols);
 			//      - Fill the data in the form of 3D matrices
-			for (int i=0; i<priors_tab_set.depth;i++){
+			for (int i=0; i<modeling.inputs.tabulated_priors.depth;i++){
 				Data_Nd prior_tab=read_data_ascii_Ncols(priors_files[i], delimiter, false);
-				set_3dMatrix(priors_tab_set.data_3d, prior_tab.data, i);
+				set_3dMatrix(modeling.inputs.tabulated_priors.data_3d, prior_tab.data, i);
 			}
+			modeling.inputs.tabulated_priors.empty = false; // Flag it as usable
 			std::cout << "            Done." << std::endl;
 			
 		} else{
@@ -226,25 +242,11 @@ void Config::setup(const int slice_ind){
 			std::cerr << "      - May have a unit marked by a '*'" << std::endl;
 			exit(EXIT_FAILURE);
 	}	
-	
-	exit(EXIT_SUCCESS);
-    // ALL SEEMS OK UNTIL HERE 
+	// ALL SEEMS OK UNTIL HERE 
 	// WE NOW NEED TO WORK ON PRIORS_CALC
 	//                AND ON THE BUILD FUNCTIONS 
 	
-	// ---- Reading the model-specific configuration files ----
-	modeling.slice_ind=slice_ind;
-    std::cout << " ---------- " << std::endl;
-    read_inputs_files(); // Here we read the configuration files (e.g. the .MCMC file)
-    std::cout << "       - Converting prior names into integers..." << std::endl;
-    modeling.inputs.priors_names_switch=convert_priors_names_to_switch(modeling.inputs.priors_names);
-    std::cout << "       - Converting model function names into integers..." << std::endl;
-    modeling.model_fct_name_switch=convert_model_fct_name_to_switch(modeling.model_fct_name);
-    std::cout << "       - Converting  likelihood function names into integers..." << std::endl;
-    modeling.likelihood_fct_name_switch=convert_likelihood_fct_name_to_switch(modeling.likelihood_fct_name);
-    std::cout << "       - Converting prior function names into integers..." << std::endl;
-    modeling.prior_fct_name_switch=convert_prior_fct_name_to_switch(modeling.prior_fct_name);
-	
+
 	std::cout << "       - Handling data inputs..." << std::endl;
     // ----- Define which columns are containing the x values, the y values and ysig_ind ----
 	if(data.data.xrange[0] == -9999 && data.data.xrange[1] == -9999){ // Case where no range was given in the cfg file ==> Take all
@@ -380,6 +382,9 @@ void Config::reset(){
 	modeling.inputs.relax.resize(0);
 	modeling.inputs.priors.resize(0,0);
 	modeling.inputs.plength.resize(0);
+	modeling.inputs.extra_priors.resize(0);
+	modeling.inputs.tabulated_priors.data_3d=initialize_3dMatrix(0, 0, 0); // depth, Nrows, Ncols
+	modeling.inputs.tabulated_priors={};
 
 	// all the configuration required for the Data
 	data.verbose_data=0; // Should we show them on screen before proceeding?
@@ -495,6 +500,109 @@ std::vector<std::string> Config::listMatchingFiles(const std::string& directory,
     return matchingFiles;
 }
 
+void Config::read_inputs_prior_Simple_Matrix(){
+/*
+ * Contains the internal structure of an input file when inputs and priors are 
+ * Simply organized in a Matrix of parameters. Useful format for simple models
+ * ie, when the number of parameters is small and without hyper-parameters. 
+ * Example of configuration files that can be read with this function: 
+ *         - model_Test_Gaussian
+ *         - model_Harvey_Gaussian
+*/
+
+	int i;
+	std::vector<int> pos;
+	std::string line0, char0;
+	std::vector<std::string> word, tmp;
+	std::ifstream cfg_session;
+
+    cfg_session.open(modeling.cfg_model_file.c_str());
+    if (cfg_session.is_open()) {
+
+	char0="#"; 
+	// ------ Skip header lines and the range information (because a simple fit does the full spectrum) ------
+	while((char0 == "#" || char0 == "*") && !cfg_session.eof()){ 
+		std::getline(cfg_session, line0);
+		line0=strtrim(line0);
+		char0=strtrim(line0.substr(0, 1)); 
+	}
+	while(!cfg_session.eof()){
+		// ---------- Dealing with the inputs names -----------
+		if(char0 == "!"){
+			modeling.inputs.inputs_names=strsplit(line0.substr(1), " \t");  // Remove the "!" and split what follows assuming spaces (" ") OR tabulations ("\t") for separator
+		} else{
+			msg_handler(modeling.cfg_model_file, "text_indicator", "Config::read_inputs_prior_Simple_Matrix()", "", 1);
+		}
+
+		// ----------- Dealing with the inputs values ------------
+		std::getline(cfg_session, line0);
+		line0=strtrim(line0);
+		modeling.inputs.inputs=arrstr_to_Xdarrdbl(strsplit(line0, " \t"));
+
+		// ---------- Dealing with relax ---------
+		std::getline(cfg_session, line0);
+		line0=strtrim(line0);
+		char0=strtrim(line0.substr(0, 1)); 
+		if(char0 == "!"){
+			std::getline(cfg_session,line0);
+			modeling.inputs.relax=arrstr_to_Xiarr(strsplit(line0.substr(1), " \t"));  // Remove the "!" and split what follows assuming spaces (" ") OR tabulations ("\t") for separator
+		} else{
+			msg_handler(modeling.cfg_model_file, "text_indicator", "Config::read_inputs_prior_Simple_Matrix()", "", 1);
+		}
+
+		// ---------- Dealing with the priors names ---------
+		std::getline(cfg_session, line0); // Normally, we should get the priors names in line0 now
+		line0=strtrim(line0);
+		char0=strtrim(line0.substr(0, 1)); 
+		if(char0 == "!"){
+			modeling.inputs.priors_names=strsplit(line0.substr(1), " \t");  // Remove the "!" and split what follows assuming spaces (" ") OR tabulations ("\t") for separator
+		} else{
+			msg_handler(modeling.cfg_model_file, "text_indicator", "Config::read_inputs_prior_Simple_Matrix()", "", 1);
+		}
+
+		//  ------- Dealing with the priors values -------
+		modeling.inputs.priors.resize(4, modeling.inputs.priors_names.size()); // The maximum number of input parameters for the priors is 4
+		modeling.inputs.priors.setConstant(-9999); // Put a recognizable values to indicate empty slots
+		i=0;
+		
+		while(!cfg_session.eof()){
+			std::getline(cfg_session, line0);
+			line0=strtrim(line0);
+			if(line0.size() != 0){
+				modeling.inputs.priors.row(i)=arrstr_to_Xdarrdbl(strsplit(line0, " \t"));	
+				i=i+1;	
+			}		
+		}
+
+	}
+	cfg_session.close();
+
+	// -------- Determining plength using the parameters names ------
+	std::cout << "inputs_names = ";
+	for(i=0; i<modeling.inputs.inputs_names.size(); i++){
+		std::cout << modeling.inputs.inputs_names[i] << "  ";
+	}
+	std::cout << std::endl << "     -----------" << std::endl;
+
+	tmp=modeling.inputs.inputs_names;
+	i=0;
+	while(tmp.size() > 0){
+		pos=where_str(tmp, tmp[0]);
+		for(int j=0; j<pos.size(); j++){ // Remove the detected values to avoid to read them again
+			tmp.erase(tmp.begin() + pos[j]);
+		}
+		modeling.inputs.plength.conservativeResize(i+1);
+		modeling.inputs.plength[i]=pos.size();
+		i=i+1;
+	}
+
+   } else {
+	msg_handler(modeling.cfg_model_file, "openfile", "Config::read_inputs_prior_Simple_Matrix()", "Please check that the config file is in the Config directory", 1);
+   }
+   //modeling.inputs.tabulated_priors=modeling.priors_data;
+}
+
+
 void Config::read_inputs_priors_MS_Global(){
 
 	bool verbose=1;
@@ -507,6 +615,7 @@ void Config::read_inputs_priors_MS_Global(){
 	std::cout << "   - Preparing input and priors parameters..." << std::endl;
     in_vals=build_init_MS_Global(iMS_global, verbose, data.data_all.data(2, data.x_col)-data.data_all.data(1, data.x_col)); // Interpret the MCMC file and format it as an input structure
 	in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
+	//in_vals.tabulated_priors=modeling.priors_data;  // Added on 10 Jul 2023 to handle custom tabulated priors
 	modeling.inputs=in_vals;
 	modeling.model_fct_name=in_vals.model_fullname;
 	std::cout << "Setup according to the MCMC configuration file finished" << std::endl;
@@ -524,6 +633,7 @@ void Config::read_inputs_priors_asymptotic(){
 	std::cout << "   - Preparing input and priors parameters..." << std::endl;
     in_vals=build_init_asymptotic(i_asymptotic, verbose, data.data_all.data(2, data.x_col)-data.data_all.data(1, data.x_col)); // Interpret the MCMC file and format it as an input structure
 	in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
+	//in_vals.tabulated_priors=modeling.priors_data;  // Added on 10 Jul 2023 to handle custom tabulated priors
 	modeling.inputs=in_vals;
 	modeling.model_fct_name=in_vals.model_fullname;
 	std::cout << "Setup according to the MCMC configuration file finished" << std::endl;
@@ -539,15 +649,12 @@ void Config::read_inputs_priors_local(){
 	//std::cout << "Before read_MCMC" << std::endl;
 	std::cout << "  - Reading the MCMC file: " << modeling.cfg_model_file << "..." << std::endl;
 	i_local=read_MCMC_file_local(modeling.cfg_model_file, modeling.slice_ind, 0); // Read the MCMC file, with verbose=0 here
-	
 	data.data.xrange=i_local.freq_range; // Load the wished frequency range into the data structure (contains the spectra)
-	
-//	std::cout << "Stop in Config::read_inputs_priors_local: Need to be implemented from here..." << std::endl;
-//	exit(EXIT_SUCCESS);
 	
 	std::cout << "   - Preparing input and priors parameters..." << std::endl;
     in_vals=build_init_local(i_local, verbose, data.data_all.data(2, data.x_col)-data.data_all.data(1, data.x_col)); // Interpret the MCMC file and format it as an input structure
 	in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
+	//in_vals.tabulated_priors=modeling.priors_data;  // Added on 10 Jul 2023 to handle custom tabulated priors
 	modeling.inputs=in_vals;
 	modeling.model_fct_name=in_vals.model_fullname;
 	std::cout << "Setup according to the MCMC configuration file finished" << std::endl;
@@ -568,6 +675,7 @@ void Config::read_inputs_ajfit(){
 	data.data_all=set_observables_ajfit(i_ajfit, data.data_all, data.x_col, data.y_col, data.ysig_col);
     in_vals=build_init_ajfit(i_ajfit, a1_obs); // Interpret the aj file and format it as an input structure
 	in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
+	//in_vals.tabulated_priors=modeling.priors_data; // Added on 10 Jul 2023 to handle custom tabulated priors
 	modeling.inputs=in_vals;
 	modeling.model_fct_name=in_vals.model_fullname;
 	diags.data_scoef1=0; // a2, a4, a6 are independent parameters... WE MUST NOT smooth over x={a2,a4,a6}
@@ -1917,107 +2025,6 @@ void Config::read_defautlerrors(bool verbose){
 	}
      }
 
-}
-
-void Config::read_inputs_prior_Simple_Matrix(){
-/*
- * Contains the internal structure of an input file when inputs and priors are 
- * Simply organized in a Matrix of parameters. Useful format for simple models
- * ie, when the number of parameters is small and without hyper-parameters. 
- * Example of configuration files that can be read with this function: 
- *         - model_Test_Gaussian
- *         - model_Harvey_Gaussian
-*/
-
-	int i;
-	std::vector<int> pos;
-	std::string line0, char0;
-	std::vector<std::string> word, tmp;
-	std::ifstream cfg_session;
-
-    cfg_session.open(modeling.cfg_model_file.c_str());
-    if (cfg_session.is_open()) {
-
-	char0="#"; 
-	// ------ Skip header lines and the range information (because a simple fit does the full spectrum) ------
-	while((char0 == "#" || char0 == "*") && !cfg_session.eof()){ 
-		std::getline(cfg_session, line0);
-		line0=strtrim(line0);
-		char0=strtrim(line0.substr(0, 1)); 
-	}
-	while(!cfg_session.eof()){
-		// ---------- Dealing with the inputs names -----------
-		if(char0 == "!"){
-			modeling.inputs.inputs_names=strsplit(line0.substr(1), " \t");  // Remove the "!" and split what follows assuming spaces (" ") OR tabulations ("\t") for separator
-		} else{
-			msg_handler(modeling.cfg_model_file, "text_indicator", "Config::read_inputs_prior_Simple_Matrix()", "", 1);
-		}
-
-		// ----------- Dealing with the inputs values ------------
-		std::getline(cfg_session, line0);
-		line0=strtrim(line0);
-		modeling.inputs.inputs=arrstr_to_Xdarrdbl(strsplit(line0, " \t"));
-
-		// ---------- Dealing with relax ---------
-		std::getline(cfg_session, line0);
-		line0=strtrim(line0);
-		char0=strtrim(line0.substr(0, 1)); 
-		if(char0 == "!"){
-			std::getline(cfg_session,line0);
-			modeling.inputs.relax=arrstr_to_Xiarr(strsplit(line0.substr(1), " \t"));  // Remove the "!" and split what follows assuming spaces (" ") OR tabulations ("\t") for separator
-		} else{
-			msg_handler(modeling.cfg_model_file, "text_indicator", "Config::read_inputs_prior_Simple_Matrix()", "", 1);
-		}
-
-		// ---------- Dealing with the priors names ---------
-		std::getline(cfg_session, line0); // Normally, we should get the priors names in line0 now
-		line0=strtrim(line0);
-		char0=strtrim(line0.substr(0, 1)); 
-		if(char0 == "!"){
-			modeling.inputs.priors_names=strsplit(line0.substr(1), " \t");  // Remove the "!" and split what follows assuming spaces (" ") OR tabulations ("\t") for separator
-		} else{
-			msg_handler(modeling.cfg_model_file, "text_indicator", "Config::read_inputs_prior_Simple_Matrix()", "", 1);
-		}
-
-		//  ------- Dealing with the priors values -------
-		modeling.inputs.priors.resize(4, modeling.inputs.priors_names.size()); // The maximum number of input parameters for the priors is 4
-		modeling.inputs.priors.setConstant(-9999); // Put a recognizable values to indicate empty slots
-		i=0;
-		
-		while(!cfg_session.eof()){
-			std::getline(cfg_session, line0);
-			line0=strtrim(line0);
-			if(line0.size() != 0){
-				modeling.inputs.priors.row(i)=arrstr_to_Xdarrdbl(strsplit(line0, " \t"));	
-				i=i+1;	
-			}		
-		}
-
-	}
-	cfg_session.close();
-
-	// -------- Determining plength using the parameters names ------
-	std::cout << "inputs_names = ";
-	for(i=0; i<modeling.inputs.inputs_names.size(); i++){
-		std::cout << modeling.inputs.inputs_names[i] << "  ";
-	}
-	std::cout << std::endl << "     -----------" << std::endl;
-
-	tmp=modeling.inputs.inputs_names;
-	i=0;
-	while(tmp.size() > 0){
-		pos=where_str(tmp, tmp[0]);
-		for(int j=0; j<pos.size(); j++){ // Remove the detected values to avoid to read them again
-			tmp.erase(tmp.begin() + pos[j]);
-		}
-		modeling.inputs.plength.conservativeResize(i+1);
-		modeling.inputs.plength[i]=pos.size();
-		i=i+1;
-	}
-
-   } else {
-	msg_handler(modeling.cfg_model_file, "openfile", "Config::read_inputs_prior_Simple_Matrix()", "Please check that the config file is in the Config directory", 1);
-   }
 }
 
 

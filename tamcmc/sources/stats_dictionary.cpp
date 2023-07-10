@@ -254,7 +254,7 @@ long double logP_tabulated(const VectorXd& tab_x, const VectorXd& logtab_y, cons
  * If the norm of the logprobability is provided, it is used (optional argument).
  *  Otherwise, it is calculated here using the trapezoidal approximation
  * 
- * CORRESPONDS TO CASE 8 IN THE MAIN PROGRAM
+ * CORRESPONDS TO CASE 11 IN THE MAIN PROGRAM
  *
 */
 const int Nx=tab_x.size();
@@ -286,7 +286,7 @@ long double logP_tabulated_2d(const Eigen::MatrixXd& tab_xy, const long double x
  * If the norm of the logprobability is provided, it is used (optional argument).
  *  Otherwise, it is calculated here using the trapezoidal approximation
  * 
- * CORRESPONDS TO CASE 8 IN THE MAIN PROGRAM
+ * CORRESPONDS TO CASE 12 IN THE MAIN PROGRAM
  *
 */
 

@@ -47,6 +47,9 @@ Model_def::Model_def(Config *config, const VectorXd& Tcoefs, const bool verbose)
 	// Load external data
 	extra_data=config->modeling.extra_data; // These data must be a structure for eg. interpolation tables
 	
+	// Load custom tabulated priors
+	tabulated_priors=config->modeling.inputs.tabulated_priors;
+
 	Nparams=plength.sum();
 	params.resize(Nmodels, Nparams);
 
@@ -387,22 +390,22 @@ long double Model_def::call_prior(Data *data_struc, const int m){
 
 	switch(prior_fct_name_switch){
 		case 0: // model_Test_Gaussian
-		  return priors_Test_Gaussian(params.row(m), plength, priors_params, priors_params_names_switch);
+		  return priors_Test_Gaussian(params.row(m), plength, priors_params, priors_params_names_switch, tabulated_priors);
 		  break;
 		case 1: // model_Harvey_Gaussian
-		  return priors_Harvey_Gaussian(params.row(m), plength, priors_params, priors_params_names_switch);
+		  return priors_Harvey_Gaussian(params.row(m), plength, priors_params, priors_params_names_switch, tabulated_priors);
 		  break;
 		case 2: // model_MS_Global
-		  return priors_MS_Global(params.row(m), plength, priors_params, priors_params_names_switch, extra_priors);
+		  return priors_MS_Global(params.row(m), plength, priors_params, priors_params_names_switch, extra_priors, tabulated_priors);
 		  break;
 		case 3: // model_local
-		  return priors_local(params.row(m), plength, priors_params, priors_params_names_switch, extra_priors);
+		  return priors_local(params.row(m), plength, priors_params, priors_params_names_switch, extra_priors, tabulated_priors);
 		  break;
 		case 4: // model_local
-		  return priors_asymptotic(params.row(m), plength, priors_params, priors_params_names_switch, extra_priors);
+		  return priors_asymptotic(params.row(m), plength, priors_params, priors_params_names_switch, extra_priors, tabulated_priors);
 		  break;
 		 case 5:
-		  return priors_ajfit(params.row(m), plength, priors_params, priors_params_names_switch);		 
+		  return priors_ajfit(params.row(m), plength, priors_params, priors_params_names_switch, tabulated_priors);		 
 		  break;
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;
@@ -414,7 +417,7 @@ long double Model_def::call_prior(Data *data_struc, const int m){
 		  std::cout << "    - 'io_MS_Global'" << std::endl;
 		  std::cout << "    - 'io_local'" << std::endl;
 		  std::cout << "    - 'io_asymptotic'" << std::endl;
-		  std::cout << "    - 'io_asy'" << std::endl;
+		  std::cout << "    - 'io_ajfit'" << std::endl;
 		  
 		  std::cout << " The program will exit now" << std::endl;
 		  exit(EXIT_FAILURE);
