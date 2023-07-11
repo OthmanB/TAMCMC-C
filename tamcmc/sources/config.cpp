@@ -14,6 +14,7 @@
 #include <vector>
 #include <Eigen/Dense>
 #include "config.h"
+#include "io_models.h"
 #include "io_ms_global.h"
 #include "string_handler.h"
 #include "../../external/Alm/Alm_cpp/data.h"
@@ -177,6 +178,11 @@ void Config::setup(const int slice_ind){
 	modeling.slice_ind=slice_ind;
     std::cout << " ---------- " << std::endl;
     read_inputs_files(); // Here we read the configuration files (e.g. the .MCMC file)
+	// Added on 10 Jul 2023: Nd priors are indicated by the syntax Tabulated(p1,p2,pn). 
+	// The function below allows to ensure that p1 is indicated as tabulated once, with p2,...,pn localised as prior arguments   
+	// p2,..,pn will then be set as Auto prior. It MUST BE AFTER read_inputs_files()
+	reformat_tabulated_priors(); 
+	exit(EXIT_SUCCESS); 
     std::cout << "       - Converting prior names into integers..." << std::endl;
     modeling.inputs.priors_names_switch=convert_priors_names_to_switch(modeling.inputs.priors_names);
     std::cout << "       - Converting model function names into integers..." << std::endl;
@@ -614,7 +620,7 @@ void Config::read_inputs_priors_MS_Global(){
 	data.data.xrange=iMS_global.freq_range; // Load the wished frequency range into the data structure (contains the spectra)
 	std::cout << "   - Preparing input and priors parameters..." << std::endl;
     in_vals=build_init_MS_Global(iMS_global, verbose, data.data_all.data(2, data.x_col)-data.data_all.data(1, data.x_col)); // Interpret the MCMC file and format it as an input structure
-	in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
+	//in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
 	//in_vals.tabulated_priors=modeling.priors_data;  // Added on 10 Jul 2023 to handle custom tabulated priors
 	modeling.inputs=in_vals;
 	modeling.model_fct_name=in_vals.model_fullname;
@@ -632,7 +638,7 @@ void Config::read_inputs_priors_asymptotic(){
 	data.data.xrange=i_asymptotic.freq_range; // Load the wished frequency range into the data structure (contains the spectra)
 	std::cout << "   - Preparing input and priors parameters..." << std::endl;
     in_vals=build_init_asymptotic(i_asymptotic, verbose, data.data_all.data(2, data.x_col)-data.data_all.data(1, data.x_col)); // Interpret the MCMC file and format it as an input structure
-	in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
+	//in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
 	//in_vals.tabulated_priors=modeling.priors_data;  // Added on 10 Jul 2023 to handle custom tabulated priors
 	modeling.inputs=in_vals;
 	modeling.model_fct_name=in_vals.model_fullname;
@@ -653,7 +659,7 @@ void Config::read_inputs_priors_local(){
 	
 	std::cout << "   - Preparing input and priors parameters..." << std::endl;
     in_vals=build_init_local(i_local, verbose, data.data_all.data(2, data.x_col)-data.data_all.data(1, data.x_col)); // Interpret the MCMC file and format it as an input structure
-	in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
+	//in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
 	//in_vals.tabulated_priors=modeling.priors_data;  // Added on 10 Jul 2023 to handle custom tabulated priors
 	modeling.inputs=in_vals;
 	modeling.model_fct_name=in_vals.model_fullname;
@@ -674,7 +680,7 @@ void Config::read_inputs_ajfit(){
 	a1_obs=data.data_all.data(pos_j1[0], data.y_col); // Retrieve a1
 	data.data_all=set_observables_ajfit(i_ajfit, data.data_all, data.x_col, data.y_col, data.ysig_col);
     in_vals=build_init_ajfit(i_ajfit, a1_obs); // Interpret the aj file and format it as an input structure
-	in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
+	//in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
 	//in_vals.tabulated_priors=modeling.priors_data; // Added on 10 Jul 2023 to handle custom tabulated priors
 	modeling.inputs=in_vals;
 	modeling.model_fct_name=in_vals.model_fullname;
@@ -1957,6 +1963,76 @@ void Config::read_inputs_files(){
 		msg_handler("", "prior_name", "Config::read_inputs_files()", modeling.prior_fct_name, 1);
 	}
 
+}
+
+void Config::reformat_tabulated_priors(){
+	// Added on 10 Jul 2023: Nd priors are indicated by the syntax Tabulated(p1). 
+	// The function below allows to ensure that p1 is indicated as tabulated once and is associated to p0 = modeling.inputs.inputs_names[i]
+	// p1 will then be set as Auto prior
+	// The function alters the 'modeling.inputs' to be sure that inputs for 2D (or ND) tabulated priors are properly handled
+	// 1. Scan modeling.inputs.priors_names to find places where the string 'Tabulated_2d(X)' appears, where X is an arbritrary string that has to be saved. 
+	//    a. The indexes of the locations should be listed into an Eigen::VectorXi loc_i;
+	//    b. The string X should also be listed into an std::vector<std::string> name_X of same size as the Eigen::VectorXi loc_i (to allow a mapping between the indices and the strings)
+	//    c. Search name_X within modeling.inputs.priors_names and save its index into an Eigen::VectorXi loc_j
+	// 2. Alter the line of the parameter i so that:
+	//          modeling.inputs.priors_names[i] is replaced by Tabulated_2d  (instead of 'Tabulated_2d(X)')
+	// 3. Alter the Eigen::MatrixXd modeling.inputs.priors(i, 4) value by puting in it the value ind_X
+	// 4. For each entries where 'Tabulated_2d(X)' was found, Do:
+	// Eigen::VectorXd tmp(5);
+	// tmp << -9999, -9999, -9999, -9999, -9999;
+	// io_calls.fill_param(&modeling.inputs.priors, name_X, "Auto", &modeling.inputs.inputs[j], tmp, j, 1);
+	IO_models io_calls;
+	Eigen::VectorXi loc_i;
+	std::vector<std::string> name_X;
+	Eigen::VectorXi loc_j;
+
+	for (int i = 0; i < modeling.inputs.priors_names.size(); i++) {
+		if (modeling.inputs.priors_names[i].find("Tabulated_2d") != std::string::npos) {
+			loc_i.conservativeResize(loc_i.size() + 1);
+			name_X.push_back(strtrim(modeling.inputs.priors_names[i].substr(13, modeling.inputs.priors_names[i].length() - 14)));
+			loc_i(loc_i.size() - 1) = i;
+		}
+	}
+	for (int i = 0; i < loc_i.size(); i++) {
+		int cpt=0;
+		for (int j = 0; j < modeling.inputs.inputs_names.size(); j++) {
+			if (modeling.inputs.inputs_names[j] == name_X[i]) {
+				loc_j.conservativeResize(loc_j.size() + 1);
+				loc_j(loc_j.size() - 1) = j;
+				cpt=cpt+1;
+			}
+		}
+		if(cpt > 1){
+			std::cerr << " Error for parameter " << modeling.inputs.inputs_names[i] << std::endl;
+			throw std::runtime_error("Error while parsing 2D Tabulated priors: Multiple possible arguments of same name found for Tabulated_2d(" + name_X[loc_i[i]]+ ")");
+		}
+	}
+	if(loc_j.size() == 0){
+			throw std::runtime_error("Error while parsing 2D Tabulated priors: Could not found any occurence of " + name_X[0]);
+	}
+	std::cout << " loc_i.size() = " << loc_i.size() << std::endl;
+	std::cout << " loc_j.size() = " << loc_j.size() << std::endl;
+	std::cout << " name_X.size()= " << name_X.size() << std::endl;
+
+	for (int i = 0; i < loc_i.size(); i++) {
+		std::cout << "[" << loc_i[i] << ", " << loc_j[i] << "]  name_i:" << modeling.inputs.inputs_names[loc_i[i]]  << "   -   name_j:" << name_X[i] << std::endl;
+	}
+
+	Eigen::VectorXd tmp(4);
+	tmp << -9999, -9999, -9999, -9999;
+	for (int i = 0; i < loc_i.size(); i++) {
+		modeling.inputs.priors_names[loc_i[i]] = "Tabulated_2d";
+		modeling.inputs.priors(1,loc_i[i]) = loc_j[i];
+		io_calls.fill_param(&modeling.inputs, name_X[i], "Auto", modeling.inputs.inputs[loc_j[i]], tmp, loc_j[i], 0);
+	}
+
+	if (loc_i.size() > 0){
+		std::cout <<  " >>>>>   2D TABULATED PRIORS FOUND : Parsing of information and restructuration of the prior inputs done" << std::endl;
+		std::cout <<  " >>>>>   Here is the new table of inputs " << std::endl;
+		short int k=io_calls.show_param(modeling.inputs);
+		std::cout <<  " >>>>>   END New inputs " << std::endl;
+	}
+	exit(EXIT_SUCCESS);
 }
 
 void Config::read_defautlerrors(bool verbose){

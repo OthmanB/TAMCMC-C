@@ -832,8 +832,10 @@ long double apply_generic_priors(const VectorXd& params, const MatrixXd& priors_
 					std::cout << "y-col = " << mat.col(priors_params(2,i)) << std::endl;
 					std::cout << "param val =" << params[i] << std::endl;
 				   //long double logP_tabulated(              const VectorXd& tab_x                             ,        const VectorXd& logtab_y              , const long double x, const bool normalise)
-					pena= pena + logP_tabulated(mat.col(int(priors_params(1,i))), mat.col(int(priors_params(2,i))), params[i], false);
+					//pena= pena + logP_tabulated(mat.col(int(priors_params(1,i))), mat.col(int(priors_params(2,i))), params[i], false);
 					std::cout << "Pena = " << logP_tabulated(mat.col(priors_params(1,i)), mat.col(priors_params(2,i)), params[i], false) << std::endl;
+					pena= pena + logP_tabulated(mat.col(0), mat.col(1), params[i], false); // col-x and col-y are fixed
+				    std::cout << "Pena = " << logP_tabulated(mat.col(0), mat.col(1), params[i], false) << std::endl;
 					exit(EXIT_SUCCESS);
 				} else{
 					throw std::runtime_error("Error: Custom tabulated priors (priors_tables) cannot be empty when using 'tabulated' priors!");
@@ -841,7 +843,7 @@ long double apply_generic_priors(const VectorXd& params, const MatrixXd& priors_
 				break;
 			case 12: // 2D tabulated prior
 				// Expected structure inside the model file: 
-				//    [parameter1]-[parameter2]              Tabulated_2D         [table_index]            [x-col]          [y-col]
+				//    [parameter1]              Tabulated_2D(parameter2)         [table_index]            [x-col]          [y-col]
 				// Here :
 				//     [parameter] refers to the name of the parameter. e.g Inclination
 				//     [table_index] refers to the index number of the file. It is up to the user to be careful by pointing to the correct file
@@ -858,8 +860,6 @@ long double apply_generic_priors(const VectorXd& params, const MatrixXd& priors_
 				*/
 				break;
 			case 13: // Case Auto: No Prior Applied here --> The user must set his own prior... Useful if using a 2D tabulated prior
-			  //std::cout << "CASE 10" << std::endl;
-			  //std::cout << "[" << i << "] Auto, pena=" << pena << std::endl;
 			  break;
 			default:
 			  std::cout << " Problem in priors_calc.cpp! " << std::endl;
