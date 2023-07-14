@@ -1,59 +1,91 @@
 # Version history #
 
-### v1.83.X Tweaks ###
-	- 1.83.1: Adding the possibility of settting priors values for ferr in the hyper prior section. The syntax is the same as the one used for the common part, except that the first column must be the fref frequency (as before)
-    - 1.83.2: In bin2txt, adding as argument the last sample to be exctracted. Warning: This may break codes that call bin2txt
-    - 1.83.3: Adding A constant model of Width for AppWidth_v4
-	- 1.83.4: Bug Fix in reading model files when there is only one spline column (extra priors) instead of 1 for the initial guess + 1 for the prior name + N for the parameters of the prior. Another bug fix concerns the fact that the RGB v4 model was not using the spline! It has been commented by mistake at some point
-	- 1.83.5: Update in tools/getstats : Three new optional parameters were added: first_index, last_index and Sample_period. This now align the capabilities of getstats with the capabilities of bin2txt. 
+### v1.85 Improvments ### 
+  - Added the possibility of using Tabulated priors. 
+    In the [model_name].model, setting:    
+       '[parameter]              Tabulated         [initial_guess]        [table_index]'
+    Will use the 1-Dimensional prior table contained into the [model_name]_[table_index].priors file. The table must contain in col(0): the [parameter] values. in col(1): the PDF values
+    If setting:
+       '[parameter1]              Tabulated_2d([parameter2])         [initial_guess]        [table_index]' 
+    Will use the 2-Dimensional prior table contained into the [model_name]_[table_index].priors file. The element (0,0) must contain a dummy value (eg. NA). 
+    The line(0) must have the [parameter1] values. The col(0) must have the [parameter2] values. The rest is a block matrix with 2D-PDF values.
+    It is up to the user to provided a normalised prior table (very important when performing model comparison).
+    Examples of tables for KIC=003427720 are given in test/inputs/kplr003427720_kasoc-psd_slc_v1_ajAlm_gate_0.priors (1D table) and test/inputs/kplr003427720_kasoc-psd_slc_v1_ajAlm_gate_1.priors (2D table)  		 
+
+### v1.84.1 Patch ###
+  - Update Alm external module to v1.2.1: Solving the edge case of delta ~ pi/4
+
+### v1.84 Major Improvment ###
+  - I have added a new variable called external_data into the Config Class. This is a structure that contain other structures for handling any external data that is required for the model computation. Like a grid. This can significantly speed up some of the models if used wisely
+  - The new external_data structure is used to load the 1degree resolution grid for Alm gate, triangle and gauss. 
+  - The ajAlm model make use of the Alm grid instead of having a direct computation of Alm. Speed improvments are of the order of x50. Note however that the gauss grid case show strange large uncertainties in some location in the parameter space (see the property-based tests made in https://github.com/OthmanB/Alm/  -dev branch-)
 	
+### v1.83.X Tweaks ###
+  - 1.83.1: Adding the possibility of settting priors values for ferr in the hyper prior section. The syntax is the same as the one used for the common part, except that the first column must be the fref frequency (as before)
+  - 1.83.2: In bin2txt, adding as argument the last sample to be exctracted. Warning: This may break codes that call bin2txt
+  - 1.83.3: Adding A constant model of Width for AppWidth_v4
+  - 1.83.4: Bug Fix in reading model files when there is only one spline column (extra priors) instead of 1 for the initial guess + 1 for the prior name + N for the parameters of the prior. Another bug fix concerns the fact that the RGB v4 model was not using the spline! It has been commented by mistake at some point
+  - 1.83.5: Update in tools/getstats : Three new optional parameters were added: first_index, last_index and Sample_period. This now align the capabilities of getstats with the capabilities of bin2txt. 
+  - 1.83.6: Update of tools/getmodel: Added data_type as optional parameter. If set to 'data_type=range', it expects the argv[1] to have 3 values only: xmin,xmax,resolution. And it generates the x-axis for the model within getmodel. This differs from 'data_type=file', which keeps the former behavior (expecting a data file as input for argv[1])
+  - 1.83.7: Update on model model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4 relying on the ARMM: with outparams = True, the created params.model file returns a new table (at the end of the file) that contains information specific to the mixed modes such as: l, fl_mixed, fl_p, fl_g, ksi_pg, h1_h0, a boolean saying if the mode was included in the model or just calculated and thrown.
+	Will need later on to implement that change in all ARMM-related models
+  - 1.83.8:  Binary files are now generated into a bin directory. More importantly, Update of the Alm model to add the latest version of the Alm (V2) that includes the possibility of a triangular filter and some bug fixes in the way the integral is performed. This resulted in these changes:
+	1. The Alm directory is now in external/Alm (instead of external/integral) and contains several testing elements in python.
+	2. Update of the models.cpp path to activity.h according to (1)
+	3. Update of the prior in priors_calc.cpp for the aj_fit and ajAlm model in order to (also) forbid theta > 90 - delta/2 when in 'gate' case
+	4. The gauss filter now works (!)
+	5. Changed io_ajfit.cpp in order to allow to have filter_type used as an argument to change the filter type between 'gate', 'gauss' and 'triangle'
+		THINGS WHICH WERE NOT CHANGED: ajAlm model (fitting directly the spectrum with the activity model) still have a hardcoded filter_type = 'gate'
+		  This will need to be changed eventually
+  - 1.83.9: Improvments. 
+	1. ajAlm model (fitting directly the spectrum with the activity model) now supports filter_type = 'gate' or 'triangle' or 'gauss'
+	2. Previous version required that the last line of the .model to be empty. This is no longer required: The last line will be read properly in either cases (empty or having values)
+
 ### v1.83 New tool and improvments ###
-	- Adding a quick_samples_stats.cpp and quick_samples_stats.h in tools/ that contains functions to compute the mean, median and stddev from a VectorXd
-	- Using quick_samples_stats in bin2txt_params.cpp in order to show the median and the stddev while unpacking the binary files. This is for example useful in small models such as the Gaussian model
+  - Adding a quick_samples_stats.cpp and quick_samples_stats.h in tools/ that contains functions to compute the mean, median and stddev from a VectorXd
+  - Using quick_samples_stats in bin2txt_params.cpp in order to show the median and the stddev while unpacking the binary files. This is for example useful in small models such as the Gaussian model
   - Models with AppWidth now require that numax (and optionaly its error) is provided by the user. Previously if this was not provided, the code was calculating it. But this is highly instable due the usally limited number of modes in RGB stars
   - Appourchaux Gaussian priors have been revised so that these are using 5% numax if err_numax is not provided in the model file. And use err_numax otherwise.
 
 ### v1.82 New Model ###
-	- Adding a model 'model_ajfit' that allows you to fit data for a2, a4, a6 using Alm in order to determine latitudes of active regions
-	- Warning: In order to get compatibility with ajfit models, a critical change was made in the config.cpp::setup : I Made direct use of the (global) data.data_all instead of the (temporary local) data_in. If a subroutine within read_inputs_files() changes data_all, this may have impact on the routines set prior model_ajfit. A close monitoring of the situation is required in the future, to see any unusual behavior in e.g the ranges of the data
-	- Bug Fix: 
-		 * Corrected the missing nu_cl in the function 'decompose_Alm_fct()' and in 'build_l_mode_ajAlm()'. This affected models 'model_MS_Global_ajAlm_HarveyLike' (direct or indirect)
+  - Adding a model 'model_ajfit' that allows you to fit data for a2, a4, a6 using Alm in order to determine latitudes of active regions
+  - Warning: In order to get compatibility with ajfit models, a critical change was made in the config.cpp::setup : I Made direct use of the (global) data.data_all instead of the (temporary local) data_in. If a subroutine within read_inputs_files() changes data_all, this may have impact on the routines set prior model_ajfit. A close monitoring of the situation is required in the future, to see any unusual behavior in e.g the ranges of the data
+  - Bug Fix: 
+	 * Corrected the missing nu_cl in the function 'decompose_Alm_fct()' and in 'build_l_mode_ajAlm()'. This affected models 'model_MS_Global_ajAlm_HarveyLike' (direct or indirect)
 		 
 ### v1.81 Improvment ###
-		- Adding in the model with activity  'model_MS_Global_ajAlm_HarveyLike' the possibility of not using Alm directly: Using decompose_Alm option we can now converts it to a2,a4,a6 terms. The user can then choose which terms are used and wich ones are not. It allows to
-			  control the fit accuracy, in line with the simulations involving aj coefficients
-			  	- decompose_Alm = -1 : Use Alm directly (no decomposition)
-			  	- decompose_Alm = 0  : use a2, a4, a6
-					- decompose_Alm = 1  : use a2, a4
-			  	- decompose_Alm = 2  : use a2 only
-			By default, decompose_Alm is set to -1 in the io_ms_global.cpp
+  - Adding in the model with activity  'model_MS_Global_ajAlm_HarveyLike' the possibility of not using Alm directly: Using decompose_Alm option we can now converts it to a2,a4,a6 terms. The user can then choose which terms are used and wich ones are not. It allows to control the fit accuracy, in line with the simulations involving aj coefficients
+	- decompose_Alm = -1 : Use Alm directly (no decomposition)
+	- decompose_Alm = 0  : use a2, a4, a6
+	- decompose_Alm = 1  : use a2, a4
+	- decompose_Alm = 2  : use a2 only
+	By default, decompose_Alm is set to -1 in the io_ms_global.cpp
 
 ### v1.8 Fixes and test  ####
-	- Fixes the problem of a3 that is always positive in the posterior: It was due to some residual lines of codes in priors_calc.cpp inteded for the obselete models with activity as a power law.
-	- Model with activity 'model_MS_Global_a1etaAlma3_HarveyLike' renaming 'model_MS_Global_ajAlm_HarveyLike'  to verification and full testing [TESTING]
+  - Fixes the problem of a3 that is always positive in the posterior: It was due to some residual lines of codes in priors_calc.cpp inteded for the obselete models with activity as a power law.
+  - Model with activity 'model_MS_Global_a1etaAlma3_HarveyLike' renaming 'model_MS_Global_ajAlm_HarveyLike'  to verification and full testing [TESTING]
 
 ### v1.73 New model and tools ###
-  - WARNING: I NOTICED THAT THE HFACTOR MODIFICATION MAY BE A PROBLEM IN v3 models. The io_asymptotic is clerarly quite messy and would require cleaning once we 
-             have converged toward a nice solution for the fitting
+  - WARNING: I NOTICED THAT THE HFACTOR MODIFICATION MAY BE A PROBLEM IN v3 models. The io_asymptotic is clerarly quite messy and would require cleaning once we have converged toward a nice solution for the fitting
   - Addition: I have added a corrective factor Wfactor, similarly to Hfactor, it changes Wl=(1 + zeta(nu)).W(l=0) to Wl=(1 + Wfactor.zeta(nu)).W(l=0).
-  				    It is an optional parameter set to 1 when not provided so that it is retrocompatible with older version. However:
-  				    	- It requires to add Wfactor as an argument in the .model file (GU prior is recommended at that stage with Upper bound at 1 to avoid negative widths)
-  				    	- It was tested and explicitly implemented only for model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4
-  				WARNING: FULL TESTS MADE ONLY FOR THE cubic spline (hermite spline should also work though)
+  It is an optional parameter set to 1 when not provided so that it is retrocompatible with older version. However:
+  		- It requires to add Wfactor as an argument in the .model file (GU prior is recommended at that stage with Upper bound at 1 to avoid negative widths)
+  		- It was tested and explicitly implemented only for model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4
+  	WARNING: FULL TESTS MADE ONLY FOR THE cubic spline (hermite spline should also work though)
   - Addition: 
-  		- tools/quickshow.py: Allows you to quickly visualise a params.model file (either created by the IDL postprocessing file or by the debug 'outparams=true' option inside the models)
-  		- tools/Gaussfit_tools/init_fit.py : Adding the capability of using a data file (instead of a sav file) in order to create an initial configuration file for fitting a gaussian. Because usually those data files are already made as the result of a fit, their range is restricted and thus, the user will have to be carefull with the lower harvey profile: The results of the gaussian fit are likely to give weak constrain on it due to the lack of data to support the fit in that region (if the original data file does include low-frequencies)
-  		- tools/recale_height.py: A small function that allows you to divide the power of a spectrum by a certain factor (default is factor=1000). This could be usefull to have 
+  	- tools/quickshow.py: Allows you to quickly visualise a params.model file (either created by the IDL postprocessing file or by the debug 'outparams=true' option inside the models)
+  	- tools/Gaussfit_tools/init_fit.py : Adding the capability of using a data file (instead of a sav file) in order to create an initial configuration file for fitting a gaussian. Because usually those data files are already made as the result of a fit, their range is restricted and thus, the user will have to be carefull with the lower harvey profile: The results of the gaussian fit are likely to give weak constrain on it due to the lack of data to support the fit in that region (if the original data file does include low-frequencies)
+  	- tools/recale_height.py: A small function that allows you to divide the power of a spectrum by a certain factor (default is factor=1000). This could be usefull to have 
   			better convergence properties of the MCMC as it avoid to have large covariance terms (errors on the height are usually of the order of 20% of the input). The matrix inversion  process when evaluating the best MCMC 'step size' can indeed suffer from important error propagation issue if the covariance terms are too different from approximately 1 to 10.
- 	- Changes: The auto prior for delta0l: Use of a narrower prior: +/-2% of Dnu (instead of 5%)
+  - Changes: The auto prior for delta0l: Use of a narrower prior: +/-2% of Dnu (instead of 5%)
  	
-	- Model for RGB stars : model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4
+   - Model for RGB stars : model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4
 		 Changes are in external/ARMM, introduction of polyfit.cpp/h in sources/headers, adding external/spline. 
-	     * Contrary to v3, it has the following capabilities:
-           1. model_type = 1 : The user can choose to use the l=0, shifted with d01 in order to generate l=1 p modes.
-                  In this case, we make use of:
+	  * Contrary to v3, it has the following capabilities:
+          1. model_type = 1 : The user can choose to use the l=0, shifted with d01 in order to generate l=1 p modes.
+            In this case, we make use of:
              solve_mm_asymptotic_O2from_l0(nu_l0_in, el, delta0l, DPl, alpha_g, q, resol, bool returns_pg_freqs=true, verbose=false, freq_min=fmin, freq_max=fmax)
-           2. OR model_type=0: it can use an O2 polynomial:   
+          2. OR model_type=0: it can use an O2 polynomial:   
                solve_mm_asymptotic_O2p(Dnu_p, epsilon, el, delta0l, alpha_p, nmax, DPl, alpha_g, q, fmin, fmax, resol, true, false); //returns_pg_freqs=true, verbose=false
               Here, Dnu_p, epsilon are calculated using a linear fit of l=0 frequencies.
               alpha_p, nmax are determined using a 2nd order fit of l=0 frequencies.
