@@ -182,8 +182,7 @@ void Config::setup(const int slice_ind){
 	// The function below allows to ensure that p1 is indicated as tabulated once, with p2,...,pn localised as prior arguments   
 	// p2,..,pn will then be set as Auto prior. It MUST BE AFTER read_inputs_files()
 	reformat_tabulated_priors(); 
-	exit(EXIT_SUCCESS); 
-    std::cout << "       - Converting prior names into integers..." << std::endl;
+	std::cout << "       - Converting prior names into integers..." << std::endl;
     modeling.inputs.priors_names_switch=convert_priors_names_to_switch(modeling.inputs.priors_names);
     std::cout << "       - Converting model function names into integers..." << std::endl;
     modeling.model_fct_name_switch=convert_model_fct_name_to_switch(modeling.model_fct_name);
@@ -191,7 +190,6 @@ void Config::setup(const int slice_ind){
     modeling.likelihood_fct_name_switch=convert_likelihood_fct_name_to_switch(modeling.likelihood_fct_name);
     std::cout << "       - Converting prior function names into integers..." << std::endl;
     modeling.prior_fct_name_switch=convert_prior_fct_name_to_switch(modeling.prior_fct_name);
-	
 	// --- Read tabulated priors if provided ---
 	// Added on 1st July
 	// This section update the modeling.inputs structure (of type Input_Data) by adding to it the tabulated_priors. 
@@ -224,12 +222,132 @@ void Config::setup(const int slice_ind){
 			}
 			modeling.inputs.tabulated_priors.data_3d=initialize_3dVarMatrix(modeling.inputs.tabulated_priors.depth, modeling.inputs.tabulated_priors.Nrows, modeling.inputs.tabulated_priors.Ncols);
 			//      - Fill the data in the form of 3D matrices
+			modeling.inputs.tabulated_priors.interpolator_2d.resize(modeling.inputs.tabulated_priors.depth);
+			//for(int i=0; i<8;i++){
+			//	modeling.inputs.tabulated_priors.interpolator_2d.valid.push_back(false);
+			//}
 			for (int i=0; i<modeling.inputs.tabulated_priors.depth;i++){
+				modeling.inputs.tabulated_priors.interpolator_2d[i].valid=false; // Allow to now if the table is a value 2d container
 				Data_Nd prior_tab=read_data_ascii_Ncols(priors_files[i], delimiter, false);
 				set_3dMatrix(modeling.inputs.tabulated_priors.data_3d, prior_tab.data, i);
+				if(prior_tab.data.cols() >2){ // You need Nx rows and Ny columns to have a 2D interpolation. For a 1D interp, It is just 2 columns
+					std::cout << "                * [" << i << "] 2D Table detected" << std::endl;  
+					GridData data_tmp;
+					data_tmp.n_cols=prior_tab.data.cols();
+					data_tmp.n_rows=prior_tab.data.rows();
+					// The frist line gives the x-values
+					for (int i=1; i<prior_tab.data.cols();i++){
+						data_tmp.x.push_back(prior_tab.data(0,i));
+					}
+					// The first column gives the y-values
+					for (int i=1; i<prior_tab.data.rows();i++){
+						data_tmp.y.push_back(prior_tab.data(i,0));
+					}
+					// The rest is a block of values associated to z... We need to convert it into a std::vector<std::vector>>
+					std::vector<std::vector<double>> block_vector;
+					block_vector.reserve(prior_tab.data.rows() - 1);
+					for (int i = 1; i < prior_tab.data.rows(); ++i) {
+						std::vector<double> row_vector;
+						row_vector.reserve(prior_tab.data.cols() - 1);
+						
+						for (int j = 1; j < prior_tab.data.cols(); ++j) {
+							row_vector.push_back(prior_tab.data(i, j));
+						}
+						
+						block_vector.push_back(row_vector);
+					}
+					data_tmp.z=block_vector; 
+					/*
+					std::cout << " -- " << std::endl;
+					std::cout << "data_tmp.x = ";
+					for (int i=0;i<data_tmp.x.size();i++){
+						std::cout << data_tmp.x[i] << "  ";
+					}
+					std::cout << std::endl;
+					std::cout << "data_tmp.y = ";
+					for (int i=0;i<data_tmp.y.size();i++){
+						std::cout << data_tmp.y[i] << "  ";
+					}
+					std::cout << std::endl;
+					std::cout << "data_tmp.z.size() = " << data_tmp.z.size() << std::endl;
+					std::cout << "data_tmp.z[0].size() = " << data_tmp.z[0].size() << std::endl;
+					
+					for (const auto& row : data_tmp.z) {
+        				for (const auto& element : row) {
+            				std::cout << element << "\t";
+       					}
+        				std::cout << std::endl;
+    				}
+					std::cout << " -- " << std::endl;
+					*/	
+					/*
+					switch (i)
+					{
+					case 0:
+						modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A10= flatten_grid(data_tmp);
+						modeling.inputs.tabulated_priors.interpolator_2d.interp_A10= init_2dgrid(modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A10);
+						break;
+					case 1:
+						modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A11= flatten_grid(data_tmp);
+						modeling.inputs.tabulated_priors.interpolator_2d.interp_A11= init_2dgrid(modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A11);
+					case 2:
+						modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A20= flatten_grid(data_tmp);
+						modeling.inputs.tabulated_priors.interpolator_2d.interp_A20= init_2dgrid(modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A20);
+					case 3:
+						modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A21= flatten_grid(data_tmp);
+						modeling.inputs.tabulated_priors.interpolator_2d.interp_A21= init_2dgrid(modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A21);
+					case 4:
+						modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A22= flatten_grid(data_tmp);
+						modeling.inputs.tabulated_priors.interpolator_2d.interp_A22= init_2dgrid(modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A22);
+					case 5:
+						modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A30= flatten_grid(data_tmp);
+						modeling.inputs.tabulated_priors.interpolator_2d.interp_A30= init_2dgrid(modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A30);
+					case 6:
+						modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A31= flatten_grid(data_tmp);
+						modeling.inputs.tabulated_priors.interpolator_2d.interp_A31= init_2dgrid(modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A31);
+					case 7:
+						modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A32= flatten_grid(data_tmp);
+						modeling.inputs.tabulated_priors.interpolator_2d.interp_A32= init_2dgrid(modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A32);
+					case 8:
+						modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A33= flatten_grid(data_tmp);
+						modeling.inputs.tabulated_priors.interpolator_2d.interp_A33= init_2dgrid(modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A33);
+					default:
+						std::cerr << "  You Have Exceded the maximum number of allowed tabulated priors!" << std::endl;
+						std::cerr << "  The maximum is 9" << std::endl;
+						exit(EXIT_FAILURE);
+						break;
+					}			
+					modeling.inputs.tabulated_priors.interpolator_2d.valid[i]=true;
+					*/
+					
+					modeling.inputs.tabulated_priors.interpolator_2d[i].flat_grid_A10= flatten_grid(data_tmp);
+					modeling.inputs.tabulated_priors.interpolator_2d[i].interp_A10= init_2dgrid(modeling.inputs.tabulated_priors.interpolator_2d[i].flat_grid_A10);
+					modeling.inputs.tabulated_priors.interpolator_2d[i].valid=true;
+					std::cout << "Is Valid 2D grid ? " << modeling.inputs.tabulated_priors.interpolator_2d[i].valid << std::endl;
+					std::cout << " nx = " << modeling.inputs.tabulated_priors.interpolator_2d[i].flat_grid_A10.nx << std::endl;
+					std::cout << " ny = " << modeling.inputs.tabulated_priors.interpolator_2d[i].flat_grid_A10.ny << std::endl;
+					std::cout << "x = ";
+					for(int k=0; k<modeling.inputs.tabulated_priors.interpolator_2d[i].flat_grid_A10.nx;k++){
+						std::cout << modeling.inputs.tabulated_priors.interpolator_2d[i].flat_grid_A10.x[k] << "\t";
+					}
+					std::cout << std::endl;
+					std::cout << "y = ";
+					for(int k=0; k<modeling.inputs.tabulated_priors.interpolator_2d[i].flat_grid_A10.ny;k++){
+						std::cout << modeling.inputs.tabulated_priors.interpolator_2d[i].flat_grid_A10.y[k] << "\t";
+					}
+					std::cout << std::endl;
+					std::cout << "z = ";
+					for(int k=0; k<modeling.inputs.tabulated_priors.interpolator_2d[i].flat_grid_A10.nx*modeling.inputs.tabulated_priors.interpolator_2d[i].flat_grid_A10.ny;k++){
+						std::cout << modeling.inputs.tabulated_priors.interpolator_2d[i].flat_grid_A10.z[k] << "\t";
+					}
+					std::cout << std::endl;
+				
+				} else{
+					std::cout << "                * [" << i << "] 1D Table detected" << std::endl;  
+				}
 			}
 			modeling.inputs.tabulated_priors.empty = false; // Flag it as usable
-			std::cout << "            Done." << std::endl;
+			std::cout << "             Done." << std::endl;
 			
 		} else{
 			std::cout << "        - - - - - - - - - - - - - - -  " << std::endl;
@@ -248,11 +366,7 @@ void Config::setup(const int slice_ind){
 			std::cerr << "      - May have a unit marked by a '*'" << std::endl;
 			exit(EXIT_FAILURE);
 	}	
-	// ALL SEEMS OK UNTIL HERE 
-	// WE NOW NEED TO WORK ON PRIORS_CALC
-	//                AND ON THE BUILD FUNCTIONS 
-	
-
+	//exit(EXIT_SUCCESS);
 	std::cout << "       - Handling data inputs..." << std::endl;
     // ----- Define which columns are containing the x values, the y values and ysig_ind ----
 	if(data.data.xrange[0] == -9999 && data.data.xrange[1] == -9999){ // Case where no range was given in the cfg file ==> Take all
@@ -390,6 +504,11 @@ void Config::reset(){
 	modeling.inputs.plength.resize(0);
 	modeling.inputs.extra_priors.resize(0);
 	modeling.inputs.tabulated_priors.data_3d=initialize_3dMatrix(0, 0, 0); // depth, Nrows, Ncols
+	
+	for(int i=0; i<modeling.inputs.tabulated_priors.interpolator_2d.size();i++){
+		gsl_interp2d_free(modeling.inputs.tabulated_priors.interpolator_2d[i].interp_A10);
+	}
+	modeling.inputs.tabulated_priors.interpolator_2d.resize(0);
 	modeling.inputs.tabulated_priors={};
 
 	// all the configuration required for the Data
@@ -503,6 +622,7 @@ std::vector<std::string> Config::listMatchingFiles(const std::string& directory,
             }
         }
     }
+	std::sort(matchingFiles.begin(), matchingFiles.end());
     return matchingFiles;
 }
 
@@ -2032,7 +2152,6 @@ void Config::reformat_tabulated_priors(){
 		short int k=io_calls.show_param(modeling.inputs);
 		std::cout <<  " >>>>>   END New inputs " << std::endl;
 	}
-	exit(EXIT_SUCCESS);
 }
 
 void Config::read_defautlerrors(bool verbose){

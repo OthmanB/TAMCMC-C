@@ -22,7 +22,10 @@
 #include <iomanip>
 #include <math.h>
 #include <Eigen/Dense>
+#include <algorithm>
 #include "interpol.h"
+#include "../../external/Alm/Alm_cpp/data.h"
+#include "../../external/Alm/Alm_cpp/bilinear_interpol.h"
 
 # define PIl          3.141592653589793238462643383279502884L /* pi */
 
@@ -258,9 +261,13 @@ long double logP_tabulated(const VectorXd& tab_x, const VectorXd& logtab_y, cons
  *
 */
 const int Nx=tab_x.size();
+const double min =tab_x.minCoeff();
+const double max =tab_x.maxCoeff();
 long double logP, C;
 int i0=0, i1=1;
-
+if(x < min || x > max){
+	return std::numeric_limits<double>::lowest(); // This is basically a -Inf
+}
 logP=lin_interpol(tab_x, logtab_y, x);
 if(normalise == false){
 	C=0;
@@ -278,18 +285,27 @@ if(normalise == false){
 return logP-log(C);
 }
 
-long double logP_tabulated_2d(const Eigen::MatrixXd& tab_xy, const long double x, const long double y, const bool normalise){
+long double logP_tabulated_2d(gsl_interp2d* interp, const GridData4gsl& data_flatten, const double x, const double y){
 /* 
  * Calculates the log probability for a 2D tabulated function of the log-probability
- * Bi-Linear interpolation is performed in order to get logP
- * Inputs are logtables
- * If the norm of the logprobability is provided, it is used (optional argument).
- *  Otherwise, it is calculated here using the trapezoidal approximation
+ * Bi-Linear interpolation is performed using the GSL library in order to get logP
+ * Inputs are an interpolator function (initialised in config::setup()) and a flat x,y,z grid.
+ * Here, P(x,y) MUST HAVE BEEN PROPERLY NORMALISED
  * 
  * CORRESPONDS TO CASE 12 IN THE MAIN PROGRAM
  *
 */
-
+	// Considering the x and y are sorted in increasing number... no reason that they are not.
+	const double min_x = data_flatten.x[0];
+	const double max_x = data_flatten.x[data_flatten.nx-1];
+	const double min_y = data_flatten.y[0];
+	const double max_y = data_flatten.y[data_flatten.ny-1];
+	
+	if(x < min_x || x > max_x || y < min_y || y > max_y){
+		return std::numeric_limits<double>::lowest(); // This is basically a -Inf
+	}	
+    double P=interpolate_core(interp, data_flatten, x, y);
+	return log(P);
 }
 
 /*

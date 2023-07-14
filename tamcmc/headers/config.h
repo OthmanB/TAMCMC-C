@@ -232,9 +232,9 @@ class Config{
 		void read_inputs_priors_local(); // For reading a MCMC and setting the modeling inputs structure of local models
 		void read_inputs_priors_asymptotic(); // For read a MCMC and setting the modeling inputs structure for asymptotic models (mixed modes)
 		void read_inputs_ajfit(); // Read the inputs in the ajfit format
-		// Added on 10 Jul 2023: Nd priors are indicated by the syntax Tabulated(p1,p2,pn). 
-		// The function below allows to ensure that p1 is indicated as tabulated once, with p2,...,pn localised as prior arguments   
-		// p2,..,pn will then be set as Auto prior
+		// Added on 10 Jul 2023: 2d priors are indicated by the syntax Tabulated(p2). 
+		// The function below allows to ensure that p1 is indicated as tabulated once and correlated with p2 localised as prior arguments   
+		// p2 will then be set as Auto prior
 		void reformat_tabulated_priors();  
 		// --
 		int msg_handler(const std::string file, const std::string error_type, const std::string fct_name, const std::string arguments, const short int fatal);

@@ -43,6 +43,8 @@ struct tabpriors{
     VectorXd Nrows; 
     VectorXd Ncols;
     MatrixXd** data_3d; // Contain submatrices. Each of them was read from a file and give the prior table (either 1D or Nd)
+	std::vector<gsl_funcs> interpolator_2d; //An interpolator for 2D priors. This container is empty when data_3d[i] is a 1D func
+	//gsl_funcs interpolator_2d; //An interpolator for 2D priors. This container is empty when data_3d[i] is a 1D func
 	std::vector<std::vector<std::string>> headers;
 	std::vector<std::vector<std::string>> labels;
 };

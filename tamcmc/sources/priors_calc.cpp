@@ -18,6 +18,7 @@
 #include "derivatives_handler.h"
 #include "linfit.h"
 #include "linspace.h"
+#include <stdexcept>
 
 using Eigen::VectorXd;
 using Eigen::VectorXi;
@@ -753,8 +754,9 @@ long double apply_generic_priors(const VectorXd& params, const MatrixXd& priors_
 			  //std::cout << "    pena=" << pena  << std::endl;
 			  break;
 			case 3: // Multivariate Gaussian Prior
-			  std::cout << "The Multivariate Gaussian Prior IS NOT HANDLED" << std::endl;
-		      std::cout << "The program will exit now" << std::endl;
+			  std::cerr << "The Multivariate Gaussian Prior IS NOT HANDLED" << std::endl;
+			  std::cerr << "Use instead the Tabulated_2d prior if you want a bi-variate gaussian " << std::endl;
+		      std::cerr << "The program will exit now" << std::endl;
 			  exit(EXIT_FAILURE);
 			  //pena=pena + logP_multivariate_gaussian( priors_params(0, i), Matrix, params[i]);
 			  break;
@@ -826,13 +828,8 @@ long double apply_generic_priors(const VectorXd& params, const MatrixXd& priors_
 				    MatrixXd mat=*priors_tables.data_3d[int(priors_params(0,i))];
 					std::cout << "Table index = " << priors_params(0,i) << std::endl;
 					std::cout << "Table = " << mat << std::endl;
-					std::cout << "x-col index = " << priors_params(1,i) << std::endl;
-					std::cout << "y-col index = " << priors_params(2,i) << std::endl;
-					std::cout << "x-col = " << mat.col(priors_params(1,i)) << std::endl;
-					std::cout << "y-col = " << mat.col(priors_params(2,i)) << std::endl;
 					std::cout << "param val =" << params[i] << std::endl;
 				   //long double logP_tabulated(              const VectorXd& tab_x                             ,        const VectorXd& logtab_y              , const long double x, const bool normalise)
-					//pena= pena + logP_tabulated(mat.col(int(priors_params(1,i))), mat.col(int(priors_params(2,i))), params[i], false);
 					std::cout << "Pena = " << logP_tabulated(mat.col(priors_params(1,i)), mat.col(priors_params(2,i)), params[i], false) << std::endl;
 					pena= pena + logP_tabulated(mat.col(0), mat.col(1), params[i], false); // col-x and col-y are fixed
 				    std::cout << "Pena = " << logP_tabulated(mat.col(0), mat.col(1), params[i], false) << std::endl;
@@ -843,28 +840,105 @@ long double apply_generic_priors(const VectorXd& params, const MatrixXd& priors_
 				break;
 			case 12: // 2D tabulated prior
 				// Expected structure inside the model file: 
-				//    [parameter1]              Tabulated_2D(parameter2)         [table_index]            [x-col]          [y-col]
-				// Here :
-				//     [parameter] refers to the name of the parameter. e.g Inclination
-				//     [table_index] refers to the index number of the file. It is up to the user to be careful by pointing to the correct file
-
-				/*
-				//The content should be the full matrix of the 2D PDF for parameters (i,j) 
-				 // priors_params[1,i]: must contain 0 / 1 = normalise. If 0, do not normalise (faster... normalisation must be done before-hand).
-				int j=priors_params[1,i]; // The location of the second parameter that has 
-				if (priors_params.data != MatrixXd()){ // priors_tables is an optional argument of the function
-					pena= pena + logP_tabulated_2d(priors_params.data, params[i], params[j], priors_params.data[1,i]);
+				//    [parameter1]              Tabulated_2d(parameter2)         [table_index]
+				//     [parameter2] refers to the name of the parameter. e.g Inclination
+				//     [table_index] refers to the index number of the file. It is up to the user to be careful by pointing to the correct file				
+				// The content should be the full matrix of the 2D PDF for parameters (i,j) 
+				// The code will automatically identify indexes of parameter1 and parameter2 and this will put in the prior parameter table
+				// the table_index is the number associated to .priors filename
+//				if (priors_tables.interpolator_2d.valid[priors_params(0,i)] == true){ // We check that the table that we point at was initialised as a 2D table with GSL a interpolator
+				if (priors_tables.interpolator_2d[priors_params(0,i)].valid == true){ // We check that the table that we point at was initialised as a 2D table with GSL a interpolator
+					int j=priors_params(1,i); // The index of the second parameter (parameter2)
+					/* DEBUG LINES
+					std::cout << "Table index = " << priors_params(0,i) << std::endl;
+					std::cout << "param1 val =" << params[i] << std::endl;
+					std::cout << "param2 val =" << params[j] << std::endl;
+					std::cout << "Is Valid 2D grid ? " << priors_tables.interpolator_2d[priors_params(0,i)].valid << std::endl;
+					std::cout << " nx = " << priors_tables.interpolator_2d[priors_params(0,i)].flat_grid_A10.nx << std::endl;
+					std::cout << " ny = " << priors_tables.interpolator_2d[priors_params(0,i)].flat_grid_A10.ny << std::endl;
+					std::cout << "x = ";
+					for(int k=0; k<priors_tables.interpolator_2d[priors_params(0,i)].flat_grid_A10.nx;k++){
+						std::cout << priors_tables.interpolator_2d[priors_params(0,i)].flat_grid_A10.x[k] << "\t";
+					}
+					std::cout << std::endl;
+					std::cout << "y = ";
+					for(int k=0; k<priors_tables.interpolator_2d[priors_params(0,i)].flat_grid_A10.ny;k++){
+						std::cout << priors_tables.interpolator_2d[priors_params(0,i)].flat_grid_A10.y[k] << "\t";
+					}
+					std::cout << std::endl;
+					std::cout << "z = ";
+					for(int k=0; k<priors_tables.interpolator_2d[priors_params(0,i)].flat_grid_A10.nx*priors_tables.interpolator_2d[priors_params(0,i)].flat_grid_A10.ny;k++){
+						std::cout << priors_tables.interpolator_2d[priors_params(0,i)].flat_grid_A10.z[k] << "\t";
+					}
+					std::cout << std::endl;
+					*/
+					/* ALTERNATIVE SOLUTION... TO REMOVE IF THE MAIN SOLUTION WORKS WELL WITHOUT MEM LEAK
+					switch (std::fixed(priors_params(0,i)))
+					{
+						case 0:
+							long double logP=logP_tabulated_2d(priors_tables.interpolator_2d.interp_A10, priors_tables.interpolator_2d.flat_grid_A10, params[i], params[j]);
+							std::cout << "Pena       =" << logP << std::endl;
+							pena= pena + logP_tabulated_2d(priors_tables.interpolator_2d.interp_A10, priors_tables.interpolator_2d.flat_grid_A10, params[i], params[j]);
+							break;
+						case 1:
+							long double logP=logP_tabulated_2d(priors_tables.interpolator_2d.interp_A11, priors_tables.interpolator_2d.flat_grid_A11, params[i], params[j]);
+							std::cout << "Pena       =" << logP << std::endl;
+							pena= pena + logP_tabulated_2d(priors_tables.interpolator_2d.interp_A11, priors_tables.interpolator_2d.flat_grid_A11, params[i], params[j]);
+							break;
+						case 2:
+							long double logP=logP_tabulated_2d(priors_tables.interpolator_2d.interp_A20, priors_tables.interpolator_2d.flat_grid_A20, params[i], params[j]);
+							std::cout << "Pena       =" << logP << std::endl;
+							pena= pena + logP_tabulated_2d(priors_tables.interpolator_2d.interp_A20, priors_tables.interpolator_2d.flat_grid_A20, params[i], params[j]);
+							break;
+						case 3:
+							long double logP=logP_tabulated_2d(priors_tables.interpolator_2d.interp_A21, priors_tables.interpolator_2d.flat_grid_A21, params[i], params[j]);
+							std::cout << "Pena       =" << logP << std::endl;
+							pena= pena + logP_tabulated_2d(priors_tables.interpolator_2d.interp_A21, priors_tables.interpolator_2d.flat_grid_A21, params[i], params[j]);
+							break;
+						case 4:
+							long double logP=logP_tabulated_2d(priors_tables.interpolator_2d.interp_A22, priors_tables.interpolator_2d.flat_grid_A22, params[i], params[j]);
+							std::cout << "Pena       =" << logP << std::endl;
+							pena= pena + logP_tabulated_2d(priors_tables.interpolator_2d.interp_A22, priors_tables.interpolator_2d.flat_grid_A22, params[i], params[j]);
+							break;
+						case 5:
+							long double logP=logP_tabulated_2d(priors_tables.interpolator_2d.interp_A30, priors_tables.interpolator_2d.flat_grid_A30, params[i], params[j]);
+							std::cout << "Pena       =" << logP << std::endl;
+							pena= pena + logP_tabulated_2d(priors_tables.interpolator_2d.interp_A30, priors_tables.interpolator_2d.flat_grid_A30, params[i], params[j]);
+							break;
+						case 6:
+							long double logP=logP_tabulated_2d(priors_tables.interpolator_2d.interp_A31, priors_tables.interpolator_2d.flat_grid_A31, params[i], params[j]);
+							std::cout << "Pena       =" << logP << std::endl;
+							pena= pena + logP_tabulated_2d(priors_tables.interpolator_2d.interp_A31, priors_tables.interpolator_2d.flat_grid_A31, params[i], params[j]);
+							break;
+						case 7:
+							long double logP=logP_tabulated_2d(priors_tables.interpolator_2d.interp_A32, priors_tables.interpolator_2d.flat_grid_A32, params[i], params[j]);
+							std::cout << "Pena       =" << logP << std::endl;
+							pena= pena + logP_tabulated_2d(priors_tables.interpolator_2d.interp_A32, priors_tables.interpolator_2d.flat_grid_A32, params[i], params[j]);
+							break;
+						case 8:
+							long double logP=logP_tabulated_2d(priors_tables.interpolator_2d.interp_A33, priors_tables.interpolator_2d.flat_grid_A33, params[i], params[j]);
+							std::cout << "Pena       =" << logP << std::endl;
+							pena= pena + logP_tabulated_2d(priors_tables.interpolator_2d.interp_A33, priors_tables.interpolator_2d.flat_grid_A33, params[i], params[j]);
+							break;
+						default:
+							throw("Error: Invalid priors_params(0,i)\n. priors_params(0,i)="+std::string(std::fixed(priors_params(0,i))) +"\nShould be in the [0,8] range.");
+							break;
+					}
+					*/
+					//long double logP=logP_tabulated_2d(priors_tables.interpolator_2d[priors_params(0,i)].interp_A10, priors_tables.interpolator_2d[priors_params(0,i)].flat_grid_A10, params[i], params[j]);
+					//std::cout << "Pena       =" << logP << std::endl;
+					pena= pena + logP_tabulated_2d(priors_tables.interpolator_2d[priors_params(0,i)].interp_A10, priors_tables.interpolator_2d[priors_params(0,i)].flat_grid_A10, params[i], params[j]);
+					//exit(EXIT_SUCCESS);
 				} else{
-					throw std::runtime_error("Error: priors_tables cannot be empty when using 'tabulated' priors!");
+					throw std::runtime_error("Error: priors_tables is not a valid 2D table! Check that it follows the expected format, ie first row: x, first col y + a block matrix for z ");
 				}
-				*/
 				break;
 			case 13: // Case Auto: No Prior Applied here --> The user must set his own prior... Useful if using a 2D tabulated prior
 			  break;
 			default:
 			  std::cout << " Problem in priors_calc.cpp! " << std::endl;
 			  std::cout << " priors_names_switch[" << i << "]=" << priors_names_switch[i] << std::endl;
-		          std::cout << " This value is not associated to any known case statement " << std::endl;
+		    std::cout << " This value is not associated to any known case statement " << std::endl;
 			  std::cout << " The program will exit now" << std::endl;
 			  exit(EXIT_FAILURE);
 		}

@@ -18,7 +18,10 @@
 #include <iomanip>
 #include <math.h>
 #include <Eigen/Dense>
- 
+#include "../../external/Alm/Alm_cpp/data.h"
+#include "../../external/Alm/Alm_cpp/bilinear_interpol.h"
+
+
  long double logP_gaussian(const long double mean, const long double sigma, const long double x);
  long double logP_gaussian_truncated(const long double mean, const long double sigma, const long double x, const long double bmin, const long double bmax);
  long double logP_uniform(const long double b_min, const long double b_max, const long double x);
@@ -35,4 +38,4 @@ long double logP_jeffrey_abs(const long double hmin, const long double hmax, con
 			const long double sigma1, const long double sigma2,const  long double x);
  long double logP_multivariate_gaussian( const Eigen::VectorXd& mean, const Eigen::MatrixXd& Matrix, const Eigen::VectorXd& x);
 long double logP_tabulated(const Eigen::VectorXd&, const Eigen::VectorXd&, const long double, const bool);
-long double logP_tabulated_2d(const Eigen::MatrixXd&, const long double, const long double, const bool);
+long double logP_tabulated_2d(gsl_interp2d*, const GridData4gsl&, const double, const double);
