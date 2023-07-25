@@ -7,20 +7,24 @@
 #include <vector>
 #include <iostream>
 #include <iomanip>
+#include <boost/program_options.hpp>
 #include "diagnostics.h"
 #include "data.h"
 #include "string_handler.h"
 #include "version.h"
 #include "quick_samples_stats.h"
 
+namespace po = boost::program_options;
+
 void showversion();
-int options(int argc, char* argv[]);
-void usage(int argc, char* argv[]);
+//int options(int argc, char* argv[]);
+void usage(const po::options_description& desc);
+//void usage(int argc, char* argv[]);
 
 int main(int argc, char* argv[]){
 
-		bool replicate_cte;
-		int ind0, indmax, ind_param, ind_var, ind_cons, ind_chain, Nsamples, Samples_period, Newsize, val; // The Samples_period defines out of all samples, how many we keep.
+		const bool replicate_cte=false; // since 1.85.0, this option is deactivated as old IDL code is obselete
+		int ind0, indmax, ind_param, ind_var, ind_cons, ind_chain, Nsamples, Samples_period, Newsize, val, first_param, last_param;
 		long cpt, lcpt;
 		Eigen::MatrixXd data_array, data_out;
 		std::string rootname, filename_params, filename_params_hdr, dir_out, file;
@@ -30,42 +34,49 @@ int main(int argc, char* argv[]){
 		Diagnostics diags;
 		Params_hdr hdr;
 
-		val=options(argc, argv);
-		rootname=argv[1]; 
-		std::istringstream(argv[2]) >> ind_chain; 
-		dir_out=argv[3];
-		std::istringstream(argv[4]) >> ind0;
-		std::istringstream(argv[5]) >> indmax;
-		std::istringstream(argv[6]) >> Samples_period;
-		if(Samples_period < 1){
-			std::cout << "Warning: The given periodicity value is smaller than 1... The program will use the default value instead (Period =1)" << std::endl;
-			std::cout << "          ===> All samples will be returned" << std::endl;
-			Samples_period=1;
+    po::options_description desc("Allowed options");
+    desc.add_options()
+        ("help,h", "Print help message")
+        ("version,v", "Print version information")
+        ("rootname", po::value<std::string>()->required(), "The root name (along with the full path) of the binary/header file containing the parameters ('[out_root_name]_chain-*' file)")
+        ("chain-index", po::value<int>()->required(), "The chain index (e.g. 0 for the coldest chain)")
+        ("output-dir", po::value<std::string>()->required(), "The output directory (must already exist)")
+        ("first-kept-element", po::value<int>()->default_value(0), "[Optional] Index of the first element which we keep. All index below that will be discarded")
+        ("last-kept-element", po::value<int>()->default_value(-1), "[Optional] Index of the last element which we keep. All index below that will be discarded")
+        ("periodicity", po::value<int>()->default_value(1), "[Optional] The Periodicity at which we keep samples. If <1 then all samples are returned")
+        ("single-param-index", po::value<int>()->default_value(-1), "[Optional] If specified by a positive number, it will only extract the parameter with the provided index\n\tThis will not show create the Summary file");
+
+		po::variables_map vm;
+		try {
+			po::store(po::parse_command_line(argc, argv, desc), vm);
+
+			if (vm.count("help")) {
+				std::cerr << desc << std::endl;
+				return EXIT_SUCCESS;
+			}
+
+			if (vm.count("version")) {
+				showversion();
+				return EXIT_SUCCESS;
+			}
+
+			po::notify(vm);
 		}
-		if (val == 11){
-			std::istringstream(argv[7]) >> replicate_cte;
-		} else{
-			std::cout << " Binary variable set to default: 0 ==> Constant values are written once" << std::endl;
-			replicate_cte=0;
+		catch (const po::error& e) {
+			std::cerr << "Error: " << e.what() << std::endl;
+			usage(desc);
 		}
+
+		rootname = vm["rootname"].as<std::string>();
+		ind_chain = vm["chain-index"].as<int>();
+		dir_out = vm["output-dir"].as<std::string>();
+		ind0 = vm["first-kept-element"].as<int>();
+		indmax = vm["last-kept-element"].as<int>();
+		Samples_period = vm["periodicity"].as<int>();
+		//replicate_cte = vm["idl-compatibility"].as<bool>();
 
 		filename_params=rootname + "_chain-" + int_to_str(ind_chain) + ".bin";
 		filename_params_hdr=rootname + ".hdr";
-		
-		std::cout << "  0. Configuration: " << std::endl;
-		std::cout << "      - Binary file: " << filename_params << std::endl;
-		std::cout << "      - Header file: " << filename_params_hdr << std::endl;
-		std::cout << "      - Chain index number: " << ind_chain << std::endl;
-		std::cout << "      - Output directory: " << dir_out << std::endl;
-		std::cout << "      - Index of the first kept sample: " << ind0 << std::endl;
-		std::cout << "      - Index of the last kept sample: " << indmax << std::endl;
-		std::cout << "      - Samples_period: " << Samples_period << " ==> ";
-		if(Samples_period >1){
-			std::cout << " Keep 1 sample every " << Samples_period << " samples" << std::endl;
-		} else{
-			std::cout << " Keep all samples" << std::endl;
-		}
-		std::cout << "      - IDL compatibility: " << replicate_cte << std::endl;
 
 		std::cout << "  1. Reading the binary output files..." << std::endl;
 		hdr=diags.read_params_header(filename_params_hdr); // Get the metadata from the header file 
@@ -79,8 +90,8 @@ int main(int argc, char* argv[]){
 			indmax=data_array.rows();
 		}
 		if (indmax < ind0+Samples_period){
-			std::cout << "    Error: The last index must be greater than the first sample + Periodicity " << std::endl;
-			std::cout << "           The program will exit" << std::endl;
+			std::cerr << "    Error: The last index must be greater than the first sample + Periodicity " << std::endl;
+			std::cerr << "           The program will exit" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 		if (Samples_period <=0){
@@ -115,44 +126,65 @@ int main(int argc, char* argv[]){
     		fileout_stream_synthese << "# Statistical Summary of the MCMC analysis" << std::endl;
     		fileout_stream_synthese << "#"  << std::setw(18) << "Variable_Name" << std::setw(18) << "Mean" << std::setw(18) << "Median" << std::setw(18) << "Stddev" << std::endl;
     	} else{
-			std::cout << " Unable to open the binary data file " << dir_out.c_str() << "SUMMARY.STATS" << std::endl;	
-			std::cout << " Check that the full path exists" << std::endl;
-			std::cout << " The program will exit now" << std::endl;
+			std::cerr << " Unable to open the binary data file " << dir_out.c_str() << "SUMMARY.STATS" << std::endl;	
+			std::cerr << " Check that the full path exists" << std::endl;
+			std::cerr << " The program will exit now" << std::endl;
 			exit(EXIT_FAILURE);    			
     	}
-    	for(int ind_param=0; ind_param < hdr.Nvars+hdr.Ncons; ind_param++){
-    		file=diags.formated_int_to_str(ind_param);
-    		fileout_stream.open((dir_out + file + ".ASCII").c_str());
-    		if(fileout_stream.is_open()){
-				if(hdr.relax[ind_param] == 1){
-					fileout_stream << "! variable_name= " << hdr.variable_names[ind_var] << std::endl;
-					fileout_stream << std::setprecision(12) << data_out.col(ind_var) << std::endl;
-					mean[ind_var]=mean_fct(data_out.col(ind_var));
-					median[ind_var]=median_fct(data_out.col(ind_var));
-					stddev[ind_var]=stddev_fct(data_out.col(ind_var));
-					fileout_stream_synthese << " " << std::setw(18) <<  hdr.variable_names[ind_var] << std::setw(18) << std::setprecision(12) << mean[ind_var] <<  std::setw(18) << std::setprecision(12) << median[ind_var] << std::setw(18) << std::setprecision(12) << stddev[ind_var] <<  std::endl;
-					std::cout << "    - File: " << file + ".ASCII" << "    variable: " << hdr.variable_names[ind_var] << "   median: " << median[ind_var] << "   stddev: " << stddev[ind_var] << std::endl;
-					ind_var=ind_var+1;
-    			} else{
-					fileout_stream << "! constant_name= " << hdr.constant_names[ind_cons] << std::endl;
-					fileout_stream_synthese << " " << std::setw(18) << hdr.constant_names[ind_cons] << std::setw(18) << std::setprecision(12) << hdr.constant_values[ind_cons] << std::setw(18) << std::setprecision(12) << hdr.constant_values[ind_cons] << std::setw(18) << "0"<<  std::endl;
-					std::cout << "    - File: " << file + ".ASCII" << "  (Constant value)" << "    variable: " << hdr.constant_names[ind_cons] << "   value: " << hdr.constant_values[ind_cons] << std::endl;
-					if(replicate_cte == 1){
-						for(long repeat=0; repeat<data_array.rows(); repeat++){
-							fileout_stream << hdr.constant_values[ind_cons] << std::endl;    
-						}
-					} else{
-							fileout_stream << hdr.constant_values[ind_cons] << std::endl;
-					}
-					ind_cons=ind_cons + 1;				
-    			}
-    		} else{
-				std::cout << " Unable to open the binary data file " << dir_out.c_str() + file + ".ASCII" << std::endl;	
-				std::cout << " Check that the full path exists" << std::endl;
-				std::cout << " The program will exit now" << std::endl;
+		if(vm["single-param-index"].as<int>() <= -1){ // We do all of the parameters
+			first_param=0;
+			last_param=hdr.Nvars+hdr.Ncons;
+		} else{ 									 // Or we do the single index provided 
+			if (vm["single-param-index"].as<int>() >= hdr.Nvars+hdr.Ncons){
+				std::cerr << " Error: the 'single-param-index' parameter was specified, but with a value exceeding the maximum number of parameters" << std::endl;
+				std::cerr << "        single-param-index = " <<  vm["single-param-index"].as<int>() << std::endl;
+				std::cerr << "        Nvars + Ncons      = " <<  hdr.Nvars+hdr.Ncons << std::endl;
 				exit(EXIT_FAILURE);
-    		}
-    		fileout_stream.close();
+			}
+			first_param=vm["single-param-index"].as<int>();
+			last_param=vm["single-param-index"].as<int>() + 1;
+		}
+    	for(int ind_param=0; ind_param < hdr.Nvars+hdr.Ncons; ind_param++){
+    		if (ind_param >= first_param && ind_param <last_param){ //
+				file=diags.formated_int_to_str(ind_param);
+				fileout_stream.open((dir_out + file + ".ASCII").c_str());
+				if(fileout_stream.is_open()){
+					if(hdr.relax[ind_param] == 1){
+						fileout_stream << "! variable_name= " << hdr.variable_names[ind_var] << std::endl;
+						fileout_stream << std::setprecision(12) << data_out.col(ind_var) << std::endl;
+						mean[ind_var]=mean_fct(data_out.col(ind_var));
+						median[ind_var]=median_fct(data_out.col(ind_var));
+						stddev[ind_var]=stddev_fct(data_out.col(ind_var));
+						fileout_stream_synthese << " " << std::setw(18) <<  hdr.variable_names[ind_var] << std::setw(18) << std::setprecision(12) << mean[ind_var] <<  std::setw(18) << std::setprecision(12) << median[ind_var] << std::setw(18) << std::setprecision(12) << stddev[ind_var] <<  std::endl;
+						std::cout << "    - File: " << file + ".ASCII" << "    variable: " << hdr.variable_names[ind_var] << "   median: " << median[ind_var] << "   stddev: " << stddev[ind_var] << std::endl;
+						ind_var=ind_var+1;
+					} else{
+						fileout_stream << "! constant_name= " << hdr.constant_names[ind_cons] << std::endl;
+						fileout_stream_synthese << " " << std::setw(18) << hdr.constant_names[ind_cons] << std::setw(18) << std::setprecision(12) << hdr.constant_values[ind_cons] << std::setw(18) << std::setprecision(12) << hdr.constant_values[ind_cons] << std::setw(18) << "0"<<  std::endl;
+						std::cout << "    - File: " << file + ".ASCII" << "  (Constant value)" << "    variable: " << hdr.constant_names[ind_cons] << "   value: " << hdr.constant_values[ind_cons] << std::endl;
+						if(replicate_cte == 1){
+							for(long repeat=0; repeat<data_array.rows(); repeat++){
+								fileout_stream << hdr.constant_values[ind_cons] << std::endl;    
+							}
+						} else{
+								fileout_stream << hdr.constant_values[ind_cons] << std::endl;
+						}
+						ind_cons=ind_cons + 1;				
+					}
+				} else{
+					std::cerr << " Unable to open the binary data file " << dir_out.c_str() + file + ".ASCII" << std::endl;	
+					std::cerr << " Check that the full path exists" << std::endl;
+					std::cerr << " The program will exit now" << std::endl;
+					exit(EXIT_FAILURE);
+				}
+	    		fileout_stream.close();
+			} else{
+				if(hdr.relax[ind_param] == 1){
+					ind_var=ind_var+1;
+				} else{
+					ind_cons=ind_cons + 1;	
+				}
+			}
 		}
 		
 		// --- Write a single line with the plength vector on a file ---
@@ -161,45 +193,48 @@ int main(int argc, char* argv[]){
 		if(fileout_stream.is_open()){
 				fileout_stream << hdr.plength << std::endl;
    		} else{
-			std::cout << " Unable to open the binary data file " << dir_out.c_str() + file  << std::endl;	
-			std::cout << " Check that the full path exists" << std::endl;
-			std::cout << " The program will exit now" << std::endl;
+			std::cerr << " Unable to open the binary data file " << dir_out.c_str() + file  << std::endl;	
+			std::cerr << " Check that the full path exists" << std::endl;
+			std::cerr << " The program will exit now" << std::endl;
 			exit(EXIT_FAILURE);
     	}
     	fileout_stream.close();
-	
-		// --- Show a summary of all the values in a list format that can be easily taken to python ---
-    	std::cout << "  4. Statistics of outputs in simple format (variable names, mean, median, standard deviation) " << std::endl;
-    	std::cout << "      ";
-    	for (int i=0; i<hdr.Nvars;i++){
-    		std::cout << hdr.variable_names[i] <<" , " ;
-    	}
-    	std::cout << std::endl;
-    	std::cout << "      ";
-    	for (int i=0; i<hdr.Nvars;i++){
-    		std::cout << mean[i];
-    		if (i != hdr.Nvars-1){
-				std::cout <<" , " ;
-			} 
-    	}
-    	std::cout << std::endl;
-    	std::cout << "      ";
-    	for (int i=0; i<hdr.Nvars;i++){
-    		std::cout << median[i] ;
-    		if (i != hdr.Nvars-1){
-				std::cout <<" , " ;
-			}     	
-    	}
-    	std::cout << std::endl;
-    	std::cout << "      ";
-    	for (int i=0; i<hdr.Nvars;i++){
-    		std::cout << stddev[i] ;
-    		if (i != hdr.Nvars-1){
-				std::cout <<" , " ;
-			} 
-    	}
-    	std::cout << std::endl;
-//	std::cout << "All done" << std::endl;
+
+		if(vm["single-param-index"].as<int>() == -1){ // We do all of the parameters
+			// --- Show a summary of all the values in a list format that can be easily taken to python ---
+			std::cout << "  4. Statistics of outputs in simple format (variable names, mean, median, standard deviation) " << std::endl;
+			std::cout << "      ";
+			for (int i=0; i<hdr.Nvars;i++){
+				std::cout << hdr.variable_names[i] <<" , " ;
+			}
+			std::cout << std::endl;
+			std::cout << "      ";
+			for (int i=0; i<hdr.Nvars;i++){
+				std::cout << mean[i];
+				if (i != hdr.Nvars-1){
+					std::cout <<" , " ;
+				} 
+			}
+			std::cout << std::endl;
+			std::cout << "      ";
+			for (int i=0; i<hdr.Nvars;i++){
+				std::cout << median[i] ;
+				if (i != hdr.Nvars-1){
+					std::cout <<" , " ;
+				}     	
+			}
+			std::cout << std::endl;
+			std::cout << "      ";
+			for (int i=0; i<hdr.Nvars;i++){
+				std::cout << stddev[i] ;
+				if (i != hdr.Nvars-1){
+					std::cout <<" , " ;
+				} 
+			}
+			std::cout << std::endl;
+		} else{
+			std::cout << "  4. Single parameter extraction requested... not showing a statistics table" << std::endl;
+		}
 }
 
 
@@ -229,56 +264,11 @@ void showversion()
 
 }
 
-int options(int argc, char* argv[]){
+void usage(const po::options_description& desc){
 
-	std::string arg1, arg2;
-	int val;
-	
-	val=-1;
-	arg1="";
-	
-	if(argc == 2){
-		arg1=argv[1];
-		if(arg1 == "version"){
-			 val=0;
-		} 
-	}
-	if(argc == 7){
-		val=10;
-	}
-	if(argc == 8){
-		val=11;
-	}
+    std::cout << " You need to provide at least 3 arguments to that function. The available arguments are: " << std::endl;
+    std::cout << desc << std::endl;
+	std::cout << "      WARNING: Since 1.85.0, Calls to arguments was drastically changed.\n\t Any code that calls bin2txt need to be upgraded accordingly" << std::endl;
 
-	if (val == -1){ // Error code
-		usage(argc, argv);
-	} 
-	if (val == 0){ // Version code
-		showversion(); 
-		exit(EXIT_SUCCESS);
-	}
-	if (val > 0 ){
-		return val; // Execution code val
-	} else{
-		return -1; // Default value is to return an error code
-	}
-}
-
-void usage(int argc, char* argv[]){
-
-			std::cout << " You need to provide at least 5 arguments to that function. The available arguments are: " << std::endl;
-			std::cout << "     [1] The root name (along with the full path) of the binary/header file containing the parameters ('[out_root_name]_chain-*' file)" << std::endl;
-			std::cout << "     [2] The chain index (e.g. 0 for the coldest chain)" << std::endl;
-			std::cout << "     [3] The output directory (must already exist)" << std::endl;
-			std::cout << "     [4] Index of the first element which we keep. All index below that will be discarded" << std::endl;
-			std::cout << "     [5] Index of the last element which we keep. All index below that will be discarded" << std::endl;
-			std::cout << "     [6] The Periodicity at which we keep samples. If <1 then all samples are returned" << std::endl;	
-			std::cout << "     [7] [Optional] Binary variable. If 1, then constant values will be written Nsamples/Nperiod times in the ASCII file (For IDL code compatibility)" << std::endl;
-			std::cout << "                                     If 0, then constant values will be written once in the ASCII file" << std::endl;
-			std::cout << "                                     Default is 0" << std::endl;
-			std::cout << "      WARNING: Since 1.83.2, [Last kept element] was added as an argument. Any code that calls bin2txt need to be upgraded accordingly" << std::endl;
-			std::cout << " Call sequence: " << std::endl;
-			std::cout << "     " << argv[0] << " [rootname] [chain index] [output directory] [First kept element] [Last kept element] [Periodicity] [IDL compatibility]" << std::endl;
-			exit(EXIT_FAILURE);
-
+    exit(EXIT_FAILURE);
 }
