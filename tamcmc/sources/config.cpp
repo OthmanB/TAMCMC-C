@@ -181,7 +181,10 @@ void Config::setup(const int slice_ind){
 	// Added on 10 Jul 2023: Nd priors are indicated by the syntax Tabulated(p1,p2,pn). 
 	// The function below allows to ensure that p1 is indicated as tabulated once, with p2,...,pn localised as prior arguments   
 	// p2,..,pn will then be set as Auto prior. It MUST BE AFTER read_inputs_files()
+	std::cout << "Pre-scan of .model for Tabulated priors..." << std::endl;
 	reformat_tabulated_priors(); 
+	std::cout << "Done" << std::endl;
+	//
 	std::cout << "       - Converting prior names into integers..." << std::endl;
     modeling.inputs.priors_names_switch=convert_priors_names_to_switch(modeling.inputs.priors_names);
     std::cout << "       - Converting model function names into integers..." << std::endl;
@@ -2127,17 +2130,16 @@ void Config::reformat_tabulated_priors(){
 			throw std::runtime_error("Error while parsing 2D Tabulated priors: Multiple possible arguments of same name found for Tabulated_2d(" + name_X[loc_i[i]]+ ")");
 		}
 	}
-	if(loc_j.size() == 0){
+	if(loc_j.size() == 0 && loc_i.size() !=0){
 			throw std::runtime_error("Error while parsing 2D Tabulated priors: Could not found any occurence of " + name_X[0]);
 	}
-	std::cout << " loc_i.size() = " << loc_i.size() << std::endl;
-	std::cout << " loc_j.size() = " << loc_j.size() << std::endl;
-	std::cout << " name_X.size()= " << name_X.size() << std::endl;
+	//std::cout << " loc_i.size() = " << loc_i.size() << std::endl;
+	//std::cout << " loc_j.size() = " << loc_j.size() << std::endl;
+	//std::cout << " name_X.size()= " << name_X.size() << std::endl;
 
 	for (int i = 0; i < loc_i.size(); i++) {
 		std::cout << "[" << loc_i[i] << ", " << loc_j[i] << "]  name_i:" << modeling.inputs.inputs_names[loc_i[i]]  << "   -   name_j:" << name_X[i] << std::endl;
 	}
-
 	Eigen::VectorXd tmp(4);
 	tmp << -9999, -9999, -9999, -9999;
 	for (int i = 0; i < loc_i.size(); i++) {
