@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include <Eigen/Dense>
+#include <filesystem>
 #include "config.h"
 #include "io_models.h"
 #include "io_ms_global.h"

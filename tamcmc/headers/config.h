@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include <Eigen/Dense>
+#include <filesystem>
 #include "data.h" // contains the structure Data
 #include "matrices.h"
 //#include "string_handler.h"

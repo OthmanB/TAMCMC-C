@@ -249,9 +249,9 @@ return logP-C;
 }
 
 
-long double logP_tabulated(const VectorXd& tab_x, const VectorXd& logtab_y, const long double x, const bool normalise){
+long double logP_tabulated(const VectorXd& tab_x, const VectorXd& tab_y, const long double x, const bool normalise){
 /* 
- * Calculates the log probability for a tabulated function of the log-probability
+ * Calculates the log probability for a tabulated function of the probability
  * Linear interpolation is performed in order to get logP
  * Inputs are logtables
  * If the norm of the logprobability is provided, it is used (optional argument).
@@ -260,29 +260,34 @@ long double logP_tabulated(const VectorXd& tab_x, const VectorXd& logtab_y, cons
  * CORRESPONDS TO CASE 11 IN THE MAIN PROGRAM
  *
 */
-const int Nx=tab_x.size();
-const double min =tab_x.minCoeff();
-const double max =tab_x.maxCoeff();
-long double logP, C;
-int i0=0, i1=1;
-if(x < min || x > max){
-	return std::numeric_limits<double>::lowest(); // This is basically a -Inf
-}
-logP=lin_interpol(tab_x, logtab_y, x);
-if(normalise == false){
-	C=0;
-	for(int i=0; i<Nx-1; i++){
-		// rectangular approximation
-		double dy=(std::exp(logtab_y[i0]) + std::exp(logtab_y[i1]))/2;  // Computation of the intergral by the area method
-		double dx=tab_x[i1] - tab_x[i0];
-		C=C + dx*dy;
-		i0=i1;
-		i1=i1+1;
+	const int Nx=tab_x.size();
+	const double min =tab_x.minCoeff();
+	const double max =tab_x.maxCoeff();
+	long double P, logP, C=0;
+	int i0=0, i1=1;
+	if(x < min || x > max){
+		return std::numeric_limits<double>::lowest(); // This is basically a -Inf
 	}
-}
+	P=lin_interpol(tab_x, tab_y, x);
+	if (P < 0){
+		std::cerr << "Warning : Interpolation of tabulated probability < 0 ==> P=0 imposed for x = " << x << std::endl;
+		P = 0;
+	}
+	if(normalise == false){
+		C=0;
+		for(int i=0; i<Nx-1; i++){
+			// rectangular approximation
+			//double dy=(std::exp(logtab_y[i0]) + std::exp(logtab_y[i1]))/2;  // Computation of the intergral by the area method
+			double dy=(tab_y[i0] + tab_y[i1])/2;  // Computation of the intergral by the area method
+			double dx=tab_x[i1] - tab_x[i0];
+			C=C + dx*dy;
+			i0=i1;
+			i1=i1+1;
+		}
+	}
 //std::cout << " logP = " << logP << std::endl;
 //std::cout << " C =" << C << std::endl;
-return logP-log(C);
+return log(P)-log(C);
 }
 
 long double logP_tabulated_2d(gsl_interp2d* interp, const GridData4gsl& data_flatten, const double x, const double y){
@@ -301,12 +306,25 @@ long double logP_tabulated_2d(gsl_interp2d* interp, const GridData4gsl& data_fla
 	const double min_y = data_flatten.y[0];
 	const double max_y = data_flatten.y[data_flatten.ny-1];
 	
+	//std::cout << "x = " << x << " x(min) - x(max) = " << min_x << "  -  " << max_x << std::endl;
+	//std::cout << "y = " << y << " y(min) - y(max) = " << min_y << "  -  " << max_y << std::endl;
+
 	if(x < min_x || x > max_x || y < min_y || y > max_y){
-		return std::numeric_limits<double>::lowest(); // This is basically a -Inf
-	}	
+		//std::cout << "   ==>  log(P) = - Inf" << std::endl;
+		//std::cout << " -- " << std::endl;
+ 		return std::numeric_limits<double>::lowest(); // This is basically a -Inf
+	}
+	//std::cout << " Calculate..." << std::endl;	
     double P=interpolate_core(interp, data_flatten, x, y);
+	if (P < 0){
+		std::cerr << "Warning : Interpolation of tabulated probability < 0 ==> P=0 imposed for (x,y) = (" << x << "," << y << ")" << std::endl;
+		P = 0;
+	}
+	//std::cout << "   ==>  P = " << P << "      log(P) = " << log(P) << std::endl;
+	//std::cout << " -- " << std::endl;
 	return log(P);
 }
+
 
 /*
 //// Test function
