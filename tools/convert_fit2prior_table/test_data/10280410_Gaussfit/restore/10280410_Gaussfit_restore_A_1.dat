@@ -1,0 +1,21 @@
+# This is an output file containing what is required to restore a run to its last saved position 
+# File number: 1 
+# Contains the last values for the variables vars[0:Nchain-1]. vars_mean denotes averaged values of Nbuffer 
+# Use this if you wish to: 
+#       (1) complete a finished job that requires more samples ==> set erase_old_file=0 and do_restore_[X]=1 
+#       (2) restart a finished job by ignoring old samples (e.g. ignoring a Burn-in) ==> set erase_old_file=1 and do_restore_proposal=1 
+#       (3) terminate an unfinished job which failed to finished (e.g. due to computer unexpected shutdown) ==> set erase_old_file=0 and do_restore_[X]=1 
+! Nchains= 4
+! Nvars= 9
+! iteration=99999
+! variable_names=H1   tc1   H2   tc2   p2   B0   Amax   numax   Gauss_sigma   
+! vars= 
+ 1110.3 549.555 343.932 21.4733 1.96029 104.466 80.5809 213.583  11.907
+1110.15 549.487 344.128 21.4723 1.95852 104.364 80.5466 213.577 11.9239
+1109.89 549.531 343.774 21.4821 1.96286 104.618 80.5191 213.575 11.8832
+1110.04  549.36 344.284 21.4582 1.95441 104.207 80.7842 213.656 11.8951
+! vars_mean= 
+ 1110.3 549.618 344.097 21.4772 1.95851 104.394 80.5953 213.581 11.9108
+ 1110.3  549.58 344.059 21.4756 1.95893 104.408 80.5584  213.58  11.916
+1110.31 549.589 343.974  21.474 1.95955 104.438 80.5711 213.583 11.9075
+ 1110.2 549.561 344.158 21.4816 1.95725 104.365 80.6036 213.583 11.9105
