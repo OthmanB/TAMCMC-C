@@ -1,0 +1,147 @@
+#---------------------------------------
+# Configuration File for the TAMCMC-C++
+#---------------------------------------
+
+
+!MALA:
+	# Variables that control the Metropolis-Hasting and Truncated Langevin scheme
+	# algorithm, the adaptive process of the proposal law and the parallel tempering
+	
+	# ----------- Controls for the Adaptive process -----------
+	target_acceptance=0.234;
+	c0=10;  Relaxation constrain. Important: Adjust empirically. Guideline: Large dimensionality requires c0~2. Small dimensionality requires c0~5-10
+	epsilon1=1e-12;  Bundary for the Robins-Monroe stochastic algorithm. Must be as small as the numerical precision of the machine. With long double, can THEORITICALLY be 1e-19 (1e-16 for double)
+	epsilon2=1e-12;
+	A1=1e14;  Bundary for the Robins-Monroe stochastic algorithm. Must be as large as the numerical precision of the machine allows.
+	# Define zones where Learning is made in different ways
+	Nt_learn=500, 1500, 100000;   DO NOT LEARN BELLOW THE FIRST VALUE OR AFTER THE LAST VALUE
+	periods_learn=1, 1;  if Nt_learn[0]< i <Nt_learn[1], learn every 5 times, etc... THIS MUST BE OF size=Nt_learn.size()-1
+
+	# ---------------- Controls for the MALA  -----------------
+	use_drift=0;  When 0, use the MH scheme instead of the MALA scheme ; NOT IMPLEMENTED
+	delta=0;  This parameter is only for the MALA algorithm (ie, when the gradient is available). For a RWM, set to 0... ; NOT IMPLEMENTED
+	delta_x=1e-10;  Boundary for the MALA... not used for the RWM mode ; NOT IMPLEMENTED
+ 
+ 	# ----------- Controls for the parallel tempering ---------
+ 	#Nchains=10;   Number of parallel chains
+	Nchains=4;
+	dN_mixing=1.;  Perform a chain mixing (parallel tempering) every dN_mixing
+ 	#lambda_temp=1.70 #1.70; value should always be adjusted so that 120<Tmax<200
+	lambda_temp=4.;
+	# --------- Experimental extra parameters ----------
+	# ------ These are not yet fully implemented ------
+	proposal_type=Random; Exact_on_grid does not yet exist // PARTLY IMPLEMENTED
+	
+
+!Modeling:
+
+	# This section contains the required information to (1) compute 
+	# the models, (2) calculate the likelihood and (3) calculate the priors
+	
+	#submodel_from_model_file=1;  If set to 0: Use values of model_fct_name and prior_fct_name hereafter. If set to 1: model_fct_name and prior_fct_name give the class of model. The fullname of the model must be in .model file
+	model_fct_name=model_Harvey_Gaussian; Envelope Gaussian fit
+	#prior_fct_name=io_MS_Global; Name of the function that contains the methods to generate the inputs and outputs for your model. e.g io_ms_global(.cpp) handles the model names and the fits of MS stars.
+	#prior_fct_name=io_ajfit;
+	prior_fct_name=priors_Harvey_Gaussian;
+	#prior_fct_name=io_local;
+	#prior_fct_name=io_asymptotic;
+	#model_fct_name=io_MS_Global; // Useless in most situations (except for dev/debug and for Gaussian fit). This because prior_fct_name defines it automatically (value is superseed). model_MS_Global; // Master name... when used with inputs_from_model_file=1, the submodel must be present in the .model file 
+	#model_fct_name=io_local;
+	#model_fct_name=io_asymptotic;
+	#likelihood_fct_name=chi(2,2p); Name of the function that will calculate the likelihood. two choices: "chi_square" or "chi(2,2p)"
+	likelihood_fct_name=chi_square;
+	likelihood_params=1; Parameters that could define the likelihood. e.g., in the case of a chi(2,2p) statistics (chi22p function), we need p
+
+	#cfg_model_file=/home/obenomar/Dropbox/Temporary/Project-Measure_a1a2a3_MS/Cpp-TAMCMC-v1.1.2/Config/inputs/model_Test_Gaussian/Gaussian.model; Contains the initial guesses and the priors in an ASCII format. To each model_fct_name, a given format is expected. IT IS STRONGLY RECOMMENDED TO NAME YOUR FILE WITH THE SAME NAME AS THE PRIOR_FCT_NAME
+	
+!Data:
+	# This section contains the information on the inputs data
+	verbose_data=0; If set to 1, shows the data on the screen
+        #file_data=/home/obenomar/Dropbox/Temporary/Project-Measure_a1a2a3_MS/Cpp-TAMCMC-v1.1.2/Config/inputs/model_Test_Gaussian/Gaussian.data; A two columns text file with the data
+	x_col=0; // column that contains the x axis (if any). Set to -1 if irrelevant
+	y_col=1; // column that contains the y axis (if any). Set to -1 if irrelevant
+	ysig_col=-1 //-1;  // column that contains the uncertainty (if any). Set to -1 if irrelevant
+
+!Outputs:
+	# Section dedicated to the required inputs of the 
+	# class Outputs (files output.cpp and output.h)
+
+	Nsamples=150;  Number of computed samples
+	Nbuffer=5000;
+
+	erase_old_files=1;  if set to 0, it appends the existing files (if any exist)
+	file_format=binary;  "text" or "binary". Alternatively, "debug" is to generate both type of files (to compare outputs from both files)
+
+	#  -----------  Variables that decide which outputs we do write  ----------- 
+	get_params=1;  if set to 1, save the parameters of the fitted model. This option might always be set to 1
+	get_statcriteria=1;  if set to 1, save the statistical parameters (logLikelihood, logPrior, logPosterior, ...). Recommended to always set it to 1
+	get_proposal_params=0;  if set to 1, save the proposal parameters (sigmas, mus, covarmats) of the parallel chains. Mostly for debug purpose.
+	get_parallel_tempering=1; if set to 1, save the parallel tempering information (swaped chain, probability, ...)
+	get_models=0;  if set to 1, save the models for all chains. WARNING: Might greatly slow-down the process and will take a HUGE amount of space. AUTOMATICALLY DEACTIVATED IF TOO LARGE DATASET
+
+	#  -----------  Variables defining the output files. Do not write the filename full path and extension ----------- 
+	output_root_name=;
+	output_dir=;
+	params_txt_fileout=params; 
+	proposal_txt_fileout=proposals; 
+	parallel_tempering_txt_fileout= parallel_tempering; 
+	model_txt_fileout= models;
+	stat_txt_fileout= stat_criteria;
+	acceptance_txt_fileout= acceptance;
+	
+	# Information required for the completion of an aborted run
+	# The restore files contain (1) last position of all chains and the index of the last saved iteration, (2) mu and sigma, (3) last covariance matrix
+	do_restore_last_index=0; Set this to 1 if you need to restart an Training phase which improperly stoped (do_restore_proposal and do_restore_variables might also be 1 in that case)
+	do_restore_proposal=0; If set to 1, restore the proposal law (covariance matrix) of a previous run
+	do_restore_variables=0; If set to 1, restore the last values for variables of a previous run
+	do_restore_proposal_mean=0; If set to 1, DO NOT restore the last value for the proposal BUT restore the average proposal law (over Nbuffer) as stored in the restore file. Often better to use the mean for the Acquire phase (more accurate covariance matrix)
+
+	#restore_dir=/home/obenomar/Dropbox/Temporary/Project-Measure_a1a2a3_MS/Cpp-TAMCMC-v1.1.3.1/Data/restore/; The directory where all files required to restore a run are put. 
+	restore_dir=; The directory where all files required to restore a run are put. 
+	restore_file_in=restore_; The root name of the restored files. This is an input file of format: [restore_dir]/[output_root_name][restore_file][type of the file].dat (type_of_file = 1 or 2 or 3 and contain different informations: last values, covariance matrix, etc...) 
+	restore_file_out=restore_; Same as restore_file_in, but this is the name for output files
+
+	# Options to backup the inputs (*.data) and the configurations file (*.model, *.cfg)
+	do_backup_input_file=1; If set to 1, compress and save the [identifier].data into the [outputs_dir]/inputs_backup/ directory
+	do_backup_cfg_files=1;  If set to 1, compress and save the [identifier].model, config_default.cfg, errors_default.cfg and config_presets.cfg into the [outputs_dir]/inputs_backup/ directory
+
+!Diagnostics:
+	# Section related to all means to diagnose/look at the processes
+	# in near-real time. All refresh rates are fixed by Outputs.Nbuffer
+
+	# -------------- Variables defining the used activated real time processes --------------
+	chains_diags=1; If set to 1, generates plots for the acceptance rate and for the likelihoods of all chains 
+	evidence_diags=1; If set to 1, evaluates the evidence (future version might have graphical rendering as well)
+	pdfs_diags=1; If set to 1, generate the pdfs of the samples for all fitted parameters
+
+	model_initial_diags=1; If set to 1, generates a plot which shows the model on top of data at the first iteration
+	model_buffer_diags=1; If set to 1, generates a plot which shows the model on top of data, averaged over Nsamples=Nbuffer (and indexed by Ncopy)
+	model_final_diags=1; If set to 1, generates a plot which shows the model on top of data at the end of the analysis
+
+	# -------------- Names of the output directories and output files ----------------
+	#For files, the extension is not necessary
+	output_root_name=; E.G. the KIC number and/or calculation phase
+	output_dir=;
+	file_chains_diags=acceptance;
+	file_evidence_diags=evidence;
+	file_pdfs_diags=pdfs_plots; 
+	file_model_init_diags=model_init; 
+	file_model_buffer_diags=model_buffer; 
+	file_model_final_diags=model_final; 
+
+	# --------  Miscellaneous control variables for the plots/diagnostics --------
+	# When the model_*_diags are set to 1, it is possible to show the data and/or a smooth of the data. Two level of smooth can be overploted
+	# data_scoef1 and data_scoef2. Note that these coefficient should be in the same unit as the x-axis of the data (e.g. microHz or seconds)
+	# The variable show_original_data set whether we show or not the unsmoothed data when overploting all the curves (0 is recommended for very noisy data).
+	show_original_data=0;
+	data_scoef1=0.1; 0.6 For MS 
+	data_scoef2=0.6; 2 For MS
+
+	# When the pdfs_diags is set to 1, histograms are created. It is required to set the number of classes for those histograms
+	Nclasses=200; Number of classes for the histograms
+
+	# Interpolation factor for the evidence computation. Used to interpolate beta=1/Tcoefs and <P(D|M,I)>(beta) so that the evidence is precise
+	evidence_interpolation_factor=1000;
+
+/END;
+
