@@ -8,7 +8,7 @@ from nice_hist import nice_hist,nice_hist_matrix
 
 def make_prior_table(index1, binning, output_dir, dir_tamcmc_outputs, process_name, phase='A', chain=0, 
 		     first_index=0, last_index=-1, period=1,
-		     index2=None, cpp_prg="../bin/"):
+		     index2=None, cpp_prg="../bin/", convert_a1cosisini=False):
 	'''
 		Program that allows you to create a 1D or 2D table in a format suitable for the TAMCMC 
 		tabulated priors.
@@ -21,6 +21,8 @@ def make_prior_table(index1, binning, output_dir, dir_tamcmc_outputs, process_na
 		binning: The number of bins in the histogram. For a 1D prior, must be an integer. For a 2D prior it
 			can be either an integer (in that case Nx_bin=Ny_bin) or an array with two values [Nx_bin, Ny_bin]
 		cpp_prg: The directory in which the 'bin2txt' program is
+		convert_a1cosisini: If set to True, when the index1 and index2 correspond to parameters of names :
+					- sqrt(splitting_a1).cosi    and   sqrt(splitting_a1).sini
 	'''
 	# Define and create a temporary directory for the extracted binary data
 	outdir_tmp=output_dir + '/tmp/'
@@ -59,8 +61,13 @@ def make_prior_table(index1, binning, output_dir, dir_tamcmc_outputs, process_na
 		# Case of a 1D table
 		if index2 == None:
 			# Definitions
-			file_out=output_dir + "/" + process_name + "1d.priors"
+			file_out=output_dir + "/" + process_name + "_0.priors"
 			file_out_plot=file_out + ".jpg"
+			# Conversion of sqrt(splitting_a1).cosi, qrt(splitting_a1).sini is impossible without index1 and index2 
+			if convert_a1cosisini == True and (label1 == "sqrt(splitting_a1).cosi" or label1 == "sqrt(splitting_a1).sini"):
+				print("Warning: convert_a1cosisini = True but only index1 was provided")
+				print("         Converting sqrt(splitting_a1).cosi, qrt(splitting_a1).sini would require index1 and index2 to be set")
+				print("         Ignoring this parameter and making the 1D table as it is")
 			# Make the plot of the table
 			fig, ax = plt.subplots(1, figsize=(12, 6))
 			xvals, yvals=nice_hist(smcmc1, stats1, ax=ax, intervals=[True,True], 
@@ -71,8 +78,21 @@ def make_prior_table(index1, binning, output_dir, dir_tamcmc_outputs, process_na
 			err_status=write_table(xvals, yvals, label1[0], None, file_out, process_name)
 		else: # Case of a 2D table
 			# Definitions
-			file_out=output_dir + "/" + process_name + "2d.priors"
+			file_out=output_dir + "/" + process_name + "_1.priors"
 			file_out_plot=file_out + ".jpg"
+			# Conversion of sqrt(splitting_a1).cosi, qrt(splitting_a1).sini if requested and necessary
+			if convert_a1cosisini == True and \
+					(label1[0] == "sqrt(splitting_a1).cosi" and label2[0] == "sqrt(splitting_a1).sini") or \
+					(label1[0] == "sqrt(splitting_a1).sini" and label2[0] == "sqrt(splitting_a1).cosi"):
+				a1=smcmc1**2 + smcmc2**2
+				if (label1[0] == "sqrt(splitting_a1).cosi" and label2[0] == "sqrt(splitting_a1).sini"):
+					inc = np.arctan(smcmc2/smcmc1) * 180./np.pi
+				if (label1[0] == "sqrt(splitting_a1).sini" and label2[0] == "sqrt(splitting_a1).cosi"):
+					inc = np.arctan(smcmc1/smcmc2) * 180./np.pi
+				label1[0]="Splitting_a1"
+				label2[0]="Inclination"
+				smcmc1=a1
+				smcmc2=inc
 			# Make the table based on np.histogram2d() values
 			try:
 				Nx_bins = binning[0]
@@ -178,37 +198,3 @@ def write_table(xvals, yvals, label1, unit1, output_file, process_name, zvals=No
 		print("       Debug required", file=sys.stderr)
 		err=True
 	return err
-
-'''
-def quick_test_write_table():
-	xvals=[1,2,3,4,5]
-	yvals=[0,45,90]
-	zvals=[[1,2,3]]
-	zvals = [[1.1, 1.2, 1.3, 1.4, 1.5], [2.1, 2.2, 2.3, 2.4, 2.5], [3.1, 3.2, 3.3, 3.4, 3.5]]
-	label1 = "x"
-	unit1 = "(Hz)"
-	label2 = "y"
-	unit2 = "(deg)"
-	output_file = "output2.txt"
-	process_name = "Process2"
-
-	write_table(xvals, yvals, label1, unit1, output_file, process_name, zvals=zvals, label2=None, unit2=None)
-
-def quick_test_make_prior_table():
-	binning=30
-	work_dir=os.getcwd()
-	process_name="10280410_Gaussfit"
-	dir_tamcmc_outputs=work_dir + "/test_data/" #+ process_name + "/outputs/"
-	output_dir=work_dir + "/test_data/Outputs/"
-	print("Test for a 1D tabulated prior")
-	index1=7 # numax parameter of the test file
-	make_prior_table(index1, binning, output_dir, dir_tamcmc_outputs, process_name, phase='A', chain=0, 
-		     first_index=0, last_index=-1, period=5,
-		     index2=None, cpp_prg="../../bin/") 
-	print("Test for a 2D tabulated prior")
-	index1=8 # numax parameter of the test file in the x-axis
-	index2=7 # Amax parameter of the test file in the y-axis
-	make_prior_table(index1, binning, output_dir, dir_tamcmc_outputs, process_name, phase='A', chain=0, 
-		     first_index=0, last_index=-1, period=5,
-		     index2=index2, cpp_prg="../../bin/") 
-'''
