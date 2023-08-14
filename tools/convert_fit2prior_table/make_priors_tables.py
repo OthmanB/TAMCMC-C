@@ -4,15 +4,51 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 from read_outputs_tamcmc import bin2txt
-from nice_hist import nice_hist,nice_hist_matrix
+from nice_hist import nice_hist
+
+def define_name(search_dir, root_name, extension):
+    '''
+        A function that will look into a specified directory for files of a given
+        root name and with a specific extension. 
+        The expected structure of the files is [search_dir]/[root_name]_*.[extension]
+        If such files are not found, then the index 0 is appended to the root_name such as:
+        [search_dir]/[root_name]_0.[extension]
+        If such files are found, then it look for the highest index and increment it
+    '''
+    # Test for search_dir existence ==> if does not exist, return an error
+    #
+    # Make the list of all available files following the expected syntax
+    files_found = []
+    for path, subdirs, files in os.walk(search_dir):
+        for f in files:
+            if f.startswith(root_name) and f.endswith(extension):
+              files_found.append(f)
+    # Define the filename accordingly, ie by setting the index to highest_index + 1
+    if len(files_found) == 0:
+        filename=search_dir + '/' + root_name + '_0.' + extension
+    else:
+        index=-1
+        for f in files_found:
+            try:
+                ind=int(f.split("_")[-1].split(".")[-2]) # take what is in-between the last _ and the last .
+                if ind > index:
+                    index=ind
+            except ValueError as e:
+                print("Warning: inappropriate file format found! Debug might be required")
+                print("         file: ", f)
+                print("         Skipping this file...")
+                print("			Error message: ", e)
+                raise(ValueError("Exiting the program."))  
+        filename=search_dir + '/' + root_name + '_' + str(index + 1) + '.' + extension
+    return filename
 
 def make_prior_table(index1, binning, output_dir, dir_tamcmc_outputs, process_name, phase='A', chain=0, 
 		     first_index=0, last_index=-1, period=1,
-		     index2=None, cpp_prg="../bin/", convert_a1cosisini=False):
+		     index2=None, cpp_prg="../bin/"):
 	'''
 		Program that allows you to create a 1D or 2D table in a format suitable for the TAMCMC 
 		tabulated priors.
-		index1: Index of the a parameter that will be extracted and for which a prior table will be made. 
+		index1: Index of the parameter that will be extracted and for which a prior table will be made. 
 			Note that the index starts at 1.
 		output_dir: Directory in which the table and plot (used for checks) of the table will be created
 		index2: If provided, will be used to create a 2D table, by using jointly index1 parameter values
@@ -21,8 +57,6 @@ def make_prior_table(index1, binning, output_dir, dir_tamcmc_outputs, process_na
 		binning: The number of bins in the histogram. For a 1D prior, must be an integer. For a 2D prior it
 			can be either an integer (in that case Nx_bin=Ny_bin) or an array with two values [Nx_bin, Ny_bin]
 		cpp_prg: The directory in which the 'bin2txt' program is
-		convert_a1cosisini: If set to True, when the index1 and index2 correspond to parameters of names :
-					- sqrt(splitting_a1).cosi    and   sqrt(splitting_a1).sini
 	'''
 	# Define and create a temporary directory for the extracted binary data
 	outdir_tmp=output_dir + '/tmp/'
@@ -42,7 +76,6 @@ def make_prior_table(index1, binning, output_dir, dir_tamcmc_outputs, process_na
 			print("      index1        : ", index1, file=sys.stderr)
 			print("      parameter name: ", label1[0], file=sys.stderr)
 			raise ValueError("Exiting the program...")
-		
 		if index2 != None:
 			smcmc2, label2, isfixed2=bin2txt(dir_tamcmc_outputs, process_name, phase=phase, chain=chain, 
 				first_index=first_index, last_index=last_index, period=period, single_param_index=index2,
@@ -61,13 +94,9 @@ def make_prior_table(index1, binning, output_dir, dir_tamcmc_outputs, process_na
 		# Case of a 1D table
 		if index2 == None:
 			# Definitions
-			file_out=output_dir + "/" + process_name + "_0.priors"
+			file_out=define_name(output_dir, process_name, 'priors') # Dynamically increment an index for the prior
+			#file_out=output_dir + "/" + process_name + "_0.priors"
 			file_out_plot=file_out + ".jpg"
-			# Conversion of sqrt(splitting_a1).cosi, qrt(splitting_a1).sini is impossible without index1 and index2 
-			if convert_a1cosisini == True and (label1 == "sqrt(splitting_a1).cosi" or label1 == "sqrt(splitting_a1).sini"):
-				print("Warning: convert_a1cosisini = True but only index1 was provided")
-				print("         Converting sqrt(splitting_a1).cosi, qrt(splitting_a1).sini would require index1 and index2 to be set")
-				print("         Ignoring this parameter and making the 1D table as it is")
 			# Make the plot of the table
 			fig, ax = plt.subplots(1, figsize=(12, 6))
 			xvals, yvals=nice_hist(smcmc1, stats1, ax=ax, intervals=[True,True], 
@@ -78,21 +107,9 @@ def make_prior_table(index1, binning, output_dir, dir_tamcmc_outputs, process_na
 			err_status=write_table(xvals, yvals, label1[0], None, file_out, process_name)
 		else: # Case of a 2D table
 			# Definitions
-			file_out=output_dir + "/" + process_name + "_1.priors"
+			file_out=define_name(output_dir, process_name, 'priors') # Dynamically increment an index for the prior
+			#file_out=output_dir + "/" + process_name + "_1.priors"
 			file_out_plot=file_out + ".jpg"
-			# Conversion of sqrt(splitting_a1).cosi, qrt(splitting_a1).sini if requested and necessary
-			if convert_a1cosisini == True and \
-					(label1[0] == "sqrt(splitting_a1).cosi" and label2[0] == "sqrt(splitting_a1).sini") or \
-					(label1[0] == "sqrt(splitting_a1).sini" and label2[0] == "sqrt(splitting_a1).cosi"):
-				a1=smcmc1**2 + smcmc2**2
-				if (label1[0] == "sqrt(splitting_a1).cosi" and label2[0] == "sqrt(splitting_a1).sini"):
-					inc = np.arctan(smcmc2/smcmc1) * 180./np.pi
-				if (label1[0] == "sqrt(splitting_a1).sini" and label2[0] == "sqrt(splitting_a1).cosi"):
-					inc = np.arctan(smcmc1/smcmc2) * 180./np.pi
-				label1[0]="Splitting_a1"
-				label2[0]="Inclination"
-				smcmc1=a1
-				smcmc2=inc
 			# Make the table based on np.histogram2d() values
 			try:
 				Nx_bins = binning[0]

@@ -1,16 +1,18 @@
 # Fit2Prior
 
-This provides a tool to convert posterior from an analysis to a 1D or a 2D tabulated prior, that can be used with TAMCMC v1.85.0 and higher.
+This provides tools to convert posterior from an analysis to a 1D or a 2D tabulated prior, that can be used with TAMCMC v1.85.0 and higher.
 
-The main function is `make_prior_table()` within `make_priors_tables.py`. But you can also use the more convenient function dopriors() within do_many_processes.py.
-This function allows you to scan a directory for processes and automatically identifies the parameters for which a tabulation is requested by their names. It has also
-some (limited) conversion capabilities between some parameters that are equivalent in various version of TAMCMC, but that could be named differently or parametrised differently.
+The main function is `make_prior_table()` within `make_priors_tables.py`.
 
 You must have compiled the main TAMCMC code in order to get working `bin2txt` binary. And you need to specify the path of that binary (default is cpp_prg="../bin/", assumes that you run the program from this tools subdirectory).
 
 Unit tests are provided in `unittest_priors_tables.py`.
 
-## Usage
+You can also use the higher level function `dopriors` inside `dopriors.py`. This function scan a directory that
+should contain a serie of MCMC analysis and identify by name the variables intended to be converted into a prior.
+
+
+## Usage of make_priors_table()
 
 ```python
 binning = 30
