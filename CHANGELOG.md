@@ -1,5 +1,9 @@
 # Version history #
 
+### v1.85.1 Improvement ###
+  Modified the CMakeLists.txt file to add an option for a static compilation. With the static compilation, you can export a binary compiled in a system to 
+  another that has the same CPU architecture (eg. AMD, Intel, ARM). Usefull to avoid the cumbersome cross-compilation...
+
 ### v1.85 Improvments ### 
   - Added the possibility of using Tabulated priors. 
     In the [model_name].model, setting:    

@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(Boost_USE_MULTITHREADED TRUE)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../bin)
 
+option(WITH_STATIC "Link Libraries Statically. Useful to port from one system to another" OFF)
 option(WITH_GSL "GSL Library" ON)
 option(WITH_OPENMP "OpenMP Library" ON)
 option(BUILD_ON_DALMA "Building for NYU DALMA Supercomputer" OFF)
@@ -47,6 +48,8 @@ else()
 	endif()
 endif()
 
+# Add the following line to include filesystem library
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lstdc++fs")
 
 #Bring the core program sources into the project
 set(SOURCES_MAIN  #_COMMON
@@ -132,20 +135,6 @@ set(SOURCES_TOOLS_GETMODEL
 	external/Alm/Alm_cpp/Alm_interpol.cpp
 	external/Alm/Alm_cpp/bilinear_interpol.cpp
         )
-
-#Define the sources for the testsolver_mm program
-set(SOURCES_TOOLS_TESTSOLVER
-	tools/test_solver.cpp
-	tamcmc/sources/string_handler.cpp
-    external/ARMM/solver_mm.cpp
-	external/ARMM/bump_DP.cpp
-    tamcmc/sources/interpol.cpp
-   	tamcmc/sources/derivatives_handler.cpp
-    tamcmc/sources/polyfit.cpp
-   	external/ARMM/linfit.cpp
-	external/ARMM/linspace.cpp
-	tamcmc/sources/noise_models.cpp
-	)
 	
 # Check and Load dependencies
 find_package(Gnuplot REQUIRED)
@@ -180,6 +169,11 @@ else()
 	if(NOT GSL_FOUND)
 		message(FATAL_ERROR "GSL not found. Use -DWITH_GSL=OFF to build without GSL")
 	endif()
+	if(WITH_STATIC)
+    	set(GSL_LIB /usr/local/lib/libgsl.a)
+    else()
+    	set(GSL_LIB GSL::gsl)
+    endif()
 endif()
 
 #Look for eigen and explicitly specify to use it. EIGEN3_INCLUDE_DIR Must be specified in the bashrc
@@ -194,21 +188,44 @@ include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 
 add_executable(${CMAKE_PROJECT_NAME} ${SOURCES_MAIN} ${DIAG_SRC})
-target_link_libraries(${CMAKE_PROJECT_NAME}  ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY}) # Boost::boost)
-#target_link_libraries(${CMAKE_PROJECT_NAME} sharedlib)
-
 add_executable(bin2txt ${SOURCES_TOOLS_BIN2TXT} ${DIAG_SRC})
-#target_link_libraries(bin2txt ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY})
-target_link_libraries(bin2txt  ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY})
 add_executable(getstats  ${SOURCES_TOOLS_GETSTATS})
-target_link_libraries(getstats ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY})# Boost::boost)
+add_executable(getmodel ${SOURCES_TOOLS_GETMODEL})
 
-add_executable(getmodel  ${SOURCES_TOOLS_GETMODEL})
-target_link_libraries(getmodel ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY}) # Boost::boost)
-
-add_executable(testsolver_mm  ${SOURCES_TOOLS_TESTSOLVER})
-target_link_libraries(testsolver_mm ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} Boost::boost)
-
+#target_link_libraries(bin2txt ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY})
+if (WITH_STATIC)
+	target_link_libraries(${CMAKE_PROJECT_NAME}  -static
+		${Boost_LIBRARY_DIRS}/libboost_system.a
+		${Boost_LIBRARY_DIRS}/libboost_filesystem.a
+		${Boost_LIBRARY_DIRS}/libboost_iostreams.a
+		${Boost_LIBRARY_DIRS}/libboost_program_options.a
+		/usr/local/lib/libgsl.a
+		-lz)
+	target_link_libraries(bin2txt -static
+  		${Boost_LIBRARY_DIRS}/libboost_system.a
+  		${Boost_LIBRARY_DIRS}/libboost_filesystem.a
+  		${Boost_LIBRARY_DIRS}/libboost_iostreams.a
+  		${Boost_LIBRARY_DIRS}/libboost_program_options.a
+  		/usr/local/lib/libgsl.a)
+	target_link_libraries(getstats -static
+		${Boost_LIBRARY_DIRS}/libboost_system.a
+		${Boost_LIBRARY_DIRS}/libboost_filesystem.a
+		${Boost_LIBRARY_DIRS}/libboost_iostreams.a
+		${Boost_LIBRARY_DIRS}/libboost_program_options.a
+		/usr/local/lib/libgsl.a)
+	target_link_libraries(getmodel -static
+		${Boost_LIBRARY_DIRS}/libboost_system.a
+		${Boost_LIBRARY_DIRS}/libboost_filesystem.a
+		${Boost_LIBRARY_DIRS}/libboost_iostreams.a
+		${Boost_LIBRARY_DIRS}/libboost_program_options.a
+		/usr/local/lib/libgsl.a
+		-lz)
+else()
+	target_link_libraries(${CMAKE_PROJECT_NAME} ${Boost_LIBRARIES} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY}) # Boost::boost)
+	target_link_libraries(bin2txt ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY})
+	target_link_libraries(getstats ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY})# Boost::boost)
+	target_link_libraries(getmodel  ${Boost_LIBRARIES} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY}) # Boost::boost)
+endif()
 
 
 
