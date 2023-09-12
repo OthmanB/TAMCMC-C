@@ -19,8 +19,12 @@ if(NOT BUILD_ON_DALMA)
 		else()
 			set(CMAKE_CXX_FLAGS "-O3 -fopenmp -march=znver2")
 		endif()
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lstdc++fs")
 	endif()
 	if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+		if(WITH_STATIC)
+			message(FATAL_ERROR "Cannot compile statically on MacOS. Use it only for Linux systems. Turn it off by -DWITH_STATIC=OFF")
+		endif()
 		if(NOT WITH_OPENMP)
 			set(CMAKE_CXX_FLAGS "-O3")
 		else()
@@ -28,6 +32,9 @@ if(NOT BUILD_ON_DALMA)
 		endif()
 	endif()
 	if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
+		if(WITH_STATIC)
+			message(FATAL_ERROR "Cannot compile statically on MacOS. Use it only for Linux systems. Turn it off by -DWITH_STATIC=OFF")
+		endif()
 		if(NOT WITH_OPENMP)
 			set(CMAKE_CXX_FLAGS "-O3")
 		else()
@@ -48,8 +55,6 @@ else()
 	endif()
 endif()
 
-# Add the following line to include filesystem library
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lstdc++fs")
 
 #Bring the core program sources into the project
 set(SOURCES_MAIN  #_COMMON
@@ -226,6 +231,3 @@ else()
 	target_link_libraries(getstats ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY})# Boost::boost)
 	target_link_libraries(getmodel  ${Boost_LIBRARIES} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY}) # Boost::boost)
 endif()
-
-
-

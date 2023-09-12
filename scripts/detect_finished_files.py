@@ -23,15 +23,19 @@ def detect_finished_files(main_directory, file_prefix, file_extension):
                         # File has not finished
                         not_finished_files.append((filename, file_path))
                         info={}
-                        for line in lines:                       #if "Average swapping rate" in line:
-                            if "swaping rate" in line:
-                                info["swapping_rate"] =line.strip()
+                        i=0
+                        for line in lines:
+                            #if "swaping rate" in line:
+                            #    info["swapping_rate"] =line.strip()
                             if "Total time so far" in line:
                                 # Only store the last occurrence of the term
                                 info["total_time"] = line.strip()
+                                i_last_samples=i-1
                             if "Processing rate:" in line:
                                 # Only store the last occurrence of the term
                                 info["processing_rate"] = line.strip()
+                            i=i+1
+                        info["processed_samples"]=lines[i_last_samples].strip()
                         info["last_line"]=lines[-1].strip()
                         not_finished_info.append(info)
     return finished_files, not_finished_files, not_finished_info
@@ -85,7 +89,7 @@ def display_file_paths(files_list, info=None):
                 print(f"|  " * num_directories + f"+--{file_name}")
                 shift_spaces = len(file_name) - len("slurm") + max_shift_spaces
                 try:
-                    line = info_name["swapping_rate"]
+                    line = info_name["processed_samples"]
                     value = re.findall(r'\[(\d+)\]', line)[0]
                     colored_line = colored(f'Number of samples processed : {value}', 'yellow')
                     print(f"|  " * (num_directories + 1) + " " * shift_spaces + colored_line)
@@ -120,12 +124,12 @@ def display_file_paths(files_list, info=None):
   Set root_dir as the highest level directory that contain all of the slurm files
   you want to scan
 '''
-root_dir="/var/services/homes/obenomar/Temporary/ajAlm_project/"
+root_dir="/scratch/ob19/ajAlm_project/"
 file_prefix="slurm-"
 finished_files, not_finished_files, not_finished_info= detect_finished_files(root_dir, file_prefix, ".out")
 
 print(colored(" --------------------------------------------- ","red"))
-print(colored("                 FINISHED FILES                "),"red")
+print(colored("                 FINISHED FILES                ","red"))
 print(colored(" --------------------------------------------- ","red"))
 print(" ")
 display_file_paths(finished_files)
