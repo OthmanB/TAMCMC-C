@@ -13,8 +13,6 @@
 #include "MALA.h"
 #include "config_presets.h"
 #include "version.h"
-#include <boost/program_options.hpp>
-namespace po = boost::program_options;
 
 void zip_config(const std::string cfg_file_default, const std::string error_file_default, const std::string cfg_file_presets, 
 		const std::string model_file, const std::string output_dir, const std::string id);
@@ -31,69 +29,13 @@ extern long ben_clock();
 
 int main(int argc, char* argv[]){
 
-	//bool execute; // if argv[1]="execute" then look for argv[2]==execute. 
+	bool execute=1; // if argv[1]="execute" then look for argv[2]==execute. 
 			// argv[3]=start_index_ids argv[4]=last_index_ids. 
 			// If execute = 0 ==> Show only the setup
-	int id_index=0, process_index=0, startV=-1, lastV=-1, lastslice=-1, startslice=-1;
+	int id_index=0, process_index=0,startV=-1,lastV=-1, lastslice=-1, startslice=-1;
 	std::string dir_backup;
 	int msg_code;
-
-    po::options_description desc("Options");
-    desc.add_options()
-        ("version,V", "Show version")
-		("help,H", "Show help")
-        ("execute,E", po::value<bool>()->implicit_value(1)->default_value(1), "Execute flag. If set to 0, the program stops after loading the configuration.")
-        ("start_index,S", po::value<int>(), "Starting index of the list of objects to be processed")
-        ("last_index,L", po::value<int>(), "Last index of the list of objects to be processed")
-		("startslice", po::value<int>()->implicit_value(1)->default_value(1), "For fit with multiple slices, indicate the first slice to fit (default means from first)")
-        ("lastslice", po::value<int>()->implicit_value(1)->default_value(-1), "For fit with multiple slices, indicate the last slice to fit (default means until last one)");	
-    po::variables_map vm;
-
-    try {
-        po::store(po::parse_command_line(argc, argv, desc), vm);
-        if (argc < 2 || vm.count("help")) {
-            std::cout << desc << std::endl;
-            exit(EXIT_SUCCESS);
-        }
-        po::notify(vm);
-    } catch(const po::error& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        std::cout << desc << std::endl;
-        exit(EXIT_FAILURE);
-    }
-    if (vm.count("help") > 0) {
-        std::cout << desc << std::endl;
-        exit(EXIT_SUCCESS);
-    }
-    if (vm.count("version") > 0) {
-        showversion();
-        exit(EXIT_SUCCESS);
-    }
-	if (vm.count("start_index") > 0) {
-		startV = vm["start_index"].as<int>() - 1;
-		if (startV < 0){
-			std::cerr << "Error: The start_index number must be greater or equal than 1" << std::endl;
-			std::cout << desc << std::endl;
-			exit(EXIT_FAILURE); 
-		}
-	}
-	if (vm.count("last_index") > 0) {
-		lastV = vm["last_index"].as<int>() - 1;
-		if (lastV < 0){
-			std::cerr << "Error: The last_index number must be greater or equal than 1" << std::endl;
-			std::cout << desc << std::endl;
-			exit(EXIT_FAILURE); 
-		}
-	} 
-	if (vm.count("startslice") > 0) {
-		startslice = vm["startslice"].as<int>() - 1;
-	}
-	if (vm.count("lastslice") > 0) {
-		lastslice = vm["lastslice"].as<int>() - 1;
-	}
-
-
-/*
+	
 	msg_code=options(argc, argv);
 	if(msg_code == -1){
 		std::cout << "Error detected in options. Cannot proceed. Debug required." << std::endl;
@@ -119,7 +61,7 @@ int main(int argc, char* argv[]){
 			lastslice=lastslice-1; 
 		}
 	}
-*/
+
 	std::cout << " --------- TAMCMC-CPP ----------" << std::endl;
 
 	// Set the current path variables
@@ -144,8 +86,8 @@ int main(int argc, char* argv[]){
 	std::cout << "- Loading the Preset configuration: config_presets.cfg..." << std::endl;
 	Config_presets config_master(cfg_file_presets, &config); // read the master config file + initialize counters to 0
 
-	if(vm["execute"].as<bool>() == false){
-		std::cout << "Detection of execute=False... The code will exit now"<< std::endl;
+	if(execute == 0){
+		std::cout << "Detection of execute=0... The code will exit now"<< std::endl;
 		exit(EXIT_SUCCESS);
 	}
     
@@ -154,8 +96,8 @@ int main(int argc, char* argv[]){
 	std::string modelfile="";
 	if(config_master.force_manual_config == 0){
 		// BENOIT: after config_preset reset first/last start index to command line parameter values
-        config_master.first_id_ind=startV;
-        config_master.last_id_ind=lastV;
+                config_master.first_id_ind=startV;
+                config_master.last_id_ind=lastV;
 		// If the user-defined last index is greater than the size of the table, force the last index to match the size of the array
 		if (config_master.last_process_ind > config_master.processing.size()){ 
 			config_master.last_process_ind=config_master.processing.size()-1;
@@ -164,14 +106,12 @@ int main(int argc, char* argv[]){
 		if (config_master.last_id_ind > config_master.table_ids.size()){
 			config_master.last_id_ind=config_master.table_ids.size()-1;
 		}
-		/*
 		if (config_master.first_id_ind < 0){
 	 		std::cout << "   config_master.first_id_ind= " << config_master.first_id_ind << std::endl;	
 	 		std::cout << "   You mistakenly started indexes at 0. Please use 1 as first index for the table of model files" << std::endl;
 	 		std::cout << "   Example: ./cpptamcmc execute 1 1 1" << std::endl;
 	 		exit(EXIT_FAILURE);
 		}
-		*/
 		// ---- Begin to process all the requested objects ----
         for(int i=config_master.first_id_ind; i<=config_master.last_id_ind; i++){ // For each star
         	modelfile=config_master.cfg_models_dir +  config_master.table_ids[i].at(0) + ".model";

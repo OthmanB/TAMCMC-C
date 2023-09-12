@@ -1,5 +1,8 @@
 # Version history #
 
+### v1.85.2 Improvments ###
+  Added new logic using the boost library for handling cpptamcmc options.
+
 ### v1.85.1 Improvement ###
   Modified the CMakeLists.txt file to add an option for a static compilation. With the static compilation, you can export a binary compiled in a system to 
   another that has the same CPU architecture (eg. AMD, Intel, ARM). Usefull to avoid the cumbersome cross-compilation...
