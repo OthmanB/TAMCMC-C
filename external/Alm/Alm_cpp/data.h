@@ -54,7 +54,6 @@ struct GridData4gsl {
 // structure containing the gsl initialised grid functions
 // This is similar to GridData_Alm_fast but with the gsl function instead of the matrix
 struct gsl_funcs{
-    //std::vector<bool> valid;
     bool valid;
     gsl_interp2d* interp_A10;
     gsl_interp2d* interp_A11;

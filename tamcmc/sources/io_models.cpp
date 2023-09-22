@@ -9,7 +9,6 @@
 
 #include <Eigen/Dense>
 #include "data.h" // contains the structure Data
-//#include "string_handler.h"
 #include "io_models.h"
  
 IO_models::IO_models(){ // Empty constructor
@@ -20,9 +19,23 @@ IO_models::~IO_models(){ // Destructor
 
 }
 
-//int IO_models::size(*data){
-//	return (*data).priors.rows()
-//}
+std::vector<int> IO_models::lookupIndices(const std::string& target, const std::vector<std::string>& names)
+/*
+Search for indices that correspond to the occurence of a string. Can be used for lookup inside 
+data.inputs_names or data.priors_names
+*/
+{
+    std::vector<int> indices;
+    for (int i = 0; i < names.size(); ++i)
+    {
+        if (names[i] == target)
+        {
+            indices.push_back(i);
+        }
+    }
+    return indices;
+}
+
 
 short int IO_models::fill_param(Input_Data *data, const std::string input_name, const std::string prior_name, const double in_val, const VectorXd& prior_vals, const int pos, const int i0_prior){
 /*

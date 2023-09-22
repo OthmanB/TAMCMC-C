@@ -10,7 +10,7 @@
     #define APP_SITE      "https://github.com/othmanB/Alm"
     #define APP_COPYRIGHT "Othman Benomar"
 
-    #define VERSION_MAJOR 1
-    #define VERSION_MINOR 2
+    #define VERSION_MAJOR 3
+    #define VERSION_MINOR 0
     #define VERSION_PATCH 1
 #endif // VERSION_H

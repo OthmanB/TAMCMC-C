@@ -12,7 +12,6 @@
 #include <vector>
 #include <string>
 #include "data.h" // contains the structure Data
-//#include "string_handler.h"
 #include "io_local.h"
 #include "io_models.h"
 #include "noise_models.h"

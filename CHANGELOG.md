@@ -1,5 +1,15 @@
 # Version history #
 
+### v1.86.0 Improvments ###
+  - Refactoring of the CMake file to reduce redundancies and better management of options. You need to use the RELEASE option to compile it with all features
+  - Replaced ARMM v0.7 by ARMM v1.1, including well-tested paralelisation. This improves computation time ARMM models. I Recommend to set Nchains*2 < Nthreads < Nchains*4 
+  - Replaced my custom-made linspace() function with the native Eigen::VectorXd::LinSpaced()
+  - Use of a more optimised linfit() function
+  - Some function cleaning
+  - Bug fix in io_asymptotic.cpp: 
+  	 - providing user-centric priors for the spline nodes was not working. This fixes it.
+	 - fixing logic to allow usage of bias_type = 0 as a way to not use bias function (Fixed bias function) [NEED TESTING]
+  
 ### v1.85.2 Improvments ###
   Added new logic using the boost library for handling cpptamcmc options.
 

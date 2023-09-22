@@ -16,8 +16,6 @@
 #include "models.h"   // This contains the models that can be used
 #include "likelihoods.h"  // This contains the likelihoods that can be used
 #include "priors_calc.h"  // This contains the priors that can be used
-//#include "config.h"
-//#include "data.h"
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -224,14 +222,18 @@ VectorXd Model_def::call_model(Data *data_struc, int m, bool outparams){
 	VectorXd fail(data_struc->Nx);
 	fail.setZero();
 	switch(model_fct_name_switch){
-		case 0: // model_Test_Gaussian
-		  return model_Test_Gaussian(params.row(m), plength, (*data_struc).x, outparams);
-		  break;
+		//case 0: // model_Test_Gaussian
+		//  return model_Test_Gaussian(params.row(m), plength, (*data_struc).x, outparams);
+		//  break;
 		case 1: // model_Harvey_Gaussian
 		  return model_Harvey_Gaussian(params.row(m), plength, (*data_struc).x, outparams);
 		  break;
 		case 2: // model_MS_Global with a1, eta (asphericity), a3, asymetry, Generalized Harvey function. 
-		  return model_MS_Global_a1etaa3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams);
+		  std::cout << "Obselete model that is not anymore supported: model_MS_Global_a1etaa3_HarveyLike" << std::endl;
+		  std::cout << "The program will exit now" << std::endl;
+		  exit(EXIT_FAILURE);
+		  return fail;		 
+		  //return model_MS_Global_a1etaa3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams);
 		  break;
 		case 3: // model_MS_Global with a1, eta (asphericity), a3, asymetry, Generalized Harvey function. Inclination and splitting are not fitted directly. sqrt(a1).cos(i) and sqrt(a1).sin(i) instead
 		  return model_MS_Global_a1etaa3_HarveyLike_Classic(params.row(m), plength, (*data_struc).x, outparams);
@@ -289,7 +291,10 @@ VectorXd Model_def::call_model(Data *data_struc, int m, bool outparams){
 			return model_MS_Global_a1nl_a2a3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams); // Added on 18 Jan 2021: Handles the a2 coefficient with n free
 			break;
 		case 20:
-			return model_MS_Global_a1a2a3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams); // Added on 18 Jan 2021: Handles the a2 coefficient with n free
+		  	std::cout << "Obselete model that is not anymore supported: model_MS_Global_a1a2a3_HarveyLike" << std::endl;
+		  	std::cout << "The program will exit now" << std::endl;
+		  	exit(EXIT_FAILURE);
+			//return model_MS_Global_a1a2a3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams); // Added on 18 Jan 2021: Handles the a2 coefficient with n free
 			break;
 		case 21:
 			return model_MS_Global_ajAlm_HarveyLike(params.row(m), plength, (*data_struc).x, outparams, extra_data); // Added on 31 Mar 2021: describes asphericity using a2_CF + a2_AR (see Gizon 2002, AN)

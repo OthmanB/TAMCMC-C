@@ -143,4 +143,3 @@ double interpolate(const GridData& data, double x, double y){
     // Evaluate interpolated value
     return r;
 }
-

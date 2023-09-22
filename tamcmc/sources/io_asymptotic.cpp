@@ -75,7 +75,6 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	// -- Initialisation of structures --
     // --- Look for common instruction That must be run before the setup ---------
 	all_in.model_fullname=" "; // Default is an empty string
-	//all_in.prior_fullname="prior_MS_Global"; // Default set of prior
     for(int i=0; i<inputs_MS_global.common_names.size(); i++){
         if(inputs_MS_global.common_names[i] == "model_fullname" ){ // This defines if we assume S11=S22 or not (the executed model will be different)
         	all_in.model_fullname=inputs_MS_global.common_names_priors[i];
@@ -261,37 +260,44 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		Nmixedmodes_params=Nmixedmodes_g_params + fl1p_all.size(); // Adding the fl1p modes in the parameter list 
 		status_model=true;
 	}
+	int Nfix=0;
 	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4" || all_in.model_fullname =="model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4"){
 		ferr.resize(inputs_MS_global.hyper_priors.rows()); 
 		fref.resize(inputs_MS_global.hyper_priors.rows());		
 		// Generate initial set of ferr and fref. fref is basically a grid of nodes for the x-axis of the bias splines		
 		// We use the hyper-prior section of the .model file in order to get the list of fref. It is up to the user to provide that after examination of the spectrum
-//		if (inputs_MS_global.hyper_priors.cols() > 3){
-//			for (int i=0; i<inputs_MS_global.hyper_priors.rows()-1;i++){ // Check that we have values that are monotonically increasing
-//				if (inputs_MS_global.hyper_priors(i+1,0) < inputs_MS_global.hyper_priors(i,0)){
-//					std::cout << "Error in io_asymptotic, model " << all_in.model_fullname << std::endl;
-//					std::cout << " You must ensure that values in the hyper prior section are non-zero and are monotonically increasing" << std::endl;
-//				} 
-//			}
-//			for(int i=0; i<inputs_MS_global.hyper_priors.rows(); i++){
-//				fref[i]=inputs_MS_global.hyper_priors(i,0);
-//			}
-//		} else{
-		// MOD ON 24 OCT 2022: Check that it works for both scenario of extra params
-			for (int i=0; i<inputs_MS_global.hyper_priors.rows()-1;i++){ // Check that we have values that are monotonically increasing
+		// MOD ON 24 OCT 2022 + Mod on 22 Sept 2023 (adding the possibility to fix the bias)
+			for (int i=0; i<inputs_MS_global.hyper_priors.rows()-1;i++){ 
+				// Check that we have values that are monotonically increasing
 				if (inputs_MS_global.hyper_priors(i+1,0) < inputs_MS_global.hyper_priors(i,0)){
-					std::cout << "Error in io_asymptotic, model " << all_in.model_fullname << std::endl;
-					std::cout << " You must ensure that values in the hyper prior section are non-zero and are monotonically increasing" << std::endl;
+					std::cout << "Error in io_asymptotic, model (A) " << all_in.model_fullname << std::endl;
+					std::cout << " You must ensure that values in the hyper prior section are all FIXED OR ALL non-zero and are monotonically increasing" << std::endl;
+					exit(EXIT_FAILURE);
 				} 
+				// Counter to know how many Fix hyper param. If all in Fix ==> no bias correction. If one in Fix and other not ==> NOT ALLOWED
+				if (inputs_MS_global.hyper_priors_names[i] == "Fix"){
+					Nfix=Nfix+1;
+				} 				
 			}
+			// Check if fixed params are either all or none
+			if (Nfix != inputs_MS_global.hyper_priors_names.size()-1 && Nfix != 0){
+				std::cout << "Error in io_asymptotic, model (B) " << all_in.model_fullname << std::endl;
+				std::cout << " You must ensure that values in the hyper prior section are all FIXED OR ALL non-zero and are monotonically increasing" << std::endl;
+				std::cout << " Nfix = " << Nfix << std::endl;
+				std::cout << " inputs_MS_global.hyper_priors_names.size() = " << inputs_MS_global.hyper_priors_names.size() << std::endl;
+				exit(EXIT_FAILURE);
+			}
+
 			for(int i=0; i<inputs_MS_global.hyper_priors.rows(); i++){
 				fref[i]=inputs_MS_global.hyper_priors(i,0);
 			}
 
-			if (inputs_MS_global.hyper_priors.cols() !=1 ){ // If there is not all of the prior information, we expect a single column
-				std::cout << "Error in io_asymptotic, model " << all_in.model_fullname << std::endl;
-				std::cout << " You must have at least 4 non-zero data points in the hyper_priors section in order to describe the bias frequencies used as hanchors" << std::endl;
-				std::cout << " Or you just specify the anchor points and default prior will be set" << std::endl;
+			if (inputs_MS_global.hyper_priors.cols() <1 ){ // If there is not all of the prior information, we expect a single column
+				std::cout << " inputs_MS_global.hyper_priors.rows() = " << inputs_MS_global.hyper_priors.cols() << std::endl;
+				std::cout << " inputs_MS_global.hyper_priors = " << inputs_MS_global.hyper_priors << std::endl;
+				std::cout <<  "Error in io_asymptotic, model " << all_in.model_fullname << std::endl;
+				std::cout << " You must have at least 4 non-zero data points per line in the hyper_priors section in order to describe the bias frequencies used as hanchors" << std::endl;
+				std::cout << " Or you just specify the anchor points (1 column entries) and default prior will be set" << std::endl;
 				exit(EXIT_FAILURE);
 			}
 //		}
@@ -309,17 +315,6 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		Nmixedmodes_params=Nmixedmodes_g_params;
 	}	
 	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike"){
-		// delta0l=params[Nmax + lmax + Nfl0];
-		//DPl=std::abs(params[Nmax + lmax + Nfl0 + 1])
-		//alpha_g=std::abs(params[Nmax + lmax + Nfl0 + 2])
-		// q_star=std::abs(params[Nmax + lmax + Nfl0 + 3]);
-		//sigma_H_l1=std::abs(params[Nmax + lmax + Nfl0 + 4]); // Evaluation of the inaccuracy in terms of Heights
-		//sigma_m_0_l1=std::abs(params[Nmax + lmax + Nfl0 + 5]); // Evaluation of the inaccuracy in terms of frequencies: Ordinate at origin ==> sigma_p
-		//sigma_m_1_l1=std::abs(params[Nmax + lmax + Nfl0 + 6]); // Evaluation of the inaccuracy in terms of frequencies: slope ==> zeta=1 ==> sigma_g
-    	//sigma_a1_0_l1=std::abs(params[Nmax + lmax + Nfl0 + 7]); // Evaluation of the inaccuracy in terms of splitting a1: Ordinate at origin ==> sigma_p
-   		//sigma_a1_1_l1=std::abs(params[Nmax + lmax + Nfl0 + 8]); // Evaluation of the inaccuracy in terms of splitting a1: slope
-    	//nmax=std::abs(params[Nmax + lmax + Nfl0 + 9]); // l=1 p modes: nmax ~ numax/Dnu + epsilon
-    	//alpha_p=std::abs(params[Nmax + lmax + Nfl0 + 10])
 		Nmixedmodes_params=11; 
 	}
 
@@ -380,23 +375,20 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		if (inputs_MS_global.hyper_priors.cols() == 1){
 			// Add the ferr into the frequency parameters
 			// The FIRST frequency (lower edge) is allowed to have larger excursion to the low frequency range
-			std::cout << " inputs_MS_global.Dnu =" <<  inputs_MS_global.Dnu << std::endl;
-			std::cout << " cpt =" << cpt << std::endl;
-			std::cout << " ferr[0] =" << ferr[0] << std::endl;
+			//std::cout << " inputs_MS_global.Dnu =" <<  inputs_MS_global.Dnu << std::endl;
+			//std::cout << " cpt =" << cpt << std::endl;
+			//std::cout << " ferr[0] =" << ferr[0] << std::endl;
 			tmpXd << -inputs_MS_global.Dnu/2 , inputs_MS_global.Dnu/20, -9999, -9999; // default parameters for a Uniform prior
 			io_calls.fill_param(&freq_in, "ferr_bias", "Uniform",  ferr[0], tmpXd, cpt, 0);
 			cpt=cpt+1;
 			// Core
 			tmpXd << -inputs_MS_global.Dnu/20 , inputs_MS_global.Dnu/20, -9999, -9999; // default parameters for a Uniform prior
 			for(int i=1; i<ferr.size()-1;i++){
-				//tmpXd << fref[i-1] , fref[i+1], -9999, -9999; // default parameters for a Uniform prior
 				io_calls.fill_param(&freq_in, "ferr_bias", "Uniform",  ferr[i], tmpXd, cpt, 0);
 				cpt=cpt+1;
 			}
-			std::cout << "[4.3]" << std::endl;
 
 			// The LAST frequency (upper edge) is allowed to have larger excursion to the high frequency range
-			//tmpXd << fref[ferr.size()-2] , ferr[ferr.size()-1] + inputs_MS_global.Dnu/2, -9999, -9999; // default parameters for a Uniform prior
 			tmpXd << -inputs_MS_global.Dnu/20 , inputs_MS_global.Dnu/2, -9999, -9999; // default parameters for a Uniform prior
 			io_calls.fill_param(&freq_in, "ferr_bias", "Uniform",  ferr[ferr.size()-1], tmpXd, cpt, 0);
 			cpt=cpt+1;
@@ -420,9 +412,6 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		exit(EXIT_FAILURE);
 	}	
 	// ----------- Calculate numax -----------
-	// Flated the output vector
-	//tmpXd.resize(Nf_el.sum());
-	//tmpXd.resize(height_in.inputs.size()); // We assume l=0,1,2,3 as p mode to get numax... this may not be true, but this is the best we can do at that stage of the code
 	cpt=0;
 	if(numax <=0){
 		std::cout << "numax not provided. Input numax may be required by some models... Calculating numax ASSUMING PURE l=0 P MODES ONLY..." << std::endl;
@@ -456,24 +445,6 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
     if(do_a11_eq_a12 == 1 && do_avg_a1n == 1){
         io_calls.initialise_param(&Snlm_in, 5, Nmax_prior_params, -1, -1);
     }  
-    //if(do_a11_eq_a12 == 0 && do_avg_a1n == 1){
-    //    io_calls.initialise_param(&Snlm_in, 7, Nmax_prior_params, -1, -1);
-    //}
-    //if(do_a11_eq_a12 == 1 && do_avg_a1n == 0){
-	//	if (Nf_el[1] == Nf_el[2]){
-	//		io_calls.initialise_param(&Snlm_in, 6 + Nf_el[1], Nmax_prior_params, -1, -1);
-	//	} else {
-	//		std::cout << "When considering a11=a22"<< std::endl;
-	//		std::cout <<" You must have as many l=1 than l=2" << std::endl;
-	//		std::cout <<" Here we have: Nf(l=1) = " << Nf_el[1] << " and Nf(l=2) = " << Nf_el[2] << std::endl;
-	//		std::cout <<" Check the .model file" << std::endl;
-	//		std::cout <<" The program will exit now" << std::endl;
-	//		exit(EXIT_FAILURE);
-	//	}
-    //}
-    //if(do_a11_eq_a12 == 0 && do_avg_a1n == 0){
-    //	io_calls.initialise_param(&Snlm_in, 6 + Nf_el[1]+Nf_el[2], Nmax_prior_params, -1, -1);
-    //}
  
 	// -------------- Set Extra_priors ----------------	
 	extra_priors.resize(5); 
@@ -529,7 +500,12 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			if(inputs_MS_global.common_names_priors[i] != "Fix"){
 				fatalerror_msg_io_MS_Global("bias_type", "Fix", "[Value]", "(0: window bias, 1: Cubic spline, 2: Hermite spline" );
 			} else{
-				bias_type=inputs_MS_global.modes_common(i,0); // This value is added to the input vector at the end of this function.
+				if(Nfix != inputs_MS_global.hyper_priors_names.size()-1){
+					bias_type=inputs_MS_global.modes_common(i,0); // This value is added to the input vector at the end of this function.
+				} else{
+					bias_type=0; // Use this value to signify that no bias will be used in the code (ALL FIXED)
+
+				}
 			}
 		}	
 		// --- Frequencies ---
@@ -922,61 +898,6 @@ if(bool_a1cosi != bool_a1sini){ // Case when one of the projected splitting quan
 	std::cout << "The program will exit now" << std::endl;
 	exit(EXIT_FAILURE);
 }
-/*
-if((bool_a1cosi == 0) && (bool_a1sini == 0)){ // Case where Inclination and Splitting_a1 are supposed to be used (CLASSIC and CLASSIC_vX models)
-	if( (all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike") || (all_in.model_fullname == "model_MS_Global_a1etaa3_Harvey1985") ||
-		(all_in.model_fullname == "model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1") || (all_in.model_fullname=="model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2")){
-		std::cout << "Warning: Splitting_a1 and Inclination keywords detected while requested model is model_MS_Global_a1etaa3_HarveyLike... ADAPTING THE VARIABLE FOR ALLOWING THE FIT TO WORK" << std::endl;
-		
-		std::cout << "         Replacing variables splitting_a1 and inclination by sqrt(splitting_a1).cos(i) and sqrt(splitting_a1).sin(i)..." << std::endl;
-
-		if( Inc_in.priors_names[0]=="Fix" && Snlm_in.priors_names[0]=="Fix"){
-			std::cout << "         - Inclination and splitting_a1 were 'Fixed' ==> Fixing sqrt(splitting_a1).cos(i) and sqrt(splitting_a1).sin(i)" << std::endl; 
-			
-			io_calls.fill_param(&Snlm_in, "sqrt(splitting_a1).cosi", "Fix", sqrt(Snlm_in.inputs[0])*cos(Inc_in.inputs[0]*pi/180.), Snlm_in.priors.col(0), 3, 0);
-			io_calls.fill_param(&Snlm_in, "sqrt(splitting_a1).sini", "Fix", sqrt(Snlm_in.inputs[0])*sin(Inc_in.inputs[0]*pi/180.), Snlm_in.priors.col(0), 4, 0);
-		} else{
-			std::cout << "	       - Inclination and/or Splitting_a1 requested as a free parameter ==> Freeing both sqrt(splitting_a1).cos(i) and sqrt(splitting_a1).sin(i)" << std::endl;
-			std::cout << "         - Setting the prior to the one requested for the Splitting_a1 assuming non-informative prior on inclination: " << Snlm_in.priors_names[0] << std::endl;
-			std::cout << "         - Value of the prior are set for cosi=sini=1, ie the max is set by sqrt(splitting_a1)" << std::endl;
-			std::cout << "           Beware that this may not be what you want!" << std::endl;
-
-			Snlm_in.priors(1,0)=std::sqrt(Snlm_in.priors(1,0)); // Convert the max boundary of splitting_a1 into the max boundary of sqrt(splitting_a1)
-			
-			io_calls.fill_param(&Snlm_in, "sqrt(splitting_a1).cosi", Snlm_in.priors_names[0], sqrt(Snlm_in.inputs[0])*cos(Inc_in.inputs[0]*pi/180.), Snlm_in.priors.col(0), 3, 0);
-			io_calls.fill_param(&Snlm_in, "sqrt(splitting_a1).sini", Snlm_in.priors_names[0], sqrt(Snlm_in.inputs[0])*sin(Inc_in.inputs[0]*pi/180.), Snlm_in.priors.col(0), 4, 0);
-		}
-
-		if(Snlm_in.inputs[3] < 1e-2){ // Avoid issues with the edge of uniform priors
-			Snlm_in.inputs[3]=1e-2;
-		}
-		if(Snlm_in.inputs[4] < 1e-2){ // Avoid issues with the edge of uniform priors
-			Snlm_in.inputs[4]=1e-2;
-		}
-
-        std::cout << "            Slots for the variables Inclination and Splitting are forced to be FIXED" << std::endl;
-        std::cout << "            Be aware that may lead to unwished results if you are not careful about the used model" << std::endl;
-        io_calls.fill_param(&Inc_in, "Empty", "Fix", 0, Inc_in.priors.col(0), 0, 1); // Note that inputs_MS_global.modes_common.row(0) is not used... just dummy
-        io_calls.fill_param(&Snlm_in, "Empty", "Fix", 0, Snlm_in.priors.col(0), 0, 1); // Note that inputs_MS_global.modes_common.row(0) is not used... just dummy
-	}
-
-}
-if((bool_a1cosi == 1) && (bool_a1sini ==1)){
-	if (all_in.model_fullname == "model_MS_Global_a1etaa3_HarveyLike_Classic"){
-		std::cout << "Warning: We cannot use " << all_in.model_fullname << " with variables sqrt(splitting_a1).cosi and sqrt(splitting_a1).sini..." << std::endl;
-		std::cout << "         Use Inclination and Splitting_a1 instead for the model this model"  << std::endl;
-		std::cout << "	       Alternatively, you can use 'model_MS_Global_a1etaa3_HarveyLike with sqrt(splitting_a1).cosi and sqrt(splitting_a1).sini keywords'" <<std::endl;
-		std::cout << "         The program will exit now" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-    std::cout << "    NOTICE: sqrt(splitting_a1).sini and sqrt(splitting_a1).cosi superseed inclination and splitting" << std::endl;
-    std::cout << "            Slots for the variables Inclination and Splitting are therefore forced to be FIXED" << std::endl;
-    std::cout << "            Be aware that may lead to unwished results if you are not careful about the used model" << std::endl;
-   	
-   	io_calls.fill_param(&Inc_in, "Empty", "Fix", 0, Inc_in.priors.col(0), 0, 1); // Note that inputs_MS_global.modes_common.row(0) is not used... just dummy   	
-   	io_calls.fill_param(&Snlm_in, "Empty", "Fix", 0, Snlm_in.priors.col(0), 0, 1); // "Splitting_a1" default values are erased
-}
-*/
 	// ----------------------------------------------------
 	// ---------------- Handling noise --------------------
 	// ----------------------------------------------------
@@ -986,7 +907,6 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 	// ------------- Sticking everything together in a Input_Data structure --------------
 	// -------------------------------------------------------------------------------------
 	
-	//if(model_type ==-1 && bias_type==-1 && (all_in.model_fullname != "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4")){ // If it is a model that does not include any model_type (or bias_type) value, then it has no bias function 
 	plength.resize(11);
 	plength[0]=h_inputs.size(); plength[1]=lmax                  ; plength[2]=Nf_el[0];
 	plength[3]=Nf_el[1]       ; plength[4]=Nf_el[2]		   ; plength[5]=Nf_el[3];
@@ -1063,7 +983,17 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 		io_calls.fill_param(&all_in, "bias type ", "Fix", bias_type, tmpXd, p0,1);
 		io_calls.fill_param(&all_in, "Nferr ", "Fix", ferr.size(), tmpXd, p0+1,1); // Nferr
 	}
-
+	if (bias_type == 0 && Nfix != inputs_MS_global.hyper_priors_names.size()-1 ){
+		std::cout << "  Warning : Inconcistency detected between the requested bias_type = 0" << std::endl;
+		std::cout << "            and the hyper priors being not set to FIX. In this scenario, " << std::endl;
+		std::cout << "            bias_type superseed the hyper priors ==> Setting hyper priors to FIX and 0" << std::endl;
+		tmpXd.resize(4);
+		tmpXd << -9999, -9999, -9999, -9999;
+		std::vector<int> positions=io_calls.lookupIndices("ferr_bias", all_in.inputs_names);
+		for (p0=0; p0<positions.size();p0++){ // Fix to 0 all ferr_bias.
+			io_calls.fill_param(&all_in, "ferr_bias", "Fix", 0, tmpXd, positions[p0],1);
+		}
+	}
 	//
 	if(verbose == 1){
 		std::cout << " ----------------- Configuration summary -------------------" << std::endl;
@@ -1098,8 +1028,8 @@ if((bool_a1cosi == 1) && (bool_a1sini ==1)){
 		std::cout << " -----------------------------------------------------------" << std::endl;
 	}
 	
-//	std::cout << "Exiting test " << std::endl;
-//	exit(EXIT_SUCCESS);
+	std::cout << "Exiting test " << std::endl;
+	exit(EXIT_SUCCESS);
 
 return all_in;
 }

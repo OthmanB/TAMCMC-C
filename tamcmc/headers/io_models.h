@@ -8,22 +8,15 @@
  */
  
 #pragma once
-//#include <string>
-//#include <vector>
 #include <Eigen/Dense>
 #include "data.h" // contains the structure Data
-//#include "matrices.h"
-//#include "string_handler.h"
-
-//using Eigen::MatrixXd;
 using Eigen::VectorXd;
-//using Eigen::VectorXi;
-
 class IO_models{		
 
 	public:
 		IO_models();
 		~IO_models();
+		std::vector<int> lookupIndices(const std::string& target, const std::vector<std::string>& names);
 		short int initialise_param(Input_Data * data, const int size_vec, const int Nrows, const int Nplength, const int Nextra_priors);
         short int initialise_param(Input_Data *data, const int size_vec, const int Nrows, const VectorXi& plength, const int Nextra_priors);
         short int initialise_param(Input_Data *data, const int size_vec, const int Nrows, const int Nplength, const VectorXd& extra_priors);

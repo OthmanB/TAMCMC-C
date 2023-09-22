@@ -1193,402 +1193,6 @@ VectorXd model_MS_Global_a1nl_etaa3_HarveyLike(const VectorXd& params, const Vec
 }
 
 
-VectorXd model_MS_Global_a1etaa3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
-	/* Model of the power spectrum of a Main sequence solar-like star
-	 * param is a vector of parameters
-	 * param_length defines the structure of the parameters
-	 * x is the frequency assumed to be in microHz
-	 * Warning: Although we have Nfli terms, all these MUST have same size, provided that 0<i<lmax. 
-	 *          Size MUST be 0 otherwise (this check is not made in this function)
-	 */
-
-	const double step=x[1]-x[0]; // used by the function that optimise the lorentzian calculation
-	const long double pi = 3.141592653589793238462643383279502884L;
-	
-	const int Nmax=params_length[0]; // Number of Heights
-	const int lmax=params_length[1]; // number of degree - 1
-	const int Nfl0=params_length[2]; // number of l=0 frequencies
-	const int Nfl1=params_length[3]; // number of l=1 frequencies
-	const int Nfl2=params_length[4]; // number of l=2 frequencies
-	const int Nfl3=params_length[5]; // number of l=3 frequencies
-	const int Nsplit=params_length[6]; // number of splitting parameters. Should be 6 for a ALL global MS model (a1,eta,a3, magb, magalfa, asym)
-	const int Nwidth=params_length[7]; // number of parameters for the widths. Should be the same as Nmax for a global MS model
-	const int Nnoise=params_length[8]; // number of parameters for the noise. Should be 7 for a global MS model
-	const int Ninc=params_length[9]; // number of parameters for the stellar inclination. Should be 1 for a global MS model
-    const int Ncfg=params_length[10]; // number of extra configuration parameters (e.g. truncation parameter)
-
-	const int Nf=Nfl0+Nfl1+Nfl2+Nfl3;
-	const double trunc_c=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc];
-	const bool do_amp=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc+1];
-
-	double inclination;
-	
-
-	VectorXd ratios_l0(1), ratios_l1(3), ratios_l2(5), ratios_l3(7);
-	VectorXd model_l0(x.size()), model_l1(x.size()), model_l2(x.size()), model_l3(x.size()), model_noise(x.size()), model_final(x.size());
-
-	VectorXd fl0_all(Nmax), Wl0_all(Nmax), noise_params(Nnoise); //Hl0_all[Nmax],
-	double fl0, fl1, fl2, fl3, Vl1, Vl2, Vl3, Hl0, Hl1, Hl2, Hl3, Wl0, Wl1, Wl2, Wl3, a1,eta0,a3, asym;
-
-	int Nharvey;
-	long cpt;
-
-    const int Nrows=1000, Ncols=9; // Number of parameters for each mode
-    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
-    int Line=0; // will be used to trim the mode_params table where suited
-
-	/*
-	   -------------------------------------------------------
-	   ------- Gathering information about the modes ---------
-	   -------------------------------------------------------
-	*/
-	
-  	a1=pow(params[Nmax + lmax + Nf+3],2)+ pow(params[Nmax + lmax + Nf+4],2);
-    
-    inclination=std::atan(params[Nmax + lmax + Nf+4]/params[Nmax + lmax + Nf+3]); 
-    inclination=inclination*180./pi;
-
-    //std::cout << "a1 = " << a1 << std::endl;
-    //std::cout << "inclination = " << inclination << std::endl;
-
-	// Forcing values of visibilities to be greater than 0... priors will be in charge of the penalisation
-	ratios_l0.setOnes();
-	if(lmax >=1){
-        Vl1=std::abs(params[Nmax]);
-		ratios_l1=amplitude_ratio(1, inclination);
-        //std::cout << "Vl1 " << Vl1 << std::endl;
-    }
-	if(lmax >=2){
-		Vl2=std::abs(params[Nmax+1]);
-		ratios_l2=amplitude_ratio(2, inclination);
-        //std::cout << "Vl2 " << Vl2 << std::endl;
-
-	}
-	if(lmax >=3){
-		Vl3=std::abs(params[Nmax+2]);
-		ratios_l3=amplitude_ratio(3, inclination);
-	}
-
-	fl0_all=params.segment(Nmax + lmax, Nfl0); // required for the interpolation of the widths
-	Wl0_all=params.segment(Nmax + lmax + Nf + Nsplit, Nmax);
-
-	//a1=std::abs(params[Nmax + lmax + Nf]);
-    //eta0=params[Nmax + lmax + Nf + 1]; // 7 Dec 2021: eta0 is not anymore a parameter
-    eta0=eta0_fct(fl0_all);
-
-	a3=params[Nmax + lmax + Nf + 2];
-	asym=params[Nmax+lmax + Nf + 5];
-	
-	model_final.setZero();
-	
-	/* -------------------------------------------------------
-	   --------- Computing the models for the modes  ---------
-	   -------------------------------------------------------
-	*/
-	cpt=0;
-	for(long n=0; n<Nmax; n++){
-		
-		fl0=fl0_all[n];
-		Wl0=std::abs(Wl0_all[n]);
-			
-		if(do_amp){
-			Hl0=std::abs(params[n]/(pi*Wl0)); // A^2/(pi.Gamma)
-		} else{
-			Hl0=std::abs(params[n]);
-		}		
-        if (outparams){
-            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, asym, inclination;// mode_vec;
-            Line=Line+1;
-        }   
-		model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl0, fl0, a1, eta0, a3, asym, Wl0, 0, ratios_l0, step, trunc_c);
-
-		if(lmax >=1){
-			fl1=params[Nmax+lmax+Nfl0+n];
-			Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
-			if(do_amp){
-				//Hl1=std::abs(params[n]/(pi*Wl1));
-                Hl1=std::abs(params[n]/(pi*Wl1))*Vl1;
-			} else{
-				Hl1=std::abs(params[n]*Vl1);
-			}				
-            if (outparams){
-                mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1, eta0*1e-6, a3, asym, inclination;// mode_vec;
-                Line=Line+1;
-            }   
-			model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl1, fl1, a1, eta0, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
-		}
-		if(lmax >=2){
-			fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
-			Wl2=std::abs(lin_interpol(fl0_all, Wl0_all, fl2));
-			if(do_amp){
-				Hl2=std::abs(params[n]/(pi*Wl2))*Vl2;
-                //Hl2=std::abs(params[n]/(pi*Wl2));
-			} else{
-				Hl2=std::abs(params[n]*Vl2);
-			}	
-            if (outparams){
-                mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1, eta0*1e-6, a3, asym, inclination;// mode_vec;
-                Line=Line+1;
-            }   
-			model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl2, fl2, a1, eta0, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
-		}
-        if(lmax >=3){
-			fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
-			Wl3=std::abs(lin_interpol(fl0_all, Wl0_all, fl3));
-			if(do_amp){
-				//Hl3=std::abs(params[n]/(pi*Wl3));
-                Hl3=std::abs(params[n]/(pi*Wl3))*Vl3;
-			} else{
-				Hl3=std::abs(params[n]*Vl3);			
-			}	
-            if (outparams){
-                mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1, eta0*1e-6, a3, asym, inclination;// mode_vec;
-                Line=Line+1;
-            }   	
-			model_final=optimum_lorentzian_calc_a1etaa3(x, model_final, Hl3, fl3, a1, eta0, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
-		}		
-	}
-    //std::cin.ignore();
-
-	/* -------------------------------------------------------
-	   ------- Gathering information about the noise ---------
-	   -------------------------------------------------------
-	*/
-	//std::cout << "Before computing noise model" << std::endl;
-	noise_params=params.segment(Nmax+lmax+Nf+Nsplit+Nwidth, Nnoise);
-	Nharvey=(Nnoise-1)/3;
-	//std::cout << "Nharvey = " << Nharvey << std::endl;
-		
-	/* -------------------------------------------------------
-	   ---------- Computing the mode of the noise ------------
-	   -------------------------------------------------------
-	*/
-	model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
-
-  if(outparams){
-        int c=0;
-        std::string file_out="params.model";
-        std::string modelname = __func__;
-        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1 / eta0 / a3 / asymetry / inclination";
-        VectorXd spec_params(3);
-        spec_params << x.minCoeff() , x.maxCoeff(), step;
-        MatrixXd noise(Nharvey+1, 3);
-        noise.setConstant(-2);
-        for(int i=0;  i<noise.cols(); i++){
-            for(int j=0;j<Nharvey; j++){
-                noise(i,j)=noise_params(c);
-                c=c+1;
-           }
-        }
-        noise(Nharvey, 0) = noise_params(c); // White noise 
-        write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
-    }
-
-	return model_final;
-}
-
-VectorXd model_MS_Global_a1a2a3_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
-    /* Model of the power spectrum of a Main sequence solar-like star
-     * param is a vector of parameters
-     * param_length defines the structure of the parameters
-     * x is the frequency assumed to be in microHz
-     * Warning: Although we have Nfli terms, all these MUST have same size, provided that 0<i<lmax. 
-     *          Size MUST be 0 otherwise (this check is not made in this function)
-     */
-
-    const double step=x[1]-x[0]; // used by the function that optimise the lorentzian calculation
-    const long double pi = M_PI;    
-    
-    const int Nmax=params_length[0]; // Number of Heights
-    const int lmax=params_length[1]; // number of degree - 1
-    const int Nfl0=params_length[2]; // number of l=0 frequencies
-    const int Nfl1=params_length[3]; // number of l=1 frequencies
-    const int Nfl2=params_length[4]; // number of l=2 frequencies
-    const int Nfl3=params_length[5]; // number of l=3 frequencies
-    const int Nsplit=params_length[6]; // number of splitting parameters. Should be 6 for a ALL global MS model (a1,eta,a3, magb, magalfa, asym)
-    const int Nwidth=params_length[7]; // number of parameters for the widths. Should be the same as Nmax for a global MS model
-    const int Nnoise=params_length[8]; // number of parameters for the noise. Should be 7 for a global MS model
-    const int Ninc=params_length[9]; // number of parameters for the stellar inclination. Should be 1 for a global MS model
-    const int Ncfg=params_length[10]; // number of extra configuration parameters (e.g. truncation parameter)
-
-    const int Nf=Nfl0+Nfl1+Nfl2+Nfl3;
-    const double trunc_c=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc];
-    const bool do_amp=params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+Ninc+1];
-
-    double inclination;
-    
-
-    VectorXd ratios_l0(1), ratios_l1(3), ratios_l2(5), ratios_l3(7);
-    VectorXd model_l0(x.size()), model_l1(x.size()), model_l2(x.size()), model_l3(x.size()), model_noise(x.size()), model_final(x.size());
-
-    VectorXd fl0_all(Nmax), Wl0_all(Nmax), noise_params(Nnoise), a2_terms(3); //Hl0_all[Nmax],
-    double fl0, fl1, fl2, fl3, Vl1, Vl2, Vl3, Hl0, Hl1, Hl2, Hl3, Wl0, Wl1, Wl2, Wl3, a1,a2,a3, asym;
-
-    int Nharvey;
-    long cpt;
-
-    const int Nrows=1000, Ncols=9; // Number of parameters for each mode
-    MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
-    int Line=0; // will be used to trim the mode_params table where suited
-
-    /*
-       -------------------------------------------------------
-       ------- Gathering information about the modes ---------
-       -------------------------------------------------------
-    */
-    
-    a1=pow(params[Nmax + lmax + Nf+3],2)+ pow(params[Nmax + lmax + Nf+4],2);
-    
-    inclination=std::atan(params[Nmax + lmax + Nf+4]/params[Nmax + lmax + Nf+3]); 
-    inclination=inclination*180./pi;
-
-    //std::cout << "a1 = " << a1 << std::endl;
-    //std::cout << "inclination = " << inclination << std::endl;
-
-    // Forcing values of visibilities to be greater than 0... priors will be in charge of the penalisation
-    ratios_l0.setOnes();
-    if(lmax >=1){
-        Vl1=std::abs(params[Nmax]);
-        ratios_l1=amplitude_ratio(1, inclination);
-        //std::cout << "Vl1 " << Vl1 << std::endl;
-    }
-    if(lmax >=2){
-        Vl2=std::abs(params[Nmax+1]);
-        ratios_l2=amplitude_ratio(2, inclination);
-        //std::cout << "Vl2 " << Vl2 << std::endl;
-
-    }
-    if(lmax >=3){
-        Vl3=std::abs(params[Nmax+2]);
-        ratios_l3=amplitude_ratio(3, inclination);
-    }
-
-    fl0_all=params.segment(Nmax + lmax, Nfl0); // required for the interpolation of the widths
-    Wl0_all=params.segment(Nmax + lmax + Nf + Nsplit, Nmax);
-
-    //a1=std::abs(params[Nmax + lmax + Nf]);
-    a2_terms=params.segment(Nmax + lmax + Nf + 6,3); // a2 terms are after the a3 and asym terms  //two terms: one constant term + one linear in nu + one quadratic in nu
-    a3=params[Nmax + lmax + Nf + 2];
-    asym=params[Nmax+lmax + Nf + 5];
-    
-    model_final.setZero();
-    //std::cout << "[" << Nmax + lmax + Nf + 6 << "]  a2_terms = " << a2_terms.transpose() << std::endl;
-    /*
-    std::cout << "inclination = " << inclination << std::endl;
-    std::cout << "a2_terms = " << a2_terms << std::endl;
-    std::cout << "a3 = " << a3 << std::endl;
-    std::cout << "asym = " << asym << std::endl;
-    */
-    /* -------------------------------------------------------
-       --------- Computing the models for the modes  ---------
-       -------------------------------------------------------
-    */
-    cpt=0;
-    for(long n=0; n<Nmax; n++){
-        
-        fl0=fl0_all[n];
-        Wl0=std::abs(Wl0_all[n]);
-            
-        if(do_amp){
-            Hl0=std::abs(params[n]/(pi*Wl0)); // A^2/(pi.Gamma)
-        } else{
-            Hl0=std::abs(params[n]);
-        }       
-        model_final=optimum_lorentzian_calc_a1a2a3(x, model_final, Hl0, fl0, 0, 0, 0, asym, Wl0, 0, ratios_l0, step, trunc_c);
-        if (outparams){
-            mode_params.row(Line) << 0, fl0, Hl0 , Wl0, 0, 0, 0, asym, inclination;// mode_vec;
-            Line=Line+1;
-        }   
-        if(lmax >=1){
-            fl1=params[Nmax+lmax+Nfl0+n];
-            Wl1=std::abs(lin_interpol(fl0_all, Wl0_all, fl1));
-            if(do_amp){
-                //Hl1=std::abs(params[n]/(pi*Wl1));
-                Hl1=std::abs(params[n]/(pi*Wl1))*Vl1;
-            } else{
-                Hl1=std::abs(params[n]*Vl1);
-            }   
-            a2=a2_terms[0] + a2_terms[1]*(fl1*1e-3) + a2_terms[2]*(fl1*fl1*1e-6); //two terms: one constant term + one linear in nu, after a11, set in mHz            
-            model_final=optimum_lorentzian_calc_a1a2a3(x, model_final, Hl1, fl1, a1, a2, a3,asym, Wl1, 1, ratios_l1, step, trunc_c);
-           if (outparams){
-                mode_params.row(Line) << 1, fl1, Hl1 , Wl1, a1, a2, a3, asym, inclination;// mode_vec;
-                Line=Line+1;
-            } 
-        }
-        if(lmax >=2){
-            fl2=params[Nmax+lmax+Nfl0+Nfl1+n];
-            Wl2=std::abs(lin_interpol(fl0_all, Wl0_all, fl2));
-            if(do_amp){
-                Hl2=std::abs(params[n]/(pi*Wl2))*Vl2;
-                //Hl2=std::abs(params[n]/(pi*Wl2));
-            } else{
-                Hl2=std::abs(params[n]*Vl2);
-            }   
-            a2=a2_terms[0] + a2_terms[1]*(fl2*1e-3) + a2_terms[2]*(fl2*fl2*1e-6); //two terms: one constant term + one linear in nu, after a11 
-            model_final=optimum_lorentzian_calc_a1a2a3(x, model_final, Hl2, fl2, a1, a2, a3,asym, Wl2, 2, ratios_l2, step, trunc_c);
-            if (outparams){
-                mode_params.row(Line) << 2, fl2, Hl2 , Wl2, a1, a2, a3, asym, inclination;// mode_vec;
-                Line=Line+1;
-            }      
-        }
-        if(lmax >=3){
-            fl3=params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n];
-            Wl3=std::abs(lin_interpol(fl0_all, Wl0_all, fl3));
-            if(do_amp){
-                //Hl3=std::abs(params[n]/(pi*Wl3));
-                Hl3=std::abs(params[n]/(pi*Wl3))*Vl3;
-            } else{
-                Hl3=std::abs(params[n]*Vl3);            
-            }       
-            a2=a2_terms[0] + a2_terms[1]*(fl3*1e-3) + a2_terms[2]*(fl3*fl3*1e-6); //two terms: one constant term + one linear in nu, after a11  
-            model_final=optimum_lorentzian_calc_a1a2a3(x, model_final, Hl3, fl3, a1, a2, a3, asym, Wl3, 3, ratios_l3, step, trunc_c);
-            if (outparams){
-                mode_params.row(Line) << 3, fl3, Hl3 , Wl3, a1, a2, a3, asym, inclination;// mode_vec;
-                Line=Line+1;
-            } 
-        }       
-    }
-    //std::cin.ignore();
-
-    /* -------------------------------------------------------
-       ------- Gathering information about the noise ---------
-       -------------------------------------------------------
-    */
-    //std::cout << "Before computing noise model" << std::endl;
-    noise_params=params.segment(Nmax+lmax+Nf+Nsplit+Nwidth, Nnoise);
-    Nharvey=(Nnoise-1)/3;
-    //std::cout << "Nharvey = " << Nharvey << std::endl;
-    //std::cout << "noise_params = " << noise_params.transpose() << std::endl;
-    /* -------------------------------------------------------
-       ---------- Computing the mode of the noise ------------
-       -------------------------------------------------------
-    */
-    model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
-    
-  if(outparams){
-        int c=0;
-        std::string file_out="params.model";
-        std::string modelname = __func__;
-        std::string name_params = "# Input mode parameters. degree / freq / H / W / a1 / a2 / a3 / asymetry / inclination";
-        VectorXd spec_params(3);
-        spec_params << x.minCoeff() , x.maxCoeff(), step;
-        MatrixXd noise(Nharvey+1, 3);
-        noise.setConstant(-2);
-        for(int i=0;  i<noise.cols(); i++){
-            for(int j=0;j<Nharvey; j++){
-                noise(i,j)=noise_params(c);
-                c=c+1;
-           }
-        }
-        noise(Nharvey, 0) = noise_params(c); // White noise 
-        write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
-    }
-
-    return model_final;
-}
-
-
-
 VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
     /* Model of the power spectrum of a Main sequence solar-like star
      * param is a vector of parameters
@@ -3777,7 +3381,8 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike(const VectorXd& params, co
     fl0_all=params.segment(Nmax + lmax, Nfl0); // required for the interpolation of the widths and mixed modes determination 
 
     // --- Determining the large separation and the epsilon for the current set of free l=0 mode frequencies ---
-    xfit=linspace(0, fl0_all.size()-1, fl0_all.size());
+    //xfit=linspace(0, fl0_all.size()-1, fl0_all.size());
+    xfit = Eigen::VectorXd::LinSpaced(fl0_all.size(), 0, fl0_all.size()-1);
     rfit=linfit(xfit, fl0_all); // fit[0] is the slope ==> Dnu and fit[1] is the ordinate at origin ==> fit[1]/fit[0] = epsilon
     Dnu_p=rfit[0];
     epsilon=rfit[1]/rfit[0];
@@ -5014,7 +4619,8 @@ VectorXd model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4(const VectorXd& params,
     //const Data_eigensols freqs_l1=solve_mm_asymptotic_O2from_nupl(fl1p_all, 1, delta0l, DPl, alpha_g, q_star, 0, step, true, false, fmin, fmax); // note that we use the true data resolution (step) for optimising computation
     if (model_type == 0){
         VectorXd xfit, rfit;
-        xfit=linspace(0, fl0_all.size()-1, fl0_all.size());
+        //xfit=linspace(0, fl0_all.size()-1, fl0_all.size());
+        xfit = Eigen::VectorXd::LinSpaced(fl0_all.size(), 0, fl0_all.size()-1);
         rfit=linfit(xfit, fl0_all); // rfit[0] = Dnu
         const double Dnu_p=rfit[0];
         const int n0=floor(rfit[1]/Dnu_p);
@@ -5402,28 +5008,13 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
     const double rot_env=std::abs(params[Nmax + lmax + Nf]);
     const double rot_core=std::abs(params[Nmax + lmax + Nf+1]);
     VectorXd ksi_pg, h1_h0_ratio,f_interp, h_interp;
- //   std::cout << params << std::endl;
- //   std::cout << " " << std::endl;
- //   std::cout << " i0=" << Nmax+ lmax + Nfl0 + 8 << std::endl;
- //   std::cout << " Nferr = " << Nferr << std::endl;
     for (int i=0;i<Nferr; i++){
         fref_all[i]=params[Nmax+ lmax + Nfl0 + 8 + i];        
         ferr_all[i]=params[Nmax+ lmax + Nfl0 + 8 + Nferr + i];
- //       std::cout << fref_all[i]  << "   " << ferr_all[i] << std::endl;
     }
-    //unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    //std::default_random_engine gen_m(seed);    
-    //std::normal_distribution<double> distrib_fl1m(0.,sigma_m_l1);
-    //std::normal_distribution<double> distrib_Hl1m(0.,sigma_H_l1);
-    
- //   exit(EXIT_SUCCESS);
     // bias type setup
     tk::spline bias; // declare a bias
-    //tk::spline bias(fref_all, ferr_all);
-    if (bias_type == 0){ // WINDOW CASE
-        std::cout << " Windows case not implemented... Use cubic or hermite spline instead" << std::endl;
-        exit(EXIT_SUCCESS);
-    } else{
+    if (bias_type != 0){ // 0 is No bias case. Defined when priors are set to fix in the hyper priors
         bias.set_boundary(tk::spline::second_deriv, 0.0, tk::spline::second_deriv, 0.0); // imposes second derivative to 0 at the edge (extrapolation if happens will be linear)
         if (bias_type == 1){ // CUBIC SPLINE
             bias.set_points(fref_all,ferr_all,tk::spline::cspline);     // this calculates all spline coefficients   
@@ -5435,79 +5026,29 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
 
     const double fmin=fl0_all.minCoeff(); // This is to avoid a change in the number of modes
     const double fmax=fl0_all.maxCoeff();  // This is to avoid a change in the number of modes 
-    //const Data_eigensols freqs_l1=solve_mm_asymptotic_O2from_nupl(fl1p_all, 1, delta0l, DPl, alpha_g, q_star, 0, step, true, false, fmin, fmax); // note that we use the true data resolution (step) for optimising computation
     VectorXd xfit, rfit;
-    xfit=linspace(0, fl0_all.size()-1, fl0_all.size());
+    xfit = Eigen::VectorXd::LinSpaced(fl0_all.size(), 0, fl0_all.size()-1);
     rfit=linfit(xfit, fl0_all); // rfit[0] = Dnu
     const double Dnu_p=rfit[0];
     const int n0=floor(rfit[1]/Dnu_p);
     const double epsilon_p = rfit[1]/Dnu_p -n0;
     if (model_type == 0){
-        //std::cout << " ---- 1st Order Fit ----" << std::endl;
-        //std::cout << " Dnu_p =" << rfit[0] << std::endl;
-        //std::cout << " epsilon_p + n0 =" << rfit[1]/rfit[0] << std::endl;
-        //std::cout << " ---- 2nd Order Fit ----" << std::endl;
-        //rfit=polyfitXd(xfit, fl0_all, 2); // rfit[0] = A, rfit[1]=B, rfit[2]=C : alpha_p=2 C / Dnu_p   ; nmax = (1 - B/Dnu_p)/alpha_p ; epsilon = A/Dnu_p - alpha_p * nmax^2 / 2
-        //const long double alpha_p=2 *rfit[2]/Dnu_p;
-        //const long double nmax = (1-rfit[1]/Dnu_p)/alpha_p;
-        //const long double n0=floor(rfit[1]/Dnu_p - alpha_p * pow(nmax,2) / 2);
-        //const long double epsilon_p = rfit[1]/Dnu_p - alpha_p * pow(nmax,2) / 2 - n0; // remove n0
-        /*
-        std::cout << " A=rfit[0] =" << rfit[0] << std::endl;
-        std::cout << " B=rfit[1] =" << rfit[1] << std::endl;
-        std::cout << " C=rfit[2] =" << rfit[2] << std::endl;
-        std::cout << " alpha_p=" << alpha_p << std::endl;    
-        std::cout << " nmax =" << nmax << std::endl;
-        std::cout << " n0 = " << n0 << std::endl;
-        std::cout << " epsilon_p =" << epsilon_p  << std::endl; // epsilon = (n0 + epsilon) - n0
-        std::cout << " fl0_all=  " << fl0_all.transpose() << std::endl;
-        std::cout << " fitted frequencies: " << std::endl;
-        for (int i=0; i<xfit.size();i++){
-            std::cout <<   rfit[0] +  rfit[1]*xfit[i] + rfit[2]*pow(xfit[i],2) << std::endl;
-        }
-        std::cout << " --- " << std::endl;
-        //exit(EXIT_SUCCESS);
-        std::cout << " asymptotic..." << std::endl;
-        std::cout << "delta0l =" << delta0l << std::endl;
-        std::cout << "DPl =" << DPl << std::endl;
-        std::cout << "alpha_g =" << alpha_g << std::endl;
-        std::cout << "q_star =" << q_star << std::endl;
-        std::cout << "Hfactor =" << Hfactor << std::endl;
-        std::cout << "rot_env =" << rot_env << std::endl;
-        std::cout << "rot_core =" << rot_core << std::endl;
-        std::cout << "fmin =" << fmin << "   fmax =" << fmax << std::endl;
-        std::cout << " Getting inside solver:" << std::endl;
-        */
-        //freqs_l1=solve_mm_asymptotic_O2p(Dnu_p, epsilon_p, 1, delta0l, alpha_p, nmax, DPl, alpha_g, q_star, 0, fmin - Dnu_p, fmax + Dnu_p, step, true, false);
         freqs_l1=solve_mm_asymptotic_O2p(Dnu_p, epsilon_p, 1, delta0l, 0, 0., DPl, alpha_g, q_star, 0, fmin - Dnu_p, fmax + Dnu_p, step, true, false);
-        //std::cout << " Getting outside solver " << std::endl;
-        /*
-        std::cout << "Dnu_p = " << Dnu_p << std::endl;
-        std::cout << " freqs_l1.nu_p = " << freqs_l1.nu_p.transpose() << std::endl;
-        std::cout << " freqs_l1.nu_g = " << freqs_l1.nu_g.transpose() << std::endl;
-        std::cout << " freqs_l1.nu_m = " << freqs_l1.nu_m.transpose() << std::endl;
-        std::cout << " --- " << std::endl;
-        */
-        //exit(EXIT_SUCCESS);
     } else{
         freqs_l1=solve_mm_asymptotic_O2from_l0(fl0_all, 1, delta0l, DPl, alpha_g, q_star, 0, step, true, false, fmin, fmax);
     }
     fl1_all=freqs_l1.nu_m;
 
     // Adding the bias function to the vector fl1_all
-
-//  std::cout << " fl1     /   bias     /   Total " << std::endl;
-    b.resize(fl1_all.size());
-    b.setZero();
-    
-    /*
-    for (int i=0; i< fl1_all.size(); i++){
-        b[i]=bias(fl1_all[i]);
-        //std::cout << fl1_all[i] << "  ";
-        fl1_all[i] = fl1_all[i] + b[i];
-        //std::cout << bias(fl1_all[i]) << "  "  << fl1_all[i] << std::endl;
+    if (bias_type !=0){
+        b.resize(fl1_all.size());
+        b.setZero();
+        for (int i=0; i< fl1_all.size(); i++){
+            b[i]=bias(fl1_all[i]);
+            fl1_all[i] = fl1_all[i] + b[i];
+            std::cout << bias(fl1_all[i]) << "  "  << fl1_all[i] << std::endl;
+        }
     }
-    */
      // Generating widths profiles for l=1 modes using the ksi function
     ksi_pg=ksi_fct2(fl1_all, freqs_l1.nu_p, freqs_l1.nu_g, freqs_l1.dnup, freqs_l1.dPg, q_star, "precise"); //"precise" // assume Dnu_p, DPl and q constant
     h1_h0_ratio=h_l_rgb(ksi_pg, Hfactor); // WARNING: Valid assummption only not too evolved RGB stars (below the bump, see Kevin mail 10 August 2019).
@@ -5540,25 +5081,13 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
 
         }
     }
-
     Hl1_all=h1_h0_ratio.cwiseProduct(Hl1p_all*Vl1);
-    /*if (sigma_H_l1 != 0){
-        for (int i=0; i<Hl1_all.size();i++){
-             r = distrib_fl1m(gen_m);
-             while ((1+r) < 0){ // Avoid negative heights
-                r = distrib_fl1m(gen_m);
-             }
-             tmp=tmp*(1 + r); // Perturbation proportional to the actual value
-        }
-    }
-    */
     Wl1_all=gamma_l_fct2(ksi_pg, fl1_all, fl0_all, Wl0_all, h1_h0_ratio, 1, Wfactor); // generate the mixed modes widths // Added on 28 Apr: Wfactor: in front of the ksi fonction: recommended to have a alpha ~ N(1,sigma=0.1)
     // Generating splittings with a two-zone averaged rotation rates
     a1_l1=dnu_rot_2zones(ksi_pg, rot_env, rot_core);
     a1_l1=a1_l1.array().abs();
     a1_l2.setConstant(std::abs(rot_env));
     a1_l3.setConstant(std::abs(rot_env));
-    //eta=params[Nmax + lmax + Nf + 2];
     eta0=eta0_fct(fl0_all);
     a3=params[Nmax + lmax + Nf + 3];
     asym=params[Nmax+lmax + Nf + 4];
@@ -5600,7 +5129,6 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
         e=2.*log(fl2/gamma_params[1]) / log(gamma_params[4]/gamma_params[0]);
         lnLorentz=-log(gamma_params[5])/(1. + pow(e,2));     
         Wl2=exp(lnGamma0 + lnLorentz);
-        //std::cout << "Wl2=" << Wl2 << std::endl;
         if(do_amp){
             Hl2=lin_interpol(fl0_all, Hl0_all, fl2);
             Hl2=std::abs(Hl2/(pi*Wl2)*Vl2);
@@ -5615,7 +5143,6 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
         }     
     }
 
-//    std::cout << "--------------- " << std::endl;
     for(long n=0; n<Nfl3; n++){ 
         fl3=std::abs(params[Nmax+lmax+Nfl0+Nfl1+Nfl2+n]);
         lnGamma0=gamma_params[2] * log(fl3/gamma_params[0]) + log(gamma_params[3]);
@@ -5635,16 +5162,12 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
             Line=Line+1;
         }  
     }           
-//    std::cout << "--------------- " << std::endl;
     /* -------------------------------------------------------
        ------- Gathering information about the noise ---------
        -------------------------------------------------------
     */
-    //std::cout << "Before computing noise model" << std::endl;
     noise_params=params.segment(Nmax+lmax+Nf+Nsplit+Nwidth, Nnoise);
-    Nharvey=(Nnoise-1)/3;
-    //std::cout << "Nharvey = " << Nharvey << std::endl;
-        
+    Nharvey=(Nnoise-1)/3;        
     /* -------------------------------------------------------
        ---------- Computing the mode of the noise ------------
        -------------------------------------------------------
@@ -5658,7 +5181,6 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
         global_mixed_modes_name_params[6] = "DPl"       ; global_mixed_modes_name_params[7] = "alpha_g"; global_mixed_modes_name_params[8] = "q_star"; 
         global_mixed_modes_name_params[9] = "sigma_p";
         if (model_type == 0){
-            //global_mixed_mode_name_params = "model_type, Dnu_p, epsilon_p, delta0l , alpha_p, nmax, DPl, alpha_g, q_star, sigma_p"
             global_mixed_modes_params << model_type, Dnu_p , epsilon_p , delta0l , 0 , 0 , DPl , alpha_g , q_star , 0;
         } else{
             global_mixed_modes_params << model_type, -1 , -1 , delta0l , 0 , 0 , DPl , alpha_g , q_star , 0;            
@@ -5667,23 +5189,18 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
         for(L=0;L<freqs_l1.nu_m.size();L++){
             k=0;
             included=0;
-            //std::cout << "       freqs_l1.nu_m[" << L << "] = " << freqs_l1.nu_m[L] << std::endl;
             while((fl1_all[k]- b[k] != freqs_l1.nu_m[L]) && k<fl1_all.size()-1){
-                //std::cout << "                   fl1_all[" << k << "] =" << fl1_all[k] - b[k] << "        b =" << b[k] << std::endl;
                 k=k+1;
             }
             if(fl1_all[k] - b[k] == freqs_l1.nu_m[L]){
                 included=1;
             }
-            //std::cout << " final k:" << k <<  "    fl1_all[k] - b[k] = " << fl1_all[k] - b[k]  << "    " << freqs_l1.nu_m[L] << std::endl;
-            //std::cout << " --- " << std::endl;
             if(included == 0){
                 mixed_modes_params.row(L) << 1, freqs_l1.nu_m[L], included, -1 , -1 , -1 , -1, -1 , -1;
             } else{
                 mixed_modes_params.row(L) << 1, freqs_l1.nu_m[L], included, b[k], ksi_pg[k], h1_h0_ratio[k], Hl1p_all[k], Hl1_all[k], Wl1_all[k];
             }   
         }
-
         // Writing on files all of the data 
         int c=0;
         std::string file_out="params.model";
@@ -5700,7 +5217,6 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
            }
         }
         noise(Nharvey, 0) = noise_params(c); // White noise 
-        //write_star_params(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, file_out, modelname, name_params);
         write_star_params_mixed(spec_params, params, params_length, mode_params.block(0,0, Line, mode_params.cols()), noise, 
                         file_out, modelname, name_params, mixed_modes_params, mixed_modes_name_params,
                         global_mixed_modes_params,  global_mixed_modes_name_params, freqs_l1.nu_p, freqs_l1.nu_g);
@@ -5713,7 +5229,6 @@ VectorXd model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(const VectorXd& params,
             outfile << params.transpose() << std::endl;
         outfile.close();
     }
-    //exit(EXIT_SUCCESS);
     return model_final;
 }
 
@@ -6811,28 +6326,10 @@ bool debug_solver(const VectorXd& x, const VectorXd& fl1_all, const VectorXd& fl
     return error;
 }
 
-
-// ------ Common ------
-/*
-double eta0_fct(const VectorXd& fl0_all){
-    const double G=6.667e-8;
-    const double Dnu_sun=135.1;
-    const double R_sun=6.96342e5; //in km
-    const double M_sun=1.98855e30; //in kg
-    const double rho_sun=M_sun*1e3/(4*M_PI*std::pow(R_sun*1e5,3)/3); //in g.cm-3
-    double rho, eta0;
-    VectorXd xfit, rfit;
-    xfit=linspace(0, fl0_all.size()-1, fl0_all.size());
-    rfit=linfit(xfit, fl0_all); // rfit[0] = Dnu 
-    rho=pow(rfit[0]/Dnu_sun,2.) * rho_sun;
-    //eta0=3./(4.*M_PI*rho*G); WRONG DUE TO WRONG ASSUMPTION OMEGA ~ a1. It SHOULD BE OMEGA ~ 2.pi.a1
-    eta0=3.*M_PI/(rho*G);
-    return eta0;
-}
-*/
 double eta0_fct(const VectorXd& fl0_all){
     VectorXd xfit, rfit;
-    xfit=linspace(0, fl0_all.size()-1, fl0_all.size());
+    //xfit=linspace(0, fl0_all.size()-1, fl0_all.size());
+    xfit = Eigen::VectorXd::LinSpaced(fl0_all.size(), 0, fl0_all.size()-1);
     rfit=linfit(xfit, fl0_all); // rfit[0] = Dnu 
     return eta0_fct(rfit[0]);
 }

@@ -7,7 +7,7 @@
 #include "GaussLegendre2D.hpp"
 #include <Eigen/Dense>
 #include "activity.h"
-#include "linspace.h"
+//#include "linspace.h"
 #include "bilinear_interpol.h"
 
 using Eigen::VectorXd;
@@ -164,7 +164,8 @@ long double gauss_filter_cte(const long double theta0, const long double delta){
 		  0         theta0      pi/2    pi-theta0      pi
 	*/
 
-	VectorXd theta= linspace(0, M_PI, 200);
+	//VectorXd theta= linspace(0, M_PI, 200);
+	VectorXd theta = Eigen::VectorXd::LinSpaced(200, 0, M_PI);
 	VectorXd F;
 	F=gauss_filter(theta, theta0, delta);
 	return F.maxCoeff();

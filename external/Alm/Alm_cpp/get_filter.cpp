@@ -6,7 +6,7 @@
 #include "GaussLegendre2D.hpp"
 #include <Eigen/Dense>
 #include "activity.h"
-#include "linspace.h"
+//#include "linspace.h"
 #include "string_handler.h"
 
 void usage(int argc, char* argv[]);
@@ -48,7 +48,8 @@ int main(int argc, char* argv[]){
 			range[1]=M_PI/2;
 		}
 	}
-	theta=linspace(range[0], range[1], Npts);
+	//theta=linspace(range[0], range[1], Npts);
+	theta=Eigen::VectorXd::LinSpaced(Npts, range[0], range[1]);
 	theta0_limit=M_PI;
 	if (ftype != "gauss" && ftype != "gate" && ftype != "triangle"){
 		std::cout << "Error for ftype: Only 'gate', 'gauss' or 'triangle' is allowed" << std::endl;

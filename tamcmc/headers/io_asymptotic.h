@@ -4,7 +4,6 @@
 #include <vector>
 #include <string>
 #include "data.h" // contains the structure Data
-//#include "string_handler.h"
 #include "io_models.h"
 #include "function_rot.h"
 #include "io_ms_global.h"

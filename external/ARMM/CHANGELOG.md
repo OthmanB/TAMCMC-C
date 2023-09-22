@@ -1,3 +1,36 @@
+### 1.10 ##
+	Major changes:
+		- optimisation of linfit: gain of x2, see unit test
+		- optimisation and careful parallelisation of ksi_fct2. Gains increases drastically up to 4 cores according unit tests. 
+		- optimisation and careful parallelisation for *O2 *froml0 and *from_npl. a typical gain of core/2 (eg 4 thread ==>  x2)
+		- replacement of my own linspace by the Eigen one. Gives a few % gains
+		- proper handling of openMP in the cmake file. And addition of the apple switch. 
+		  note that for MAC OS, you need to install with brew llvm and use the correct CXX and C flags to their own clang and clang++ version. Otherwise, OPEN_MP is not recognized
+### 1.00 ##
+	Major changes:
+                - Included options handling in ARMMSolver. 
+                - Scan_range_solver: New program that use ARMMSolver iteratively to scan a range of values for a given parameter. Check options with the --help option
+                - Old tests function were removed.
+ 
+### 0.76 ##
+	- Adding a cmake compilation capability that generate 3 executables in a bin directory:
+		- ARMMsolver executable: built using the do_solve.cpp as a main program
+		- solver_test executable: built using the test.cpp as a main program
+		- solver_test2 executable: built using the main.cpp as a main program
+	Note that the last two are basically testing programs (despite the name of the cpp file of the second one)
+	The first one is the only one that is supposed to be the main program
+
+### 0.75 ##
+	- Adding new elements in cfg_star in order to allow the user to provide Stellar model-based input frequencies instead of asymptotic. Note that the asymptotic is still used to compute Widths, Heights and rotation for the two zone case. The new parameters are:
+			- cfg_star.nu_nl : Input frequencies to be used for l=0, l=1, l=2 and l=3. Must be a matrix type
+			- cfg_star.use_nu_nl : If true, uses the frequencies provided in cfg_star.nu_nl
+	Note that the following (old) parameters MUST also be provided in order for the function work:
+			- cfg_star.Dnu_star : Can be calculated eg from a stellar model sound speed
+			- cfg_star.DPl_star : Can also be calculated theoretically
+			- cfg_star.q_star
+			- cfg_star.alpha_g_star
+	epsilon_p_star delta_0l will be calculated within make_synthetic_asymptotic_star, if cfg_star.use_nu_nl = true
+
 ### 0.7 ###
         - Adding parallelisation in solve_mm_asymptotic_O2from_l0() and solve_mm_asymptotic_O2from_nupl() with fixed 4 threads. Not added to solve_mm_asymptotic_O2p()
         - Adding a filter to avoid any computation when nu_g is beyond the numin / numax range provided in solver_mm(). Might be faster for large number of nu_g

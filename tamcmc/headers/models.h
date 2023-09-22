@@ -2,7 +2,6 @@
  *  Created on: 02 Mar 2016
  */
 #pragma once
-//#include "noise_models.h"
 #include "build_lorentzian.h"
 #include <vector>
 #include "../../external/Alm/Alm_cpp/data.h"

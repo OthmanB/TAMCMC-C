@@ -11,11 +11,6 @@
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
-//double combi(int n, int r);
-//double dmm(int l, int m1, int m2, double beta);
-//int factorial(int n);
-//MatrixXd function_rot( int l, double beta);
-//VectorXd amplitude_ratio(int l, double beta);
 
 VectorXd amplitude_ratio(const int l,  const double beta){
 /* Main function that calculates the mode visibilities

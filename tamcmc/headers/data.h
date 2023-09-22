@@ -15,8 +15,6 @@
 #include "gnuplot-iostream.h"
 #include "../../external/Alm/Alm_cpp/data.h" // To load interpolation grids
 
-//using namespace std;
-
 using Eigen::MatrixXd;
 using Eigen::VectorXi;
 using Eigen::VectorXd;

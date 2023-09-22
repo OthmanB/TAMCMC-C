@@ -23,12 +23,12 @@
 #include "interpol.h"
 #include "noise_models.h" // get the harvey_1985 function
 #include "solver_mm.h"
+#include "bump_DP.h"
 #ifdef _OPENMP
    #include <omp.h>
 #else
    #define omp_get_thread_num() 0
 #endif
-
 /*
 # the ksi function as defined in equation 14 of Mosser+2017 (https://arxiv.org/pdf/1509.06193.pdf)
 # Inputs: 
@@ -59,22 +59,9 @@ VectorXd ksi_fct1(const VectorXd& nu, const long double nu_p, const long double 
 	tmp.setConstant(1);
 	ksi=front_term.cwiseProduct(tmp2);
 	ksi=(tmp + ksi).cwiseInverse();
-
-/*
-	std::cout << "---- Debug ksi_fct1 ----" << std::endl;
-	std::cout << "nu_p = " << nu_p << std::endl;
-	std::cout << "nu_g = " << nu_g << std::endl;
-	std::cout << "cos_upterm =" << cos_upterm << std::endl;
-	std::cout << "cos_downterm =" << cos_downterm << std::endl;
-	std::cout << "front_term =" << front_term << std::endl;
-	std::cout << "front * cos^2/sin^2 =" << front_term.cwiseProduct(tmp2) << std::endl;
-	std::cout << "ksi = " << ksi << std::endl;
-	std::cout << "-----" << std::endl;
-	std::cout << "-----" << std::endl;
-	exit(EXIT_SUCCESS);
-*/
 	return ksi;
 }
+
 
 /*
 # Variant of ksi_fct that deals with arrays for nu_p, nu_g, Dnu_p, DPl
@@ -88,67 +75,95 @@ VectorXd ksi_fct1(const VectorXd& nu, const long double nu_p, const long double 
 #				   This could be usefull as in case of low ng, the norm is badly estimated in
 #				   "fast" mode. Then we need to use a more continuous function to evaluate the norm
 */
-VectorXd ksi_fct2(const VectorXd& nu, const VectorXd& nu_p, const VectorXd& nu_g, const VectorXd& Dnu_p, const VectorXd& DPl, const long double q, const std::string norm_method="fast")
+Eigen::VectorXd ksi_fct2(const Eigen::VectorXd& nu, const Eigen::VectorXd& nu_p, const Eigen::VectorXd& nu_g, const Eigen::VectorXd& Dnu_p, const Eigen::VectorXd& DPl, const long double q, const std::string norm_method)
 {
-	const int Lp=nu_p.size();
-	const int Lg=nu_g.size();
-	const long double resol=1e6/(4*365.*86400.); // Fix the grid resolution to 4 years (converted into microHz)
-
-	VectorXd ksi_tmp, ksi_pg(nu.size()), nu4norm, ksi4norm;
-
-	int Ndata;
-	long double norm_coef, fmin,fmax;
-
-	ksi_pg.setConstant(nu.size());
-	ksi_pg.setZero();
-#pragma omp parallel for default(shared) private(ksi_tmp)
-	for (int np=0; np<Lp;np++)
-	{
-		for (int ng=0; ng<Lg; ng++)
-		{
-			ksi_tmp=ksi_fct1(nu, nu_p[np], nu_g[ng], Dnu_p[np], DPl[ng], q);
-			ksi_pg=ksi_pg + ksi_tmp;
+    const int Lp = nu_p.size();
+    const int Lg = nu_g.size();
+    const long double resol = 1e6 / (4 * 365. * 86400.); // Fix the grid resolution to 4 years (converted into microHz)
+    Eigen::VectorXd ksi_tmp, ksi_pg(nu.size()), nu_highres, ksi_highres;
+    int Ndata;
+    long double norm_coef, fmin, fmax;
+    ksi_pg.setZero();
+    if (norm_method == "fast"){
+		for (int np = 0; np < Lp; np++){
+			for (int ng = 0; ng < Lg; ng++){
+				ksi_tmp = ksi_fct1(nu, nu_p[np], nu_g[ng], Dnu_p[np], DPl[ng], q);
+				ksi_pg = ksi_pg + ksi_tmp;
+			}
 		}
-	}
-	if (norm_method == "fast"){
-		norm_coef=ksi_pg.maxCoeff();
-	}
-	else
-	{ // We build a very resolved 'continuous function of the frequency to calculate the norm'
-		if (nu_p.minCoeff() >= nu_g.minCoeff()){
-			fmin=nu_g.minCoeff();
-		} else{
-			fmin=nu_p.minCoeff();
-		}
-		if (nu_p.maxCoeff() >= nu_g.maxCoeff()){
-			fmax=nu_p.maxCoeff();
-		} else{
-			fmax=nu_g.maxCoeff();
-		}
-		Ndata=int((fmax-fmin)/resol);
-		nu4norm=linspace(fmin, fmax, Ndata);
-		ksi4norm.resize(nu4norm.size());
-		ksi4norm.setZero();
-#pragma omp parallel for default(shared) private(ksi_tmp)
-		for (int np=0; np<Lp; np++){
-			for (int ng=0; ng<Lg; ng++){
-				ksi_tmp=ksi_fct1(nu4norm, nu_p[np], nu_g[ng], Dnu_p[np], DPl[ng], q);
-				ksi4norm=ksi4norm + ksi_tmp;
-			}	
-		}
-		norm_coef=ksi4norm.maxCoeff();
-	}
-	ksi_pg=ksi_pg/norm_coef;
-	// Ensuring that round off error don't lead to values higher than 1...
-	for(int i=0; i<ksi_pg.size(); i++){
-		if (ksi_pg[i]>1){
-			ksi_pg[i]=1;
-		}
-	}
-	return ksi_pg;
+        norm_coef = ksi_pg.maxCoeff();
+		ksi_pg = ksi_pg / norm_coef;
+        // Ensuring that round-off errors don't lead to values higher than 1...
+        for (int i = 0; i < ksi_pg.size(); i++){
+            if (ksi_pg[i] > 1){
+                ksi_pg[i] = 1;
+            }
+        }
+    } else{
+        ksi_pg=ksi_fct2_precise(nu, nu_p, nu_g, Dnu_p, DPl, q);
+    }
+    return ksi_pg;
 }
 
-VectorXd gamma_l_fct2(const VectorXd& ksi_pg, const VectorXd& nu_m, const VectorXd& nu_p_l0, const VectorXd& width_l0, const VectorXd& hl_h0_ratio, const int el, const long double factor=1.0)
+Eigen::VectorXd ksi_fct2_precise(const Eigen::VectorXd& nu, const Eigen::VectorXd& nu_p, const Eigen::VectorXd& nu_g, const Eigen::VectorXd& Dnu_p, const Eigen::VectorXd& DPl, const long double q)
+{
+	// A slightly more optimized version since 17 Sept 2023. 10% performance increase + proper omp implementation
+    const int Lp = nu_p.size();
+    const int Lg = nu_g.size();
+    const long double resol = 1e6 / (4 * 365. * 86400.); // Fix the grid resolution to 4 years (converted into microHz)
+    const long double fmin = (nu_p.minCoeff() >= nu_g.minCoeff()) ? nu_g.minCoeff() : nu_p.minCoeff();
+    const long double fmax = (nu_p.maxCoeff() >= nu_g.maxCoeff()) ? nu_p.maxCoeff() : nu_g.maxCoeff();
+    const int Ndata = int((fmax - fmin) / resol);
+    const Eigen::VectorXd nu_highres = Eigen::VectorXd::LinSpaced(Ndata, fmin, fmax);
+    Eigen::VectorXd ksi_pg(nu.size());//, ksi_tmp(nu.size());
+    ksi_pg.setZero();
+    #pragma omp parallel for shared(ksi_pg)
+    for (int np = 0; np < Lp; np++)
+    {
+        Eigen::VectorXd ksi2_local(nu.size());
+        ksi2_local.setZero();
+        for (int ng = 0; ng < Lg; ng++){           
+            // The function of interest
+            ksi2_local += ksi_fct1(nu, nu_p[np], nu_g[ng], Dnu_p[np], DPl[ng], q); //ksi_fct1(nu, nu_p, nu_g, Dnu_p, DPl, q, np, ng);
+        }
+        #pragma omp critical
+        {
+            ksi_pg += ksi2_local;
+        }  
+    }
+    Eigen::VectorXd ksi_highres(nu_highres.size());
+    ksi_highres.setZero();
+    #pragma omp parallel for shared(ksi_highres)
+    for (int np = 0; np < Lp; np++)
+    {
+        Eigen::VectorXd ksi2_highres_local(nu_highres.size());
+        ksi2_highres_local.setZero();
+        for (int ng = 0; ng < Lg; ng++){           
+            // The function of interest
+            ksi2_highres_local += ksi_fct1(nu_highres, nu_p[np], nu_g[ng], Dnu_p[np], DPl[ng], q);//ksi_fct1(nu_highres, nu_p, nu_g, Dnu_p, DPl, q, np, ng);
+        }
+        #pragma omp critical
+        {
+            ksi_highres += ksi2_highres_local;
+        }
+    }
+    //#pragma omp barrier
+    const long double norm_coef = ksi_highres.maxCoeff();
+    ksi_pg=ksi_pg/norm_coef;
+    
+	#pragma omp parallel for
+    for (int i = 0; i < nu.size(); i++)
+    {
+        if (ksi_pg[i] > 1)
+        {
+            ksi_pg[i] = 1;
+        }
+    }  
+    return ksi_pg;
+}
+
+
+VectorXd gamma_l_fct2(const VectorXd& ksi_pg, const VectorXd& nu_m, const VectorXd& nu_p_l0, const VectorXd& width_l0, const VectorXd& hl_h0_ratio, const int el, const long double factor)
 {
 	long double width0_at_l;
 	VectorXd width_l(ksi_pg.size());
@@ -166,18 +181,11 @@ VectorXd gamma_l_fct2(const VectorXd& ksi_pg, const VectorXd& nu_m, const Vector
 			width0_at_l=lin_interpol(nu_p_l0, width_l0, nu_m[i]);
 			width_l[i]=width0_at_l * (1. - factor*ksi_pg[i])/ std::sqrt(hl_h0_ratio[i]);
 		}
-		// ---- DEBUG LINES ----
-		//std::cout << "   DEBUG FOR gamma_l_fct2..." << std::endl;
-		//std::cout << "ksi_pg     ,   width_l    ,   hl_h0_ratio" << std::endl;
-		//for (int i=0; i<ksi_pg.size(); i++)
-		//{
-		//	std::cout << ksi_pg[i] << "    " << width_l[i] << "    "  << hl_h0_ratio[i] << std::endl;
-		//}
 	}
 	return width_l;
 }
 
-VectorXd h_l_rgb(const VectorXd& ksi_pg, const long double factor=1.0)
+VectorXd h_l_rgb(const VectorXd& ksi_pg, const long double factor)
 {
 	const double tol=1e-5;
 	VectorXi pos;
@@ -194,18 +202,11 @@ VectorXd h_l_rgb(const VectorXd& ksi_pg, const long double factor=1.0)
 			hl_h0[pos[i]] = 1e-10;
 		}
 	}
-	// --- DEBUG LINES ---
-	//std::cout << "   DEBUG FOR h_l_rgb..." << std::endl;
-	//std::cout << "  ksi_pg       hl_l0 " << std::endl;
-	//for (int i=0; i<ksi_pg.size(); i++)
-	//{
-	//	std::cout << ksi_pg[i] << "    " << hl_h0[i] << std::endl;
-	//}
 	return hl_h0;
 }
 
 // Put here the code for reading template files that contain heights and width profiles
-template_file read_templatefile(const std::string file, const bool ignore_errors=true){
+template_file read_templatefile(const std::string file, const bool ignore_errors){
 
 	const std::string delimiter="=";
 	const int Ncols=3;
@@ -365,7 +366,7 @@ Data_2vectXd width_height_load_rescale(const VectorXd& nu_star, const long doubl
 // distribution of rotation in the envelope and a uniform population of core-to-envelope ratios 
 // 	 (1) rot_envelope: average rotation in the envelope
 //	 (2) core2envelope_star: average rotation in the core 
-Data_rot2zone rot_2zones_v2(const long double rot_envelope, const long double core2envelope_star, std::string output_file_rot=" ")
+Data_rot2zone rot_2zones_v2(const long double rot_envelope, const long double core2envelope_star, std::string output_file_rot)
 {
 
 	Data_rot2zone rot2data;
@@ -395,7 +396,7 @@ Data_rot2zone rot_2zones_v2(const long double rot_envelope, const long double co
 // distribution of rotation in the envelope and a uniform population of core rotation
 // 	 (1) rot_envelope: average rotation in the envelope
 //	 (2) rot_core: average rotation in the core 
-Data_rot2zone rot_2zones_v3(const long double rot_envelope, const long double rot_core, std::string output_file_rot=" ")
+Data_rot2zone rot_2zones_v3(const long double rot_envelope, const long double rot_core, std::string output_file_rot)
 {
 	Data_rot2zone rot2data;
 	std::ofstream outfile;
@@ -422,7 +423,7 @@ Data_rot2zone rot_2zones_v3(const long double rot_envelope, const long double ro
 // The truncation happens at sigma. Values are given in days
 // Returns: 
 //	rot_s: rotation frequency in microHz
-long double rot_envelope(long double med=60., long double sigma=3.)
+long double rot_envelope(long double med, long double sigma)
 {
 	const long double var=30./sigma; // in days
 	
@@ -457,10 +458,7 @@ long double rot_envelope(long double med=60., long double sigma=3.)
 */
 VectorXd dnu_rot_2zones(const VectorXd& ksi_pg, const long double rot_envelope, const long double rot_core)
 {
-	//VectorXd rc(ksi_pg.size()), re(ksi_pg.size());
 	VectorXd re(ksi_pg.size());
-
-	//rc.setConstant(rot_core/2);
 	re.setConstant(rot_envelope);
 
 	return ksi_pg*(rot_core/2 - rot_envelope) + re;
@@ -478,7 +476,6 @@ long double numax_from_stello2009(const long double Dnu_star, const long double 
 	const long double beta1=0.77; // according to Stello+2009, we have Dnu_p ~ 0.263*numax^0.77 (https://arxiv.org/pdf/0909.5193.pdf)
 	
 	long double  nu_max=std::pow(10, std::log10(Dnu_star/beta0)/beta1);
-//	std::cout <<"nu_max=", nu_max)	
 	if (std::abs(spread)>0) // Add a unifrom spread around numax, spread must be given in fraction (eg 5% is 0.05)
 	{	
 		std::uniform_real_distribution<double> distrib(nu_max*(1.-std::abs(spread)),nu_max*(1. + std::abs(spread)));
@@ -487,8 +484,6 @@ long double numax_from_stello2009(const long double Dnu_star, const long double 
 	{
 		std::cout << "Spread argument in bump_DP.cpp::numax_from_stello2009() is 0 or negative... Ignoring it" << std::endl;
 	}
-//	std::cout <<"spread: ", spread)
-//	std::cout <<"New nu_max=", nu_max)
 	return nu_max;
 }
 
@@ -525,12 +520,10 @@ long double numax_from_stello2009(const long double Dnu_star, const long double 
 #	width_lx: Widths of the l=x modes. x is between 0 and 3
 #   height_lx: Heights of the l=x modes. x is between 0 and 3 
 */
-
 Params_synthetic_star make_synthetic_asymptotic_star(Cfg_synthetic_star cfg_star)
 {
 	std::random_device rd;
 	std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-	//std::uniform_real_distribution<double> distrib(xmin,xmax);
 	std::uniform_real_distribution<double> distrib(0 , 1);
 
 	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
@@ -546,7 +539,9 @@ Params_synthetic_star make_synthetic_asymptotic_star(Cfg_synthetic_star cfg_star
 	VectorXd nu_l0, nu_m_l1, nu_l2, nu_l3, 
 		height_l0, height_l1, height_l2, height_l3, height_l1p, 
 		width_l0, width_l1, width_l2, width_l3,
-		a1_l1, a1_l2, a1_l3; // Simulate a single harvey profile
+		a1_l1, a1_l2, a1_l3, // Average rotations
+		a2_l1, a2_l2, a2_l3, a4_l2, a4_l3, a6_l3, // Activity or Magnetic effects
+		a3_l2, a3_l3, a5_l3; // Latitudinal differential rotation effects
 
 	Data_2vectXd width_height_l0;
 	Data_rot2zone rot2data;
@@ -566,7 +561,6 @@ Params_synthetic_star make_synthetic_asymptotic_star(Cfg_synthetic_star cfg_star
 
 	// Fix the resolution to 4 years (converted into microHz)
 	resol=1e6/(4*365.*86400.);
-
 	// ----- l=0 modes -----
 	// This section generate l=0 modes following the asymptotic relation of p modes, and make
 	// rescaled width and height profiles for the star using the solar width and height profiles
@@ -581,8 +575,6 @@ Params_synthetic_star make_synthetic_asymptotic_star(Cfg_synthetic_star cfg_star
 	{
 		np_min=1;
 	}
-//	std::cout << "np_min =" << np_min << std::endl;
-//	std::cout << "np_max =" << np_max << std::endl;
 	nu_l0.resize(np_max-np_min);
 	for (en=np_min; en<np_max; en++)
 	{
@@ -625,10 +617,9 @@ Params_synthetic_star make_synthetic_asymptotic_star(Cfg_synthetic_star cfg_star
 	// ------- l=1 modes ------
 	// Use the solver to get mixed modes
 	el=1;
-	delta0l_star=-el*(el + 1) * cfg_star.delta0l_percent_star / 100.;
+	delta0l_star=-el*(el + 1) * cfg_star.delta0l_percent_star / 100.;	
 	freqs=solve_mm_asymptotic_O2p(cfg_star.Dnu_star, cfg_star.epsilon_star, el, delta0l_star, cfg_star.alpha_p_star, cfg_star.nmax_star, cfg_star.DPl_star, 
 								  cfg_star.alpha_g_star, cfg_star.q_star, cfg_star.sigma_p, cfg_star.fmin, cfg_star.fmax, resol, true, false);
-
 	// Filter solutions that endup at frequencies higher/lower than the nu_l0 because we will need to extrapolate height/widths otherwise...
 	posOK=where_in_range(freqs.nu_m, nu_l0.minCoeff(), nu_l0.maxCoeff(), false);
 	nu_m_l1.resize(posOK.size());
@@ -645,21 +636,19 @@ Params_synthetic_star make_synthetic_asymptotic_star(Cfg_synthetic_star cfg_star
 	// Generating widths profiles for l=1 modes using the ksi function
 	Dnu_p=freqs.dnup;
 	DPl=freqs.dPg; 
-
 	ksi_pg=ksi_fct2(nu_m_l1, freqs.nu_p, freqs.nu_g, Dnu_p, DPl, cfg_star.q_star, "precise"); //"precise" // assume Dnu_p, DPl and q constant
 	h1_h0_ratio=h_l_rgb(ksi_pg, cfg_star.Hfactor); // WARNING: Valid assummption only not too evolved RGB stars (below the bump, see Kevin mail 10 August 2019). Hfactor Added on May 2, 2022
-	
 	height_l1p.resize(nu_m_l1.size());
 	for (int i=0; i<nu_m_l1.size();i++)
 	{
 		tmp=lin_interpol(nu_l0, height_l0, nu_m_l1[i]);
 		height_l1p[i]=tmp;
 	}
-
+	
 	height_l1p=height_l1p*cfg_star.Vl[0];
 	height_l1=h1_h0_ratio.cwiseProduct(height_l1p);
 	width_l1=gamma_l_fct2(ksi_pg, nu_m_l1, nu_l0, width_l0, h1_h0_ratio, el, cfg_star.Wfactor); //Wfactor Added on May 2, 2022
-	
+
 	// Generating splittings with a two-zone averaged rotation rates
 	if (cfg_star.rot_env_input >=0)
 	{
@@ -695,7 +684,6 @@ Params_synthetic_star make_synthetic_asymptotic_star(Cfg_synthetic_star cfg_star
 		tmp=asympt_nu_p(cfg_star.Dnu_star, en, cfg_star.epsilon_star, el, delta0l_star, cfg_star.alpha_p_star, cfg_star.nmax_star);
 		nu_l2[en-np_min]=tmp;
 	}
-
 	// Filter solutions that endup at frequencies higher/lower than the nu_l0 because we will need to extrapolate height/widths otherwise...
 	posOK=where_in_range(nu_l2, nu_l0.minCoeff(), nu_l0.maxCoeff(), false);
 	tmpXd=nu_l2;
@@ -741,6 +729,38 @@ Params_synthetic_star make_synthetic_asymptotic_star(Cfg_synthetic_star cfg_star
 	a1_l3.resize(nu_l3.size());
 	a1_l3.setConstant(rot2data.rot_env);//=numpy.repeat(rot_env, len(nu_l3))
 
+	//-----  ADDED ON 13 Sept -----
+	// Implementation of the latitudinal differential rotation for outer layers
+	// This uses the new substructure env_lat_dif_rot that has all its values initialised to 0 
+	// by default. This dummy value is used to identify the different scenarios.
+	// Implementation of a3 and a5 is possible in various ways. 
+	// However, we recommend using only two situations due to the quality of the available data
+	// (unless your a3,a5 values come from eg a rotational model). that is Inside cfg_star.env_lat_dif_rot Either:
+	//      - a3_l2, a3_l3 and a5_l3 are set to 0, then this is a case without differential rotation
+	//      - a3_l2 = a3_l3 set to some values ~ few percent of a1. And keep a5_l3 =0
+	a3_l2.resize(nu_l2.size());
+	a3_l3.resize(nu_l3.size());
+	a5_l3.resize(nu_l3.size());
+	a3_l2.setConstant(cfg_star.env_lat_dif_rot.a3_l2);
+	a3_l3.setConstant(cfg_star.env_lat_dif_rot.a3_l3);
+	a5_l3.setConstant(cfg_star.env_lat_dif_rot.a5_l3);
+	// Implementation of asphericity parameters. As for the differential rotation, the recommendation is 
+	// to keep it to 0 (default value), unless you have a model of eg activity and magnetic effects
+	a2_l1.resize(nu_m_l1.size());
+	a2_l2.resize(nu_l2.size());
+	a2_l3.resize(nu_l3.size());
+	a4_l2.resize(nu_l2.size());
+	a4_l3.resize(nu_l3.size());
+	a6_l3.resize(nu_l3.size());
+	a2_l1.setConstant(cfg_star.env_aspher.a2_l1);
+	a2_l2.setConstant(cfg_star.env_aspher.a2_l2);
+	a2_l3.setConstant(cfg_star.env_aspher.a2_l3);
+	a4_l2.setConstant(cfg_star.env_aspher.a4_l2);
+	a4_l3.setConstant(cfg_star.env_aspher.a4_l3);
+	a6_l3.setConstant(cfg_star.env_aspher.a6_l3);
+	
+	// ----- 
+
 	params_out.nu_l0=nu_l0;
 	params_out.nu_p_l1=freqs.nu_p;
 	params_out.nu_g_l1=freqs.nu_g;
@@ -758,182 +778,15 @@ Params_synthetic_star make_synthetic_asymptotic_star(Cfg_synthetic_star cfg_star
 	params_out.a1_l1=a1_l1;
 	params_out.a1_l2=a1_l2;
 	params_out.a1_l3=a1_l3;
-		
+	params_out.a2_l1=a2_l1;
+	params_out.a2_l2=a2_l2;
+	params_out.a2_l3=a2_l3;
+	params_out.a3_l2=a3_l2;
+	params_out.a3_l3=a3_l3;
+	params_out.a4_l2=a4_l2;
+	params_out.a4_l3=a4_l3;
+	params_out.a5_l3=a5_l3;
+	params_out.a6_l3=a6_l3;
+
 	return params_out;
 }
-
-
-Cfg_synthetic_star test_make_synthetic_asymptotic_star_sg(void){
-	// Define global Pulsation parameters
-	int el=1;
-
-	// Set the current path variables
-	std::string cpath=getcwd(NULL, 0);
-	
-	Cfg_synthetic_star cfg_star;
-	Params_synthetic_star params_out;
-
-	cfg_star.output_file_rot=" ";
-
-	cfg_star.Dnu_star=55;
-	cfg_star.epsilon_star=0.1;
-	cfg_star.delta0l_percent_star=1./100;
-	cfg_star.beta_p_star=0.00;
-
-	cfg_star.DPl_star=350.;
-	cfg_star.alpha_g_star=0.; // Parameters for g modes that follow exactly the asymptotic relation of g modes for a star with radiative core
-	cfg_star.q_star=0.15;
-
-	cfg_star.rot_env_input=30.;
-	cfg_star.rot_ratio_input=5.;
-	cfg_star.rot_core_input=-1;
-	cfg_star.output_file_rot=cpath + "/test.rot";
-
-	cfg_star.maxHNR_l0=5.;
-
-	// Define the frequency range for the calculation by (1) getting numax from Dnu and (2) fixing a range around numax
-	cfg_star.numax_star=numax_from_stello2009(cfg_star.Dnu_star, 0); // Second argument is the random spread
-	cfg_star.fmin=cfg_star.numax_star - 6*cfg_star.Dnu_star;
-	cfg_star.fmax=cfg_star.numax_star + 6*cfg_star.Dnu_star;
-
-	cfg_star.nmax_star=cfg_star.numax_star/cfg_star.Dnu_star - cfg_star.epsilon_star;
-	cfg_star.alpha_p_star=cfg_star.beta_p_star/cfg_star.nmax_star;
-
-	cfg_star.noise_params_harvey_like.resize(8);
-	cfg_star.Vl.resize(3);
-
-	cfg_star.noise_params_harvey_like <<  1., -2. , 0. , 1. ,-1. , 0. , 2.  ,1.;
-	cfg_star.Vl << 1.5,0.5, 0.07;
-	
-	cfg_star.Gamma_max_l0=1;
-	cfg_star.Teff_star=-1;
-	cfg_star.H0_spread=0;
-	//cfg_star.filetemplate=cpath + "/templates/11771760.template";
-	cfg_star.filetemplate=cpath + "/templates/Sun.template";
-
-	cfg_star.sigma_p=0;
-	cfg_star.sigma_m=0;
-
-	params_out=make_synthetic_asymptotic_star(cfg_star);
-
-	std::cout << " ----- FINAL DIAGNOSTICS ------" << std::endl;
-	std::cout << "[en]   type   l    nu_l        w_l         h_l         a1_l" << std::endl;
-	for (int en=0; en<params_out.nu_l0.size(); en++ )
-	{
-		std::cout << "[" << en << "]   " << "p   0    " << params_out.nu_l0[en] <<  "       " << params_out.width_l0[en] <<  "       "  << params_out.height_l0[en] <<    "   0  " << std::endl;
-	}
-	for (int en=0; en<params_out.nu_p_l1.size(); en++ )
-	{
-		std::cout << "[" << en << "]   " << "p   1    " << params_out.nu_p_l1[en] <<  "       " << "          -             " <<  "       "  << "          -             " <<  "   -  " << std::endl;
-	}
-	for (int en=0; en<params_out.nu_g_l1.size(); en++ )
-	{
-		std::cout << "[" << en << "]   " << "g   1    " << params_out.nu_g_l1[en] <<  "       " << "          -             " <<  "       "  << "          -             " <<  "   -  " << std::endl;
-	}
-	for (int en=0; en<params_out.nu_m_l1.size(); en++ )
-	{
-		std::cout << "[" << en << "]   " << "m   1    " << params_out.nu_m_l1[en] <<  "       " << params_out.width_l1[en] <<  "       "  << params_out.height_l1[en] <<  "     " << params_out.a1_l1[en] << std::endl;
-	}
-	for (int en=0; en<params_out.nu_l2.size(); en++ )
-	{
-		std::cout << "[" << en << "]   " << "p   2    " << params_out.nu_l2[en] <<  "       " << params_out.width_l2[en] <<  "       "  << params_out.height_l2[en] <<  "    "  << params_out.a1_l2[en] << std::endl;
-	}
-	for (int en=0; en<params_out.nu_l3.size(); en++ )
-	{
-		std::cout << "[" << en << "]   " << "p   3    " << params_out.nu_l3[en] <<  "       " << params_out.width_l3[en] <<  "       "  << params_out.height_l3[en] <<  "   "  << params_out.a1_l3[en] << std::endl;
-	}
-	std::cout << " ------------------------------" << std::endl;
-	return cfg_star;
-}
-
-
-Cfg_synthetic_star test_make_synthetic_asymptotic_star_rgb(void){
-	// Define global Pulsation parameters
-	int el=1;
-
-	// Set the current path variables
-	std::string cpath=getcwd(NULL, 0);
-	
-	Cfg_synthetic_star cfg_star;
-	Params_synthetic_star params_out;
-
-	cfg_star.output_file_rot=" ";
-
-	cfg_star.Dnu_star=15;
-	cfg_star.epsilon_star=0.1;
-	cfg_star.delta0l_percent_star=1./100;
-	cfg_star.beta_p_star=0.00;
-
-	cfg_star.DPl_star=80.;
-	cfg_star.alpha_g_star=0.; // Parameters for g modes that follow exactly the asymptotic relation of g modes for a star with radiative core
-	cfg_star.q_star=0.15;
-
-	cfg_star.rot_env_input=30.;
-	cfg_star.rot_ratio_input=5.;
-	cfg_star.rot_core_input=-1;
-	cfg_star.output_file_rot=cpath + "/test.rot";
-
-	cfg_star.maxHNR_l0=5.;
-
-	// Define the frequency range for the calculation by (1) getting numax from Dnu and (2) fixing a range around numax
-	cfg_star.numax_star=numax_from_stello2009(cfg_star.Dnu_star, 0); // Second argument is the random spread
-	cfg_star.fmin=cfg_star.numax_star - 6*cfg_star.Dnu_star;
-	cfg_star.fmax=cfg_star.numax_star + 6*cfg_star.Dnu_star;
-
-	cfg_star.nmax_star=cfg_star.numax_star/cfg_star.Dnu_star - cfg_star.epsilon_star;
-	cfg_star.alpha_p_star=cfg_star.beta_p_star/cfg_star.nmax_star;
-
-	cfg_star.noise_params_harvey_like.resize(8);
-	cfg_star.Vl.resize(3);
-
-	cfg_star.noise_params_harvey_like <<  1., -2. , 0. , 1. ,-1. , 0. , 2.  ,1.;
-	cfg_star.Vl << 1.5,0.5, 0.07;
-	
-	cfg_star.Gamma_max_l0=1;
-	cfg_star.Teff_star=-1;
-	cfg_star.H0_spread=0;
-	//cfg_star.filetemplate=cpath + "/templates/11771760.template";
-	cfg_star.filetemplate=cpath + "/templates/Sun.template";
-
-	cfg_star.sigma_p=0.0*cfg_star.Dnu_star;
-	cfg_star.sigma_m=0.05*cfg_star.Dnu_star;
-
-	params_out=make_synthetic_asymptotic_star(cfg_star);
-
-	std::cout << " ----- FINAL DIAGNOSTICS ------" << std::endl;
-	std::cout << "[en]   type   l    nu_l        w_l         h_l         a1_l" << std::endl;
-	for (int en=0; en<params_out.nu_l0.size(); en++ )
-	{
-		std::cout << "[" << en << "]   " << "p   0    " << params_out.nu_l0[en] <<  "       " << params_out.width_l0[en] <<  "       "  << params_out.height_l0[en] <<    "   0  " << std::endl;
-	}
-	for (int en=0; en<params_out.nu_p_l1.size(); en++ )
-	{
-		std::cout << "[" << en << "]   " << "p   1    " << params_out.nu_p_l1[en] <<  "       " << "          -             " <<  "       "  << "          -             " <<  "   -  " << std::endl;
-	}
-	for (int en=0; en<params_out.nu_g_l1.size(); en++ )
-	{
-		std::cout << "[" << en << "]   " << "g   1    " << params_out.nu_g_l1[en] <<  "       " << "          -             " <<  "       "  << "          -             " <<  "   -  " << std::endl;
-	}
-	for (int en=0; en<params_out.nu_m_l1.size(); en++ )
-	{
-		std::cout << "[" << en << "]   " << "m   1    " << params_out.nu_m_l1[en] <<  "       " << params_out.width_l1[en] <<  "       "  << params_out.height_l1[en] <<  "     " << params_out.a1_l1[en] << std::endl;
-	}
-	for (int en=0; en<params_out.nu_l2.size(); en++ )
-	{
-		std::cout << "[" << en << "]   " << "p   2    " << params_out.nu_l2[en] <<  "       " << params_out.width_l2[en] <<  "       "  << params_out.height_l2[en] <<  "    "  << params_out.a1_l2[en] << std::endl;
-	}
-	for (int en=0; en<params_out.nu_l3.size(); en++ )
-	{
-		std::cout << "[" << en << "]   " << "p   3    " << params_out.nu_l3[en] <<  "       " << params_out.width_l3[en] <<  "       "  << params_out.height_l3[en] <<  "   "  << params_out.a1_l3[en] << std::endl;
-	}
-	std::cout << " ------------------------------" << std::endl;
-	return cfg_star;
-}
-
-/*
-int main(void){
-	Cfg_synthetic_star cfg_star;
-	//cfg_star=test_make_synthetic_asymptotic_star_sg();
-	cfg_star=test_make_synthetic_asymptotic_star_rgb();
-}
-*/

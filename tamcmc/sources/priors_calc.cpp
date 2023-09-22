@@ -17,7 +17,7 @@
 #include "stats_dictionary.h"
 #include "derivatives_handler.h"
 #include "linfit.h"
-#include "linspace.h"
+//#include "linspace.h"
 #include <stdexcept>
 
 using Eigen::VectorXd;
@@ -279,7 +279,9 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 	// Determine the large separation
 	//frstder=Frstder_adaptive_reggrid(params.segment(Nmax+lmax, Nfl0)); // First derivative of fl0 gives Dnu
 	//Dnu=frstder.deriv.sum();
-	tmp=linspace(0, params.segment(Nmax+lmax, Nfl[0]).size()-1, params.segment(Nmax+lmax, Nfl[0]).size());
+	//tmp=linspace(0, params.segment(Nmax+lmax, Nfl[0]).size()-1, params.segment(Nmax+lmax, Nfl[0]).size());
+	tmp = Eigen::VectorXd::LinSpaced(params.segment(Nmax+lmax, Nfl[0]).size(), 0, params.segment(Nmax+lmax, Nfl[0]).size()-1);
+
 	fit=linfit(tmp, params.segment(Nmax+lmax, Nfl[0])); // fit[0] is the slope ==> Dnu and fit[1] is the ordinate at origin ==> fit[1]/fit[0] = epsilon
 	Dnu=fit[0];
 
@@ -449,7 +451,9 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 	//frstder=Frstder_adaptive_reggrid(params.segment(Nmax+lmax, Nfl0)); // First derivative of fl0 gives Dnu
 	//Dnu=frstder.deriv.sum();
 
-	tmp=linspace(0, params.segment(Nmax+lmax, Nfl0).size()-1, params.segment(Nmax+lmax, Nfl0).size());
+	//tmp=linspace(0, params.segment(Nmax+lmax, Nfl0).size()-1, params.segment(Nmax+lmax, Nfl0).size());
+	tmp = Eigen::VectorXd::LinSpaced(params.segment(Nmax+lmax, Nfl0).size(), 0, params.segment(Nmax+lmax, Nfl0).size()-1);
+
 	fit=linfit(tmp, params.segment(Nmax+lmax, Nfl0)); // fit[0] is the slope ==> Dnu and fit[1] is the ordinate at origin ==> fit[1]/fit[0] = epsilon
 	Dnu=fit[0];
 	//epsilon=fit[1]/fit[0];
@@ -458,7 +462,11 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 	switch(model_switch){ // SPECIFIC HANDLING FOR SOME MODELS
 		case 1: // Case of model model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3 or model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3
 			//std::cout << "fl1p:" << params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params+1, Nfl1-Nmixedmodes_g_params-1).transpose() << std::endl;
-			tmp=linspace(0, params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params+1, Nfl1-Nmixedmodes_g_params-1).size()-1, params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params-1, Nfl1-Nmixedmodes_g_params-1).size());
+			//tmp=linspace(0, params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params+1,	Nfl1-Nmixedmodes_g_params-1).size()-1, 
+			//	params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params-1, Nfl1-Nmixedmodes_g_params-1).size());
+			tmp = Eigen::VectorXd::LinSpaced(params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params-1, Nfl1-Nmixedmodes_g_params-1).size(),
+				0, params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params+1,	Nfl1-Nmixedmodes_g_params-1).size()-1);
+			
 			fit=linfit(tmp, params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params+1, Nfl1-Nmixedmodes_g_params-1)); // fit[0] is the slope ==> Dnu and fit[1] is the ordinate at origin ==> fit[1]/fit[0] = epsilon
 			Dnu_l1=fit[0];
 			f=f+ logP_gaussian(Dnu, 0.003*Dnu,Dnu_l1);  // IMPOSES Dnu(l=0) = Dnu(l=1) + N(0, 0.01*Dnu(l=0))

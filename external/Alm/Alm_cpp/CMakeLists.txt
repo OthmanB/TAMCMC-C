@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.4.1)
+cmake_minimum_required(VERSION 3.5)
 
 project(Alm VERSION 2.0)
 
@@ -13,7 +13,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../../bin)
 set(SOURCES_MAIN  #_COMMON
     main.cpp
     activity.cpp
-    linspace.cpp
     Alm_interpol.cpp
     bilinear_interpol.cpp
     string_handler.cpp
@@ -24,7 +23,6 @@ set(SOURCES_MAIN  #_COMMON
 set(SOURCES_INTEGRAND  
     get_filter.cpp
     activity.cpp
-    linspace.cpp
     string_handler.cpp
     GaussLegendre1D.hpp
     GaussLegendre2D.hpp
@@ -34,9 +32,9 @@ set(SOURCES_GRIDMAKER
     main_do_grids.cpp
     do_grids.cpp
     make_grids.cpp
+    linspace.cpp  # linspace is still required here because it is using linspace_vec (not Eigen-based vectors)
     gzip_compress.cpp
     activity.cpp
-    linspace.cpp
     string_handler.cpp
     GaussLegendre1D.hpp
     GaussLegendre2D.hpp

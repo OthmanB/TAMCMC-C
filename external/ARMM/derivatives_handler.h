@@ -1,8 +1,7 @@
 #pragma once
-//#include <fstream>
 #include <iostream>
 #include <Eigen/Dense>
-#include "data.h"
+#include "../../tamcmc/headers/data.h"
 
 using Eigen::VectorXd;
 using Eigen::VectorXi;
