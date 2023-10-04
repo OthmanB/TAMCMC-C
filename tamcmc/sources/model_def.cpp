@@ -239,13 +239,17 @@ VectorXd Model_def::call_model(Data *data_struc, int m, bool outparams){
 		  return model_MS_Global_a1etaa3_HarveyLike_Classic(params.row(m), plength, (*data_struc).x, outparams);
 		  break;
 		case 4: // model_MS_Global with a1, eta (asphericity), a3, asymetry, Original Harvey function 
-		  return model_MS_Global_a1etaa3_Harvey1985(params.row(m), plength, (*data_struc).x, outparams);
-		  break;
-		case 5: // model_MS_Global with a1, magb and magalfa (asphericity), a3, asymetry, Original Harvey function 
-		  std::cout << "Obselete model that is not anymore supported: model_MS_Global_a1acta3_HarveyLike" << std::endl;
+		  std::cout << "Obselete model that is not anymore supported: model_MS_Global_a1etaa3_Harvey1985" << std::endl;
 		  std::cout << "The program will exit now" << std::endl;
 		  exit(EXIT_FAILURE);
-		  return fail;
+		  return fail;		
+		  //return model_MS_Global_a1etaa3_Harvey1985(params.row(m), plength, (*data_struc).x, outparams);
+		  break;
+		case 5: // model_MS_Global with a1, magb and magalfa (asphericity), a3, asymetry, Original Harvey function 
+		  	std::cout << "Obselete model that is not anymore supported: model_MS_Global_a1acta3_HarveyLike" << std::endl;
+		  	std::cout << "The program will exit now" << std::endl;
+		  	exit(EXIT_FAILURE);
+		  	return fail;
 		  //return model_MS_Global_a1acta3_Harvey1985(params.row(m), plength, (*data_struc).x);
 		  break;
         case 6:// model_MS_Global with a1(l=1), a1(2), a1(3)=(a1(1)+a1(2))/2, eta (asphericity), a3, asymetry, Generalized Harvey function
@@ -258,10 +262,18 @@ VectorXd Model_def::call_model(Data *data_struc, int m, bool outparams){
             	  return model_MS_Global_a1nl_etaa3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams);
           break;
         case 9:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is selfconsistently calculated), eta (asphericity), a3, asymetry, Generalized Harvey function
-            	  return model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1(params.row(m), plength, (*data_struc).x, outparams);
+            std::cout << "Obselete model that is not anymore supported: model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1" << std::endl;
+		  	std::cout << "The program will exit now" << std::endl;
+		  	exit(EXIT_FAILURE);
+		  	return fail;
+		  	//return model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1(params.row(m), plength, (*data_struc).x, outparams);
           break;
 	    case 10:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
-            	  return model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(params.row(m), plength, (*data_struc).x, outparams);
+            std::cout << "Obselete model that is not anymore supported: model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2" << std::endl;
+		  	std::cout << "The program will exit now" << std::endl;
+		  	exit(EXIT_FAILURE);
+		  	return fail;
+		  //return model_MS_Global_a1etaa3_AppWidth_HarveyLike_v2(params.row(m), plength, (*data_struc).x, outparams);
           break;
          case 11:// model_MS_Global with Widths following relation of Appourchaux et al 2016 (numax is a free parameter), eta (asphericity), a3, asymetry, Generalized Harvey function
             	  return model_MS_local_basic(params.row(m), plength, (*data_struc).x, outparams);
@@ -276,13 +288,25 @@ VectorXd Model_def::call_model(Data *data_struc, int m, bool outparams){
             	  return model_MS_local_Hnlm(params.row(m), plength, (*data_struc).x, outparams);
 		   break;
  		case 15: // model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2 handled by io_asymptotic.cpp (based on model_MS_Globla with Appourchaux 2016, but with ARMM for mixed modes)
-				  return model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(params.row(m), plength, (*data_struc).x, outparams);
+				std::cout << "Obselete model that is not anymore supported: model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2" << std::endl;
+		  		std::cout << "The program will exit now" << std::endl;
+		  		exit(EXIT_FAILURE);
+		  		return fail;
+		  		//return model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2(params.row(m), plength, (*data_struc).x, outparams);
 			break;
 		case 16: // model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3 handled by io_asymptotic.cpp (based on model_MS_Globla with Appourchaux 2016, but with ARMM for mixed modes)
-				  return model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3(params.row(m), plength, (*data_struc).x, outparams);
+		  	std::cout << "Obselete model that is not anymore supported: model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3" << std::endl;
+		  	std::cout << "The program will exit now" << std::endl;
+		  	exit(EXIT_FAILURE);
+		  	return fail;
+		  	//return model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3(params.row(m), plength, (*data_struc).x, outparams);
 			break;
 		case 17: // Same as model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3 but with free l=0 Width. l=2 and l=3 are interpolated from those. l=1 are defined by mixed modes relations
-				  return model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3(params.row(m), plength, (*data_struc).x, outparams);
+			std::cout << "Obselete model that is not anymore supported: model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3" << std::endl;
+		  	std::cout << "The program will exit now" << std::endl;
+		  	exit(EXIT_FAILURE);
+		  	return fail;
+		  	//return model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3(params.row(m), plength, (*data_struc).x, outparams);
 			break;
 		case 18:
 			return model_MS_Global_a1n_a2a3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams); // Added on 18 Jan 2021: Handles the a2 coefficient with n free
@@ -290,32 +314,40 @@ VectorXd Model_def::call_model(Data *data_struc, int m, bool outparams){
 		case 19:
 			return model_MS_Global_a1nl_a2a3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams); // Added on 18 Jan 2021: Handles the a2 coefficient with n free
 			break;
-		case 20:
-		  	std::cout << "Obselete model that is not anymore supported: model_MS_Global_a1a2a3_HarveyLike" << std::endl;
-		  	std::cout << "The program will exit now" << std::endl;
-		  	exit(EXIT_FAILURE);
-			//return model_MS_Global_a1a2a3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams); // Added on 18 Jan 2021: Handles the a2 coefficient with n free
-			break;
+		//case 20:
+		//  	std::cout << "Obselete model that is not anymore supported: model_MS_Global_a1a2a3_HarveyLike" << std::endl;
+		//  	std::cout << "The program will exit now" << std::endl;
+		//  	exit(EXIT_FAILURE);
+		//	//return model_MS_Global_a1a2a3_HarveyLike(params.row(m), plength, (*data_struc).x, outparams); // Added on 18 Jan 2021: Handles the a2 coefficient with n free
+		//	break;
 		case 21:
 			return model_MS_Global_ajAlm_HarveyLike(params.row(m), plength, (*data_struc).x, outparams, extra_data); // Added on 31 Mar 2021: describes asphericity using a2_CF + a2_AR (see Gizon 2002, AN)
 			break;
  		case 22: // model_RGB_asympt_a1etaa3_AppWidth_HarveyLike handled by io_asymptotic.cpp (based on model_MS_Globla with Appourchaux 2016, but with ARMM for mixed modes). This model differs from similar others in the fact that it has a lot of hyperparameters for the mixed modes
-			return model_RGB_asympt_a1etaa3_AppWidth_HarveyLike(params.row(m), plength, (*data_struc).x, outparams);
+			std::cout << "Obselete model that is not anymore supported: model_RGB_asympt_a1etaa3_AppWidth_HarveyLike" << std::endl;
+		  	std::cout << "The program will exit now" << std::endl;
+		  	exit(EXIT_FAILURE);
+		  	return fail;
+			//return model_RGB_asympt_a1etaa3_AppWidth_HarveyLike(params.row(m), plength, (*data_struc).x, outparams);
 			break;
 		case 23: // model for aj coefficients 
 			return  model_MS_Global_aj_HarveyLike(params.row(m), plength, (*data_struc).x, outparams);
 			break;
 		case 24: // Same as model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3 but with free l=0 Width. l=2 and l=3 are interpolated from those. l=1 are defined by mixed modes relations
-			return model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3(params.row(m), plength, (*data_struc).x, outparams);
+		  	std::cout << "Obselete model that is not anymore supported: model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3" << std::endl;
+		  	std::cout << "The program will exit now" << std::endl;
+		  	exit(EXIT_FAILURE);
+		  	return fail;
+		  	//return model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3(params.row(m), plength, (*data_struc).x, outparams);
 			break;
 		case 25: // Same as model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3 but with a spline for describing the intrinsic bias of the asymptotic model
-			return model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4(params.row(m), plength, (*data_struc).x, outparams);
+			return model_RGB_asympt_aj_AppWidth_HarveyLike_v4(params.row(m), plength, (*data_struc).x, outparams);
 			break;
 		case 26:
 			return model_ajfit(params.row(m), plength, (*data_struc).x, outparams); // Model that handle fitting Gaussian data for a2, a4, a6 using activity model from Alm
 			break;
 		case 27: // Same as model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3 but with a spline for describing the intrinsic bias of the asymptotic model
-			return model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4(params.row(m), plength, (*data_struc).x, outparams);
+			return model_RGB_asympt_aj_CteWidth_HarveyLike_v4(params.row(m), plength, (*data_struc).x, outparams);
 			break;
 		default:
 		  std::cout << " Problem in model_def.cpp! " << std::endl;

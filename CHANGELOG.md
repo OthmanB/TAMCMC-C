@@ -2,13 +2,23 @@
 
 ### v1.86.0 Improvments ###
   - Refactoring of the CMake file to reduce redundancies and better management of options. You need to use the RELEASE option to compile it with all features
-  - Replaced ARMM v0.7 by ARMM v1.1, including well-tested paralelisation. This improves computation time ARMM models. I Recommend to set Nchains*2 < Nthreads < Nchains*4 
+  - Refactoring of how the options work when starting the main program. I know use Boost::program_options which is a much better framework for options
+  - Replaced ARMM v0.7 by ARMM v1.1, including well-tested paralelisation. This improves computation time ARMM models. I Recommend to set Nchains*2 < Nthreads < Nchains*4  . This gives a gain of ~x2 - x5 in computing l=1 mixed modes frequencies
   - Replaced my custom-made linspace() function with the native Eigen::VectorXd::LinSpaced()
   - Use of a more optimised linfit() function
-  - Some function cleaning
+  - Some function cleaning: RGB_v1,v2,v3 are now obselete. MS Harvey1985 also. Many debug comments removed from functions
   - Bug fix in io_asymptotic.cpp: 
   	 - providing user-centric priors for the spline nodes was not working. This fixes it.
-	 - fixing logic to allow usage of bias_type = 0 as a way to not use bias function (Fixed bias function) [NEED TESTING]
+	 - fixing logic to allow usage of bias_type = 0 as a way to not use bias function (Fixed bias function)
+  - Update of the testing function "lorentzian_test.cpp to include the ajAlm model
+  - Parallelisation of the aj, ajAlm, model_RGB_asympt_aj_CteWidth_HarveyLike_v4, and model_RGB_asympt_aj_AppWidth_HarveyLike_v4 models functions . Gives a max additional ~x2 gain in computing models (especially for l=1 mixed modes, that can be very numerous)
+	Note that model_RGB_asympt_aj_CteWidth_HarveyLike_v4 is a renaming of the function model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4
+	Same for model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4 that was renamed model_RGB_asympt_aj_AppWidth_HarveyLike_v4
+  - Cleaning of build_lorentzian.cpp to reduce the number of core functions + remove outdated functions 
+  - Added unit tests to verify that new codes capabilities (the four mentionned above) with randomized inputs provide same outputs as before in similar conditions. 
+  - Update io_asymptotic.cpp: 
+		- model_RGB_asympt_aj_AppWidth_HarveyLike_v4, and model_RGB_asympt_aj_CteWidth_HarveyLike_v4 full support of aj parameters for envelope rotation.
+		- adding colors for warnings and fatal errors
   
 ### v1.85.2 Improvments ###
   Added new logic using the boost library for handling cpptamcmc options.

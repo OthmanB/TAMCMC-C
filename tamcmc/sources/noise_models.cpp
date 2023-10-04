@@ -26,8 +26,8 @@ VectorXd harvey_like(const VectorXd& noise_params, const VectorXd& x, const Vect
 	
 	white_noise.setConstant(noise_params.tail(1)(0));
 	y_out=y;
-
-	for(long i=0; i<Nharvey;i++){
+	int i;
+	for(i=0; i<Nharvey;i++){
 		if(noise_params(cpt+1) != 0){
 		  		tmp=((1e-3)*noise_params(cpt+1)*x).array().pow(noise_params(cpt+2)); 
 				tmp=noise_params(cpt)*(tmp + ones.setConstant(1)).cwiseInverse();

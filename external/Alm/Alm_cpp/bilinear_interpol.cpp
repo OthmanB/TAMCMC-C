@@ -1,3 +1,4 @@
+/*
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -13,6 +14,8 @@
 #include <gsl/gsl_interp2d.h>
 #include "data.h"
 #include "string_handler.h"
+*/
+#include "bilinear_interpol.h"
 
 using namespace std;
 

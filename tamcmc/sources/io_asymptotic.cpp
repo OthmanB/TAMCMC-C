@@ -16,15 +16,18 @@
 #include "function_rot.h"
 #include "io_ms_global.h" // We include this only because io_asymptotic will use several of its functions such as read_MCMC_file_MS_Global() and set_width_App2016_params_v2()
 #include "../../external/ARMM/solver_mm.h" // To be able to use some function that generate fl1 modes for examples
+#include "colors.hpp"
 
 using Eigen::VectorXd;
 using Eigen::VectorXi;
 using Eigen::MatrixXd;
 
+
 // Asymptotic models will use the same MCMC file structure than MS_Global models
 MCMC_files read_MCMC_file_asymptotic(const std::string cfg_model_file, const bool verbose){
 	return  read_MCMC_file_MS_Global(cfg_model_file, verbose);
 }
+
 
 Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool verbose, const double resol){
 
@@ -57,6 +60,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	double tol=1e-2, tmp;
 	VectorXi pos_el, pos_relax0, els_eigen, Nf_el(4), plength;
 	VectorXd ratios_l, tmpXd, extra_priors, fl1p_all, fref, ferr;
+	VectorXd aj_param_count(8);
 	std::vector<int> pos_relax;
 	std::vector<double> f_inputs, h_inputs, w_inputs, f_priors_min, f_priors_max, f_el;
 	std::vector<bool> f_relax, h_relax, w_relax; 
@@ -71,15 +75,22 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 
 	// Flatening and ordering of all the inputs/relax variables
 	lmax=inputs_MS_global.els.maxCoeff();
-
 	// -- Initialisation of structures --
     // --- Look for common instruction That must be run before the setup ---------
+	aj_param_count.setZero();
 	all_in.model_fullname=" "; // Default is an empty string
+	bool passed_model=false;
     for(int i=0; i<inputs_MS_global.common_names.size(); i++){
         if(inputs_MS_global.common_names[i] == "model_fullname" ){ // This defines if we assume S11=S22 or not (the executed model will be different)
         	all_in.model_fullname=inputs_MS_global.common_names_priors[i];
-            if(all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3" ||
-            		"model_RGB_asympt_a1etaa3_AppWidth_HarveyLike" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4"){
+			if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4" || 
+									all_in.model_fullname == "model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4"){
+				std::cout << colors::red << " Models model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4 and model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4" << std::endl;
+				std::cout << " have now a new name: model_RGB_asympt_aj_AppWidth_HarveyLike_v4 and model_RGB_asympt_aj_CteWidth_HarveyLike_v4" << std::endl;
+				std::cout << " Update your model files accordingly." << colors::white  << std::endl;
+				exit(EXIT_FAILURE);
+			}
+            if(all_in.model_fullname == "model_RGB_asympt_aj_AppWidth_HarveyLike_v4"){
             	do_a11_eq_a12=1;
             	do_avg_a1n=1;
             	do_width_Appourchaux=2;
@@ -92,50 +103,24 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
             		std::cout << "    The program will exit now. " << std::endl;
             		exit(EXIT_SUCCESS);
             	}
-//            	}	
+//            	}
+				passed_model=true;	
             }
-            if(all_in.model_fullname == "model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3"){
-            	do_a11_eq_a12=1;
-            	do_avg_a1n=1;
-            	do_width_Appourchaux=1;
-            	if(numax != -9999){ 
-            		if (numax <= 0){ // Check that if there is a value, this one is a valid input for numax
-            			std::cout << "    The model: " << all_in.model_fullname << " is supposed to have numax for (optional) argument" << std::endl;
-            			std::cout << "    However, you provided a negative input. Please either:" << std::endl;
-            			std::cout << "           [1] Not specify any numax or set !n -9999 in the .model file. In that case, the code will calculate a numax using weighted average of frequencies using Heights as weights" << std::endl;
-            			std::cout << "           [2] Specify a valid (positive) numax." << std::endl;
-            			std::cout << "    The program will exit now. " << std::endl;
-            			exit(EXIT_SUCCESS);
-            		}
-            	}	
-            }
-            if(all_in.model_fullname == "model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3"){
-            	do_a11_eq_a12=1;
-            	do_avg_a1n=1;
-            	do_width_Appourchaux=0;
-            	if(numax != -9999){ 
-            		if (numax <= 0){ // Check that if there is a value, this one is a valid input for numax
-            			std::cout << "    The model: " << all_in.model_fullname << " is supposed to have numax for (optional) argument" << std::endl;
-            			std::cout << "    However, you provided a negative input. Please either:" << std::endl;
-            			std::cout << "           [1] Not specify any numax or set !n -9999 in the .model file. In that case, the code will calculate a numax using weighted average of frequencies using Heights as weights" << std::endl;
-            			std::cout << "           [2] Specify a valid (positive) numax." << std::endl;
-            			std::cout << "    The program will exit now. " << std::endl;
-            			exit(EXIT_SUCCESS);
-            		}
-            	}	
-            }
-        }
-        if(all_in.model_fullname == "model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4"){
-           	do_a11_eq_a12=1;
-           	do_avg_a1n=1;
-           	do_width_Appourchaux=1;
-           	if (numax <= 0){ // Check that if there is a value, this one is a valid input for numax
-           		std::cout << "    The model: " << all_in.model_fullname << " is supposed to have numax for argument" << std::endl;
-           		std::cout << "    However, you provided a negative input. Please:" << std::endl;
-           		std::cout << "           Specify a valid (positive) numax." << std::endl;
-           		std::cout << "    The program will exit now. " << std::endl;
-           		exit(EXIT_SUCCESS);
-          	}
+			if(all_in.model_fullname == "model_RGB_asympt_aj_CteWidth_HarveyLike_v4"){
+				do_a11_eq_a12=1;
+				do_avg_a1n=1;
+				do_width_Appourchaux=1;
+				if(numax != -9999){ 
+					if (numax <= 0){ // Check that if there is a value, this one is a valid input for numax
+						std::cout << "    The model: " << all_in.model_fullname << " is supposed to have numax for argument" << std::endl;
+						std::cout << "    However, you provided a negative input. Please:" << std::endl;
+						std::cout << "           Specify a valid (positive) numax." << std::endl;
+						std::cout << "    The program will exit now. " << std::endl;
+						exit(EXIT_SUCCESS);
+					}
+				}
+				passed_model=true;	
+			}
         }
         if(inputs_MS_global.common_names[i] == "fit_squareAmplitude_instead_Height" ){ 
         		do_amp=1;
@@ -145,14 +130,19 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 				do_amp=inputs_MS_global.modes_common(i,0);
 				std::cout << "Using do_amp = " << do_amp << std::endl;
 			}
-
         }
     }
     if(all_in.model_fullname == " "){
     	std::cout << "Model name empty. Cannot proceed. Check that the .model file contains the model_fullname variable." << std::endl;
     	exit(EXIT_FAILURE);
     }
- 	
+    if(passed_model == false){
+    	std::cout << colors::red << "Model Not recognized. Many models were removed in version >1.86.0. Check if your model is still supported." << std::endl;
+    	std::cout << "    Supported models: " << std::endl;
+		std::cout << "           - model_RGB_asympt_aj_CteWidth_HarveyLike_v4" << std::endl;
+		std::cout << "           - model_RGB_asympt_aj_AppWidth_HarveyLike_v4" << colors::white << std::endl;
+		exit(EXIT_FAILURE);
+    } 	
  	io_calls.initialise_param(&Vis_in, lmax, Nmax_prior_params, -1, -1);
 	io_calls.initialise_param(&Inc_in, 1, Nmax_prior_params, -1, -1);
 		
@@ -261,7 +251,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		status_model=true;
 	}
 	int Nfix=0;
-	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4" || all_in.model_fullname =="model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4"){
+	if (all_in.model_fullname == "model_RGB_asympt_aj_AppWidth_HarveyLike_v4" || all_in.model_fullname =="model_RGB_asympt_aj_CteWidth_HarveyLike_v4"){
 		ferr.resize(inputs_MS_global.hyper_priors.rows()); 
 		fref.resize(inputs_MS_global.hyper_priors.rows());		
 		// Generate initial set of ferr and fref. fref is basically a grid of nodes for the x-axis of the bias splines		
@@ -314,9 +304,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	if (status_model == false) {// status_model checks whether we already got a model defined. If not, it set the parameters to the default value
 		Nmixedmodes_params=Nmixedmodes_g_params;
 	}	
-	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike"){
-		Nmixedmodes_params=11; 
-	}
+
 
 	int f_size=Nf_el[0] + Nmixedmodes_params + Nf_el[2] + Nf_el[3];
 
@@ -352,18 +340,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	}
 
 	status_model=false;
-	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3"){
-		// Add the fl1p modes into the frequency parameters 
-		cpt=Nf_el[0] + Nmixedmodes_g_params;
-		for(int i=0; i<fl1p_all.size();i++){
-			tmpXd << fl1p_all[i] -10.*inputs_MS_global.Dnu/100 , fl1p_all[i] + 10.*inputs_MS_global.Dnu/100, 0.005*inputs_MS_global.Dnu, 0.005*inputs_MS_global.Dnu; // default parameters for a GUG prior on frequencies
-			io_calls.fill_param(&freq_in, "Frequency_RGB_l1p", "GUG",  fl1p_all[i], tmpXd, cpt, 0);
-			cpt=cpt+1;
-		}
-		status_model=true;
-	}
-
-	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4" || all_in.model_fullname =="model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4"){
+	if (all_in.model_fullname == "model_RGB_asympt_aj_AppWidth_HarveyLike_v4" || all_in.model_fullname =="model_RGB_asympt_aj_CteWidth_HarveyLike_v4"){
 		// Add the fref into the frequency parameters 
 		cpt=Nf_el[0] + Nmixedmodes_g_params + 1; // The +1 is due to Hfactor here...
 		for(int i=0; i<fref.size();i++){
@@ -375,9 +352,6 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		if (inputs_MS_global.hyper_priors.cols() == 1){
 			// Add the ferr into the frequency parameters
 			// The FIRST frequency (lower edge) is allowed to have larger excursion to the low frequency range
-			//std::cout << " inputs_MS_global.Dnu =" <<  inputs_MS_global.Dnu << std::endl;
-			//std::cout << " cpt =" << cpt << std::endl;
-			//std::cout << " ferr[0] =" << ferr[0] << std::endl;
 			tmpXd << -inputs_MS_global.Dnu/2 , inputs_MS_global.Dnu/20, -9999, -9999; // default parameters for a Uniform prior
 			io_calls.fill_param(&freq_in, "ferr_bias", "Uniform",  ferr[0], tmpXd, cpt, 0);
 			cpt=cpt+1;
@@ -394,7 +368,6 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			cpt=cpt+1;
 			status_model=true;
 		} else{
-			//tmpXd << -inputs_MS_global.Dnu/20 , inputs_MS_global.Dnu/20, -9999, -9999; // default parameters for a Uniform prior
 			tmpXd.resize(4);	tmpXd.setConstant(-9999);
 			for(int i=0; i<ferr.size();i++){
 				for(int k=0; k<inputs_MS_global.hyper_priors.cols()-2;k++){
@@ -416,9 +389,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	if(numax <=0){
 		std::cout << "numax not provided. Input numax may be required by some models... Calculating numax ASSUMING PURE l=0 P MODES ONLY..." << std::endl;
 		std::cout << "         ---- DUE TO MIXED MODES WE RECOMMEND YOU TO PROVIDE NUMAX AS AN ARGUMENT ---" << std::endl;
-		if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3" ||
-			all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike"    || 
-			all_in.model_fullname == "model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4" || all_in.model_fullname == "model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3"){
+		if (all_in.model_fullname == "model_RGB_asympt_aj_AppWidth_HarveyLike_v4" ){
 			std::cout << "     Test showed high risk of wrong estimates of the widths if numax is not provided because the number of modes in evolved stars can be small" << std::endl;
 			std::cout << "     It is therefore now enforced that the user provide it in the case of models with AppWidth" << std::endl;
 			std::cout << "     Please add numax in your model file following this syntax:" << std::endl;
@@ -443,7 +414,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 
 	// ----- Switch between the models that handle averaging over n,l or both -----
     if(do_a11_eq_a12 == 1 && do_avg_a1n == 1){
-        io_calls.initialise_param(&Snlm_in, 5, Nmax_prior_params, -1, -1);
+        io_calls.initialise_param(&Snlm_in, 10, Nmax_prior_params, -1, -1); // Add (a1_env,a1_core,a2_env,a2_core, a3_env, a4_env,a5_env,a6_env) +  1 val (bool 0/1) for eta0 + 1 asymetry
     }  
  
 	// -------------- Set Extra_priors ----------------	
@@ -453,20 +424,11 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 	extra_priors[2]=0.2; // By default a3/a1<=0.2
 	extra_priors[3]=0; // Switch to control whether a prior imposes Sum(Hnlm)_{m=-l, m=+l}=1. Default: 0 (none). >0 values are model_dependent
 	extra_priors[4]=-1; // By default the model switch is not defined
-	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4"){ // The spline is handling inside the model, so there is no new priors for it. Prior MUST differ from v3
+	if (all_in.model_fullname == "model_RGB_asympt_aj_AppWidth_HarveyLike_v4"){ // The spline is handling inside the model, so there is no new priors for it. Prior MUST differ from v3
 		extra_priors[4]=3;
 	}
-	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3"){
-		extra_priors[4]=1;
-	}
-	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v3"){ // Deal with Dnu priors the same way as "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3"
-		extra_priors[4]=1;
-	}
-	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3"){ // Deal with Dnu priors the same way as "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3"
-		extra_priors[4]=1;
-	}
-	if (all_in.model_fullname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike"){
-		extra_priors[4]=2;
+	if (all_in.model_fullname == "model_RGB_asympt_aj_CteWidth_HarveyLike_v4"){ // The spline is handling inside the model, so there is no new priors for it. Prior MUST differ from v3
+		extra_priors[4]=3;
 	}
 
 	// ------------------------------------------------
@@ -582,27 +544,6 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			p0=Nf_el[0]+4;
 			io_calls.fill_param(&freq_in, "sigma_Hl1", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
 		}
-		if(inputs_MS_global.common_names[i] == "sigma_fl1g"){
-			//std::cout << "sigma_fl1g" << std::endl;
-			if (extra_priors[4] == 1){ // Deal with this parameters only for specific models as per defined by extra_priors[4] value
-				if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
-					fatalerror_msg_io_MS_Global("sigma_fl1g", "Fix_Auto", "", "" );
-				}
-				p0=Nf_el[0]+5;
-				io_calls.fill_param(&freq_in, "sigma_fl1g", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
-			}
-			//std::cout << "		DONE" << std::endl;
-		}
-		if(inputs_MS_global.common_names[i] == "sigma_fl1m" && all_in.model_fullname != "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4" && all_in.model_fullname != "model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4"){
-			//std::cout << "sigma_fl1m" << std::endl;
-			if (extra_priors[4] == 1){ // Deal with this parameters only for specific models as per defined by extra_priors[4] value			
-				if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
-					fatalerror_msg_io_MS_Global("sigma_fl1m", "Fix_Auto", "", "" );
-				}
-				p0=Nf_el[0]+6;
-				io_calls.fill_param(&freq_in, "sigma_fl1m", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
-			}
-		}
 		if(inputs_MS_global.common_names[i] == "Wfactor"){
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 				fatalerror_msg_io_MS_Global("Wfactor", "Fix_Auto", "", "" );
@@ -616,54 +557,6 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			}
 			p0=Nf_el[0]+7;
 			io_calls.fill_param(&freq_in, "Hfactor", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
-		}
-		if(inputs_MS_global.common_names[i] == "sigma_fl1m_0"){
-			//std::cout << "sigma_fl1m_0" << std::endl;
-			if (extra_priors[4] == 2){ // Deal with this parameters only for specific models as per defined by extra_priors[4] value
-				if(inputs_MS_global.common_names_priors[i] == "Fix_Auto" || inputs_MS_global.common_names_priors[i] == "Auto"){ // ONLY the manual mode is handled at the moment
-					fatalerror_msg_io_MS_Global("sigma_fl1m_0", "Fix_Auto", "", "" );
-				}
-				// Those models have two priors for fl1m sigma inaccuracy terms (linear function of zeta(nu), see model in models.cpp)
-				p0=Nf_el[0]+5;
-				io_calls.fill_param(&freq_in, "sigma_fl1m_0", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
-			}
-			//std::cout << "		DONE" << std::endl;
-		}
-		if(inputs_MS_global.common_names[i] == "sigma_fl1m_1"){
-			//std::cout << "sigma_fl1m_1" << std::endl;
-			if (extra_priors[4] == 2){ // Deal with this parameters only for specific models as per defined by extra_priors[4] value
-				if(inputs_MS_global.common_names_priors[i] == "Fix_Auto" || inputs_MS_global.common_names_priors[i] == "Auto"){ // ONLY the manual mode is handled at the moment
-					fatalerror_msg_io_MS_Global("sigma_fl1m_1", "Fix_Auto", "", "" );
-				}
-				// Those models have two priors for fl1m sigma inaccuracy terms (linear function of zeta(nu), see model in models.cpp)
-				p0=Nf_el[0]+6;
-				io_calls.fill_param(&freq_in, "sigma_fl1m_1", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
-			}
-			//std::cout << "		DONE" << std::endl;
-		}
-		if(inputs_MS_global.common_names[i] == "sigma_a1_0"){
-			//std::cout << "sigma_a1_0" << std::endl;
-			if (extra_priors[4] == 2){ // Deal with this parameters only for specific models as per defined by extra_priors[4] value
-				if(inputs_MS_global.common_names_priors[i] == "Fix_Auto" || inputs_MS_global.common_names_priors[i] == "Auto"){ // ONLY the manual mode is handled at the moment
-					fatalerror_msg_io_MS_Global("sigma_a1_0", "Fix_Auto", "", "" );
-				}
-				// Those models have two priors for fl1m sigma inaccuracy terms (linear function of zeta(nu), see model in models.cpp)
-				p0=Nf_el[0]+7;
-				io_calls.fill_param(&freq_in, "sigma_a1_0", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
-			}
-			//std::cout << "		DONE" << std::endl;
-		}
-		if(inputs_MS_global.common_names[i] == "sigma_a1_1"){
-			std::cout << "sigma_a1_1" << std::endl;
-			if (extra_priors[4] == 2){ // Deal with this parameters only for specific models as per defined by extra_priors[4] value
-				if(inputs_MS_global.common_names_priors[i] == "Fix_Auto" || inputs_MS_global.common_names_priors[i] == "Auto"){ // ONLY the manual mode is handled at the moment
-					fatalerror_msg_io_MS_Global("sigma_a1_1", "Fix_Auto", "", "" );
-				}
-				// Those models have two priors for fl1m sigma inaccuracy terms (linear function of zeta(nu), see model in models.cpp)
-				p0=Nf_el[0]+8;
-				io_calls.fill_param(&freq_in, "sigma_a1_1", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
-			}
-			//std::cout << "		DONE" << std::endl;
 		}
 		if(inputs_MS_global.common_names[i] == "nmax"){
 			std::cout << "nmax" << std::endl;
@@ -682,6 +575,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			}
 			//std::cout << "		DONE" << std::endl;
 		}
+		/* 2nd Order Polynomial for p modes: curvature
 		if(inputs_MS_global.common_names[i] == "alpha_p"){
 			std::cout << "alpha_p" << std::endl;
 			if (extra_priors[4] == 2){ // Deal with this parameters only for specific models as per defined by extra_priors[4] value
@@ -699,6 +593,7 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 			}
 			std::cout << "		DONE" << std::endl;
 		}
+		*/
 		// --- Height or Amplitude ---
 		if(inputs_MS_global.common_names[i] == "height" || inputs_MS_global.common_names[i] == "Height" || 
 		   inputs_MS_global.common_names[i] == "amplitude" || inputs_MS_global.common_names[i] == "Amplitude"){
@@ -754,44 +649,13 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
             }
 		}	
 		// --- Splittings and asymetry ---
-		if(inputs_MS_global.common_names[i] == "rot_env" || inputs_MS_global.common_names[i] == "Rot_env"){
-			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
-				fatalerror_msg_io_MS_Global("rot_env", "Fix_Auto", "", "" );
-			}
-			p0=0;
-			io_calls.fill_param(&Snlm_in, "rot_env", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
-		}
-		if(inputs_MS_global.common_names[i] == "rot_core" || inputs_MS_global.common_names[i] == "Rot_core"){
-			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
-				fatalerror_msg_io_MS_Global("rot_core", "Fix_Auto", "", "" );
-			}
-			p0=1;
-			io_calls.fill_param(&Snlm_in, "rot_core", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
-		}
-		if(inputs_MS_global.common_names[i] == "asphericity_eta"|| inputs_MS_global.common_names[i] == "Asphericity_eta"){  
-			std::cout << " Warning: Update on the code (07/12/2021) does not allow to use Asphericity_eta as a keyword in io_asymptotic models" << std::endl;
-			std::cout << "          The calculation of eta is now made systematically within the models and no longer requires the eta parameter" << std::endl;
-			std::cout << "          Consequently, this parameter will be ignored" << std::endl;
-			Snlm_in.inputs_names[1]="Empty";
-			Snlm_in.priors_names[1]="Fix";
-			Snlm_in.inputs_names[1]="Asphericity_eta";
-			Snlm_in.relax[1]=0;
-			Snlm_in.inputs[1]=0;
-		}
-
-		if(inputs_MS_global.common_names[i] == "splitting_a3" || inputs_MS_global.common_names[i] == "Splitting_a3"){
-			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
-				fatalerror_msg_io_MS_Global("splitting_a3", "Fix_Auto", "", "" );
-			}
-			p0=3;
-			io_calls.fill_param(&Snlm_in, "Splitting_a3", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);
-		}
+		aj_param_count=aj_param_count + settings_aj_splittings_RGB(i, inputs_MS_global, &Snlm_in);
 
 		if(inputs_MS_global.common_names[i] == "asymetry" || inputs_MS_global.common_names[i] == "Asymetry"){
 			if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
 				fatalerror_msg_io_MS_Global("asymetry", "Fix_Auto", "", "" );
 			}
-			p0=4;
+			p0=9;
 			io_calls.fill_param(&Snlm_in, "Lorentzian_asymetry", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);
 		}
 		// --- Dealing with visibilities ---
@@ -803,9 +667,9 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 				p0=0;
 				io_calls.fill_param(&Vis_in, "Visibility_l1", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);
 			} else{
-				std::cout << "Warning: lmax=" << lmax << " but keyword 'visibility_l1' detected" << std::endl;
+				std::cout << colors::yellow << "Warning: lmax=" << lmax << " but keyword 'visibility_l1' detected" << std::endl;
 				std::cout << "         This visibilitiy input will be ignored" << std::endl;
-				std::cout << "         Proceeding..." << std::endl;
+				std::cout << "         Proceeding..." << colors::white << std::endl;
 			}
 		}
 		if(inputs_MS_global.common_names[i] == "visibility_l2" || inputs_MS_global.common_names[i] == "Visibility_l2"){
@@ -816,9 +680,9 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 				p0=1;
 				io_calls.fill_param(&Vis_in, "Visibility_l2", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);
 			} else{
-				std::cout << "Warning: lmax=" << lmax << " but keyword 'visibility_l2' detected" << std::endl;
+				std::cout << colors::yellow << "Warning: lmax=" << lmax << " but keyword 'visibility_l2' detected" << std::endl;
 				std::cout << "         This visibilitiy input will be ignored" << std::endl;
-				std::cout << "         Proceeding..." << std::endl;
+				std::cout << "         Proceeding..." << colors::white << std::endl;
 			}
 		}
 		if(inputs_MS_global.common_names[i] == "visibility_l3" || inputs_MS_global.common_names[i] == "Visibility_l3"){
@@ -829,9 +693,9 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 				p0=2;
 				io_calls.fill_param(&Vis_in, "Visibility_l3", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);
 			} else{
-				std::cout << "Warning: lmax=" << lmax << " but keyword 'visibility_l3' detected" << std::endl;
+				std::cout << colors::yellow << "Warning: lmax=" << lmax << " but keyword 'visibility_l3' detected" << std::endl;
 				std::cout << "         This visibilitiy input will be ignored" << std::endl;
-				std::cout << "         Proceeding..." << std::endl;
+				std::cout << "         Proceeding..." << colors::white << std::endl;
 			}
 		}
 		// --- Finally the inclination ---
@@ -849,55 +713,28 @@ Input_Data build_init_asymptotic(const MCMC_files inputs_MS_global, const bool v
 		}
 		
 		if(inputs_MS_global.common_names[i] == "sqrt(splitting_a1).cosi"){
-			std::cout << " WARNING : keyword sqrt(splitting_a1).cosi found but is incompatible with models in io_asymptotic.cpp" << std::endl;
-			std::cout << "           The keyword will be ignored. Please be sure to have the keywords 'rot_core' and rot_env' to describe the rotation" << std::endl;
-			//if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
-			//fatalerror_msg_io_MS_Global("sqrt(splitting_a1).cosi", "Fix_Auto", "", "" );
-			//}
-			/*p0=3;
-			io_calls.fill_param(&Snlm_in, "sqrt(splitting_a1).cosi", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);
-
-            if(do_a11_eq_a12 == 0 || do_avg_a1n == 0){ // In that case, we put the same prior for a1(2) than a1(1)
-				std::cout << "Warning: do_a11_eq_a12=0  and/or do_avg_a1n=0 (models *_a1n* or *_a1l*) was requested but is not available when fitting sqrt(a1).cosi and sqrt(a1).sini" << std::endl;
-				std::cout << "         You must modify the code accordingly if you want to implement a11 and a12 in that scenario" << std::endl;
-				std::cout << "         The program will exit now" << std::endl;
-				exit(EXIT_FAILURE);
-            }
-            bool_a1cosi=1;
-            */
+			std::cout << colors::yellow << " WARNING : keyword sqrt(splitting_a1).cosi found but is incompatible with models in io_asymptotic.cpp" << std::endl;
+			std::cout << "           The keyword will be ignored. Please be sure to have the keywords 'rot_core' and rot_env' to describe the rotation" << colors::white << std::endl;
 		}
 		
 		if(inputs_MS_global.common_names[i] == "sqrt(splitting_a1).sini"){
-			std::cout << " WARNING : keyword sqrt(splitting_a1).sini found but is incompatible with models in io_asymptotic.cpp" << std::endl;
-			std::cout << "           The keyword will be ignored. Please be sure to have the keywords 'rot_core' and rot_env' to describe the rotation" << std::endl;
-			//if(inputs_MS_global.common_names_priors[i] == "Fix_Auto"){
-			//	fatalerror_msg_io_MS_Global("sqrt(splitting_a1).sini", "Fix_Auto", "", "" );
-			//}
-			/*p0=4;
-			io_calls.fill_param(&Snlm_in, "sqrt(splitting_a1).sini", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);
-			
-            if(do_a11_eq_a12 == 0 || do_avg_a1n == 0){ // In that case, we put the same prior for a1(2) than a1(1)
-				std::cout << "Warning: do_a11_eq_a12=0 and/or do_avg_a1n=0 (models *_a1n* or *_a1l*) was requested but is not available when fitting sqrt(a1).cosi and sqrt(a1).sini" << std::endl;
-				std::cout << "         You must modify the code accordingly if you want to implement a11 and a12 in that scenario" << std::endl;
-				std::cout << "         The program will exit now" << std::endl;
-				exit(EXIT_FAILURE);
-            }
-            bool_a1sini=1;
-            */
+			std::cout << colors::yellow << " WARNING : keyword sqrt(splitting_a1).sini found but is incompatible with models in io_asymptotic.cpp" << std::endl;
+			std::cout << "           The keyword will be ignored. Please be sure to have the keywords 'rot_core' and rot_env' to describe the rotation" << colors::white << std::endl;
 		}
 	}
 
-// ----- Required changes to ensure that sizes of l=1 arrays are fine ----
-Nf_el[1]=Nmixedmodes_params;
-// ---------------------------
+	if (aj_param_count.sum() !=8){
+		std::cout << colors::red << "aj_param_count = " << aj_param_count.transpose() << std::endl;
+		std::cout << " Invalid number of constraints for the model." << std::endl;
+		std::cout << " Please set a1_env (or rot_env), a1_core (rot_core), a2_core, a2_env, a3_env, a4_env, a5_env, a6_env (8 parameters) for the considered model" << colors::white << std::endl;
+		exit(EXIT_SUCCESS); 	
+	} else{
+		aj_param_count.setZero();
+	}
+	// ----- Required changes to ensure that sizes of l=1 arrays are fine ----
+	Nf_el[1]=Nmixedmodes_params;
+	// ---------------------------
 
-if(bool_a1cosi != bool_a1sini){ // Case when one of the projected splitting quantities is missing ==> Problem
-	std::cout << "Warning: Both 'sqrt(splitting_a1).sini' and 'sqrt(splitting_a1).cosi' keywords must appear" << std::endl;
-	std::cout << "         It is forbidden to use only one of them" << std::endl;
-	std::cout << "         Edit the .MODEL file accordingly" << std::endl;
-	std::cout << "The program will exit now" << std::endl;
-	exit(EXIT_FAILURE);
-}
 	// ----------------------------------------------------
 	// ---------------- Handling noise --------------------
 	// ----------------------------------------------------
@@ -1028,8 +865,120 @@ if(bool_a1cosi != bool_a1sini){ // Case when one of the projected splitting quan
 		std::cout << " -----------------------------------------------------------" << std::endl;
 	}
 	
-	std::cout << "Exiting test " << std::endl;
-	exit(EXIT_SUCCESS);
+	//std::cout << "Exiting test " << std::endl;
+	//exit(EXIT_SUCCESS);
 
 return all_in;
+}
+
+
+// This function handles all of the aj related options. 
+// It is designed for aj models of the RGB phase
+VectorXd settings_aj_splittings_RGB(const int i, const MCMC_files inputs_MS_global, Input_Data* Snlm_in){
+	int p0;
+	VectorXd aj_param_count(8); // counter for knowing where we passed
+	IO_models io_calls; // function dictionary that is used to initialise, create and add parameters to the Input_Data structure
+
+	aj_param_count.setZero();
+	if(inputs_MS_global.common_names[i] == "rot_env" || inputs_MS_global.common_names[i] == "Rot_env" || inputs_MS_global.common_names[i] == "a1_env"){  // This is a valid keyword only for aj models
+		aj_param_count[0]=aj_param_count[0]+1;
+		p0=0; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
+		if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+			io_calls.fill_param(Snlm_in, "rot_env", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+		} else{
+			std::cout << "    Fix_Auto requested for rot_env ... This is not allowed. Please use an explicit prior " << std::endl;
+			exit(EXIT_SUCCESS);
+		}
+	}
+	if(inputs_MS_global.common_names[i] == "rot_core"  || inputs_MS_global.common_names[i] == "Rot_core" || inputs_MS_global.common_names[i] == "a1_core"){ // This is a valid keyword only for aj models
+		aj_param_count[0]=aj_param_count[1]+1;
+		p0=1; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
+		if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+			io_calls.fill_param(Snlm_in, "rot_core", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+		}
+		else{
+			std::cout << "    Fix_Auto requested for rot_core ... This is not allowed. Please use an explicit prior " << std::endl;
+			exit(EXIT_SUCCESS);
+		}
+	}
+	if(inputs_MS_global.common_names[i] == "a2_core"){  // This is a valid keyword only for aj models
+		aj_param_count[1]=aj_param_count[2]+1;
+		p0=2; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
+		if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+			io_calls.fill_param(Snlm_in, "a2_core", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+		} else{
+			std::cout << "    Fix_Auto requested for a2_core ... This is not allowed. Please use an explicit prior " << std::endl;
+			exit(EXIT_SUCCESS);
+		}
+	}
+	if(inputs_MS_global.common_names[i] == "a2_env"){ // This is a valid keyword only for aj models
+		aj_param_count[1]=aj_param_count[3]+1;
+		p0=3; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
+		if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+			io_calls.fill_param(Snlm_in, "a2_env", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+		} else{
+			std::cout << "    Fix_Auto requested for a2_env ... This is not allowed. Please use an explicit prior " << std::endl;
+			exit(EXIT_SUCCESS);
+		}
+	}
+	if(inputs_MS_global.common_names[i] == "a3_env"){  // This is a valid keyword only for aj models
+		aj_param_count[2]=aj_param_count[4]+1;
+		p0=4; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
+		if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+			io_calls.fill_param(Snlm_in, "a3_env", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+		} else{
+			std::cout << "    Fix_Auto requested for a3_env ... This is not allowed. Please use an explicit prior " << std::endl;
+			exit(EXIT_SUCCESS);
+		}
+	}
+	if(inputs_MS_global.common_names[i] == "a4_env"){ // This is a valid keyword only for aj models
+		aj_param_count[2]=aj_param_count[5]+1;
+		p0=5; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
+		if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+			io_calls.fill_param(Snlm_in, "a4_env", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+		} else{
+			std::cout << "    Fix_Auto requested for a4_env ... This is not allowed. Please use an explicit prior " << std::endl;
+			exit(EXIT_SUCCESS);
+		}
+	}
+	if(inputs_MS_global.common_names[i] == "a5_env"){  // This is a valid keyword only for aj models
+		aj_param_count[3]=aj_param_count[6]+1;
+		p0=6; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
+		if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+			io_calls.fill_param(Snlm_in, "a5_env", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+		} else{
+			std::cout << "    Fix_Auto requested for a5_env ... This is not allowed. Please use an explicit prior " << std::endl;
+			exit(EXIT_SUCCESS);
+		}
+	}
+	if(inputs_MS_global.common_names[i] == "a6_env"){ // This is a valid keyword only for aj models
+		aj_param_count[3]=aj_param_count[7]+1;
+		p0=7; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
+		if(inputs_MS_global.common_names_priors[i] != "Fix_Auto"){ 
+			io_calls.fill_param(Snlm_in, "a6_env", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+		} else{
+			std::cout << "    Fix_Auto requested for a6_env ... This is not allowed. Please use an explicit prior " << std::endl;
+			exit(EXIT_SUCCESS);
+		}
+	}
+	if(inputs_MS_global.common_names[i] == "asphericity_eta"|| inputs_MS_global.common_names[i] == "Asphericity_eta"){  
+		std::cout << colors::yellow << " Warning: Update on the code (07/12/2021) does not allow to use Asphericity_eta as a keyword in io_asymptotic models" << std::endl;
+		std::cout << "          The calculation of eta0 is now made if eta0_switch = 1. Otherwise (eta0_switch = 0, it is set to 0 and might be included in a2 coefficients)" << std::endl;
+		std::cout << "          Consequently, this parameter will be igno" << colors::white << std::endl;
+		Snlm_in->inputs_names[8]="eta0_switch";
+		Snlm_in->priors_names[8]="Fix";
+		Snlm_in->relax[8]=0;
+		Snlm_in->inputs[8]=0;
+	}
+	if(inputs_MS_global.common_names[i] == "eta0_switch"){ // This is a valid keyword only for aj models
+		p0=8; // ONLY VALUD IF WE CONSIDER do_a11_eq_a12 == 0 && do_avg_a1n == 0 THIS SHOULD ALWAYS BE TRUE
+		if(inputs_MS_global.common_names_priors[i] == "Fix"){ 
+			io_calls.fill_param(Snlm_in, "eta0_switch", inputs_MS_global.common_names_priors[i], inputs_MS_global.modes_common(i,0), inputs_MS_global.modes_common.row(i), p0, 1);	
+		} else{
+			std::cout << "    Error: eta0_switch must be a boolean 0 or 1: eta0_switch=0 means no computation of the a2_CF. eta0_switch means a2_CF is computed and included." << std::endl;
+			std::cout << "           Due to the fact that this is RGB models with a2_core and a2_env, we recommend the default eta0_switch=0" << std::endl;
+			exit(EXIT_SUCCESS);
+		}
+	}
+	return aj_param_count;
 }
