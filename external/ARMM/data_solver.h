@@ -96,6 +96,9 @@ struct Cfg_synthetic_star{
 	long double Hfactor;
 	long double Wfactor;
 	long double inclination;
+	MatrixXd nu_nl; // Frequencies of the modes, are here if provided by a template (e.g a theoretical model) and handled by the MCMC model
+	VectorXi Nf_el; // Gives the number of modes 
+	bool use_nu_nl=false; // If set to true, use the nu_nl frequencies instead of computing them from the asymptotic. These must be set
 };
 
 

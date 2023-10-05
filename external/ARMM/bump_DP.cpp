@@ -43,7 +43,7 @@ VectorXd ksi_fct1(const VectorXd& nu, const long double nu_p, const long double 
 {
 	
 
-	const long double pi = 3.141592653589793238L;
+	const long double pi = M_PI;
 	VectorXd cos_upterm, cos_downterm, front_term, tmp(nu.size()), tmp2(nu.size()), ksi(nu.size());
 
 	tmp.setConstant(1./nu_g);
@@ -548,6 +548,9 @@ Params_synthetic_star make_synthetic_asymptotic_star(Cfg_synthetic_star cfg_star
 	Params_synthetic_star params_out;
 	Data_eigensols freqs;
 
+	// Allow to debug content of cfg_star
+	//displayCfgSyntheticStar(cfg_star); 
+	
 	//Defining what should be Hmax_l0 in order to get the desired HNR
 	//                   04           1         2           3            4           5          6       7
 	//noise_params_harvey_like=[A_Pgran ,  B_Pgran , C_Pgran   ,  A_taugran ,  B_taugran  , C_taugran    , p      N0] // 
@@ -789,4 +792,48 @@ Params_synthetic_star make_synthetic_asymptotic_star(Cfg_synthetic_star cfg_star
 	params_out.a6_l3=a6_l3;
 
 	return params_out;
+}
+
+
+void displayCfgSyntheticStar(const Cfg_synthetic_star& cfg) {
+    std::cout << "Teff_star: " << cfg.Teff_star << std::endl;
+    std::cout << "numax_star: " << cfg.numax_star << std::endl;
+    std::cout << "Dnu_star: " << cfg.Dnu_star << std::endl;
+    std::cout << "epsilon_star: " << cfg.epsilon_star << std::endl;
+    std::cout << "delta0l_percent_star: " << cfg.delta0l_percent_star << std::endl;
+    std::cout << "beta_p_star: " << cfg.beta_p_star << std::endl;
+    std::cout << "alpha_p_star: " << cfg.alpha_p_star << std::endl;
+    std::cout << "nmax_star: " << cfg.nmax_star << std::endl;
+    std::cout << "DPl_star: " << cfg.DPl_star << std::endl;
+    std::cout << "alpha_g_star: " << cfg.alpha_g_star << std::endl;
+    std::cout << "q_star: " << cfg.q_star << std::endl;
+    std::cout << "fmin: " << cfg.fmin << std::endl;
+    std::cout << "fmax: " << cfg.fmax << std::endl;
+    std::cout << "maxHNR_l0: " << cfg.maxHNR_l0 << std::endl;
+    std::cout << "noise_params_harvey_like: " << cfg.noise_params_harvey_like << std::endl;
+    std::cout << "Gamma_max_l0: " << cfg.Gamma_max_l0 << std::endl;
+    std::cout << "rot_env_input: " << cfg.rot_env_input << std::endl;
+    std::cout << "rot_ratio_input: " << cfg.rot_ratio_input << std::endl;
+    std::cout << "rot_core_input: " << cfg.rot_core_input << std::endl;
+    std::cout << "env_lat_dif_rot.a3_l2: " << cfg.env_lat_dif_rot.a3_l2 << std::endl;
+    std::cout << "env_lat_dif_rot.a3_l3: " << cfg.env_lat_dif_rot.a3_l3 << std::endl;
+    std::cout << "env_lat_dif_rot.a5_l3: " << cfg.env_lat_dif_rot.a5_l3 << std::endl;
+    std::cout << "env_aspher.a2_l1: " << cfg.env_aspher.a2_l1 << std::endl;
+    std::cout << "env_aspher.a2_l2: " << cfg.env_aspher.a2_l2 << std::endl;
+    std::cout << "env_aspher.a2_l3: " << cfg.env_aspher.a2_l3 << std::endl;
+    std::cout << "env_aspher.a4_l2: " << cfg.env_aspher.a4_l2 << std::endl;
+    std::cout << "env_aspher.a4_l3: " << cfg.env_aspher.a4_l3 << std::endl;
+    std::cout << "env_aspher.a6_l3: " << cfg.env_aspher.a6_l3 << std::endl;
+    std::cout << "output_file_rot: " << cfg.output_file_rot << std::endl;
+    std::cout << "Vl: " << cfg.Vl.transpose() << std::endl;
+    std::cout << "H0_spread: " << cfg.H0_spread << std::endl;
+    std::cout << "filetemplate: " << cfg.filetemplate << std::endl;
+    std::cout << "sigma_p: " << cfg.sigma_p << std::endl;
+    std::cout << "sigma_m: " << cfg.sigma_m << std::endl;
+    std::cout << "Hfactor: " << cfg.Hfactor << std::endl;
+    std::cout << "Wfactor: " << cfg.Wfactor << std::endl;
+    std::cout << "inclination: " << cfg.inclination << std::endl;
+    //std::cout << "nu_nl: " << cfg.nu_nl << std::endl;
+    //std::cout << "Nf_el: " << cfg.Nf_el.transpose() << std::endl;
+    //std::cout << "use_nu_nl: " << cfg.use_nu_nl << std::endl;
 }

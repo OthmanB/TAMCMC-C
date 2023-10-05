@@ -137,3 +137,6 @@ long double numax_from_stello2009(const long double Dnu_star, const long double 
 */
 
 Params_synthetic_star make_synthetic_asymptotic_star(Cfg_synthetic_star cfg_star);
+
+// Mostly for diagnositc. Shows the variables inside cfg_star
+void displayCfgSyntheticStar(const Cfg_synthetic_star& cfg);
