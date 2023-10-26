@@ -117,10 +117,11 @@ Eigen::VectorXd ksi_fct2_precise(const Eigen::VectorXd& nu, const Eigen::VectorX
     const Eigen::VectorXd nu_highres = Eigen::VectorXd::LinSpaced(Ndata, fmin, fmax);
     Eigen::VectorXd ksi_pg(nu.size());//, ksi_tmp(nu.size());
     ksi_pg.setZero();
+	omp_set_max_active_levels(2);
     #pragma omp parallel for shared(ksi_pg)
     for (int np = 0; np < Lp; np++)
     {
-        Eigen::VectorXd ksi2_local(nu.size());
+		Eigen::VectorXd ksi2_local(nu.size());
         ksi2_local.setZero();
         for (int ng = 0; ng < Lg; ng++){           
             // The function of interest
