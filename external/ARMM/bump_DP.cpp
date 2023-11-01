@@ -107,7 +107,7 @@ Eigen::VectorXd ksi_fct2(const Eigen::VectorXd& nu, const Eigen::VectorXd& nu_p,
 
 Eigen::VectorXd ksi_fct2_precise(const Eigen::VectorXd& nu, const Eigen::VectorXd& nu_p, const Eigen::VectorXd& nu_g, const Eigen::VectorXd& Dnu_p, const Eigen::VectorXd& DPl, const long double q)
 {
-	// A slightly more optimized version since 17 Sept 2023. 10% performance increase + proper omp implementation
+    // A slightly more optimized version since 17 Sept 2023. 10% performance increase + proper omp implementation
     const int Lp = nu_p.size();
     const int Lg = nu_g.size();
     const long double resol = 1e6 / (4 * 365. * 86400.); // Fix the grid resolution to 4 years (converted into microHz)
@@ -117,11 +117,13 @@ Eigen::VectorXd ksi_fct2_precise(const Eigen::VectorXd& nu, const Eigen::VectorX
     const Eigen::VectorXd nu_highres = Eigen::VectorXd::LinSpaced(Ndata, fmin, fmax);
     Eigen::VectorXd ksi_pg(nu.size());//, ksi_tmp(nu.size());
     ksi_pg.setZero();
-	omp_set_max_active_levels(8);
+    #ifdef _OPENMP
+    	omp_set_max_active_levels(8);
+    #endif
     #pragma omp parallel for shared(ksi_pg)
     for (int np = 0; np < Lp; np++)
     {
-		Eigen::VectorXd ksi2_local(nu.size());
+	Eigen::VectorXd ksi2_local(nu.size());
         ksi2_local.setZero();
         for (int ng = 0; ng < Lg; ng++){           
             // The function of interest

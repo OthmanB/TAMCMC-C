@@ -1281,7 +1281,9 @@ VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& p
     */
     //outparams=1; 
     int n;
-    omp_set_max_active_levels(8);
+    #ifdef _OPENMP
+	omp_set_max_active_levels(8);
+    #endif
     #pragma omp parallel for default(shared) private(n, fl0, Wl0, Hl0)   
     for(n=0; n<Nfl0; n++){        
         fl0=fl0_all[n];
@@ -1525,7 +1527,9 @@ VectorXd model_MS_Global_ajAlm_HarveyLike(const VectorXd& params, const VectorXi
        -------------------------------------------------------
     */
     int n;
-    omp_set_max_active_levels(8);
+    #ifdef _OPENMP
+        omp_set_max_active_levels(2);
+    #endif
     #pragma omp parallel for default(shared) private(n, fl0, Wl0, Hl0)
     for(n=0; n<Nfl0; n++){        
         fl0=fl0_all[n];
@@ -4555,7 +4559,9 @@ VectorXd model_RGB_asympt_aj_CteWidth_HarveyLike_v4(const VectorXd& params, cons
     */ 
     model_final.setZero();
     int n;
-    omp_set_max_active_levels(8);
+    #ifdef _OPENMP
+    	omp_set_max_active_levels(2);
+    #endif
     #pragma omp parallel for default(shared) private(n, fl0, Wl0, Hl0)  
     for(n=0; n<Nfl0; n++){
         fl0=fl0_all[n];
@@ -4917,7 +4923,9 @@ VectorXd model_RGB_asympt_aj_AppWidth_HarveyLike_v4(const VectorXd& params, cons
     */ 
     model_final.setZero();
     int n;
-    omp_set_max_active_levels(8);
+    #ifdef _OPENMP
+    	omp_set_max_active_levels(2);
+    #endif
     #pragma omp parallel for default(shared) private(n, fl0, Wl0, Hl0)  
     for(n=0; n<Nfl0; n++){
         fl0=fl0_all[n];
