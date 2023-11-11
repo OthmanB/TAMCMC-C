@@ -651,19 +651,28 @@ void Config::read_inputs_prior_Simple_Matrix(){
 
 	char0="#"; 
 	// ------ Skip header lines and the range information (because a simple fit does the full spectrum) ------
-	while((char0 == "#" || char0 == "*") && !cfg_session.eof()){ 
+	//while((char0 == "#" || char0 == "*") && !cfg_session.eof()){
+	while((char0 == "#") && !cfg_session.eof()){ 
 		std::getline(cfg_session, line0);
 		line0=strtrim(line0);
 		char0=strtrim(line0.substr(0, 1)); 
 	}
 	while(!cfg_session.eof()){
 		// ---------- Dealing with the inputs names -----------
+		if(char0 == "*"){
+			data.data.xrange=str_to_Xdarr(line0.substr(1), " \t"); // Remove the "*" and split what follows assuming spaces (" ") OR tabulations ("\t") for separator
+			//std::cout << "xrange = " << data.data.xrange.transpose() << std::endl;
+			std::getline(cfg_session, line0); 
+			char0=strtrim(line0.substr(0, 1)); 
+		} else{
+			msg_handler(modeling.cfg_model_file, "text_indicator", "Config::read_inputs_prior_Simple_Matrix()", "WE DID NOT SEE THE '*' symbol indicating the frequency range", 1);
+		}
 		if(char0 == "!"){
 			modeling.inputs.inputs_names=strsplit(line0.substr(1), " \t");  // Remove the "!" and split what follows assuming spaces (" ") OR tabulations ("\t") for separator
 		} else{
 			msg_handler(modeling.cfg_model_file, "text_indicator", "Config::read_inputs_prior_Simple_Matrix()", "", 1);
 		}
-
+		std::cout << "line0 : " << line0 << std::endl;
 		// ----------- Dealing with the inputs values ------------
 		std::getline(cfg_session, line0);
 		line0=strtrim(line0);
@@ -2059,7 +2068,7 @@ void Config::read_restore_files(){
 void Config::read_inputs_files(){
 
     bool passed=0; 
- 	if(modeling.prior_fct_name == "prior_Test_Gaussian"){ // The structure of such a file is quite simple: Comments (#), Params names (!), Params Inputs, Priors names (!), Priors Inputs
+ 	if(modeling.prior_fct_name == "priors_Kallinger2014_Gaussian"){ // The structure of such a file is quite simple: Comments (#), Params names (!), Params Inputs, Priors names (!), Priors Inputs
 		read_inputs_prior_Simple_Matrix();
 		passed=1;
 	}

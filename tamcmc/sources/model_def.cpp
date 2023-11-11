@@ -222,9 +222,9 @@ VectorXd Model_def::call_model(Data *data_struc, int m, bool outparams){
 	VectorXd fail(data_struc->Nx);
 	fail.setZero();
 	switch(model_fct_name_switch){
-		//case 0: // model_Test_Gaussian
-		//  return model_Test_Gaussian(params.row(m), plength, (*data_struc).x, outparams);
-		//  break;
+		case 0: // model_Kallinger2014_Gaussian
+		  return model_Kallinger2014_Gaussian(params.row(m), plength, (*data_struc).x, outparams);
+		  break;
 		case 1: // model_Harvey_Gaussian
 		  return model_Harvey_Gaussian(params.row(m), plength, (*data_struc).x, outparams);
 		  break;
@@ -354,8 +354,8 @@ VectorXd Model_def::call_model(Data *data_struc, int m, bool outparams){
 		  std::cout << " model_fct_names_switch = " << model_fct_name_switch << std::endl;
 		  std::cout << " This value is not associated to any known case statement " << std::endl;
 		  std::cout << " Keywords with valid statements so far:" << std::endl;
-		  std::cout << "    - 'Test_Gaussian' (For Debug only)" << std::endl;
 		  std::cout << "    - 'model_Harvey_Gaussian'" << std::endl;
+		  std::cout << "    - 'model_Kallinger2014_Gaussian'" << std::endl;
 		  
 		  std::cout << "    - 'model_MS_Global_a1etaa3_HarveyLike'" << std::endl;
 		  std::cout << "    - 'model_MS_Global_a1etaa3_AppWidth_HarveyLike_v1'" << std::endl;
@@ -427,7 +427,8 @@ long double Model_def::call_prior(Data *data_struc, const int m){
 
 	switch(prior_fct_name_switch){
 		case 0: // model_Test_Gaussian
-		  return priors_Test_Gaussian(params.row(m), plength, priors_params, priors_params_names_switch, tabulated_priors);
+		  return priors_Kallinger2014_Gaussian(params.row(m), plength, priors_params, priors_params_names_switch, tabulated_priors);
+		  //return priors_Test_Gaussian(params.row(m), plength, priors_params, priors_params_names_switch, tabulated_priors);
 		  break;
 		case 1: // model_Harvey_Gaussian
 		  return priors_Harvey_Gaussian(params.row(m), plength, priors_params, priors_params_names_switch, tabulated_priors);
@@ -449,7 +450,7 @@ long double Model_def::call_prior(Data *data_struc, const int m){
 		  std::cout << " prior_fct_name_switch = " << prior_fct_name_switch << std::endl;
 		  std::cout << " This value is not associated to any known case statement " << std::endl;
 		  std::cout << " Keywords with valid statements so far:" << std::endl;
-		  std::cout << "    - 'priors_Test_Gaussian' (For Debug only)" << std::endl;
+		  std::cout << "    - 'priors_Kalling2014_Gaussian' " << std::endl;
 		  std::cout << "    - 'priors_Harvey_Gaussian'" << std::endl;
 		  std::cout << "    - 'io_MS_Global'" << std::endl;
 		  std::cout << "    - 'io_local'" << std::endl;

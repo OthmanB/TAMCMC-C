@@ -5718,72 +5718,73 @@ VectorXd model_Harvey_Gaussian(const VectorXd& params, const VectorXi& params_le
 	return model_final;
 }
 
-VectorXd model_Harvey1985_Gaussian(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
+
+VectorXd model_Kallinger2014_Gaussian(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
 /*
- * A model in which we fit a Gaussian + Harvey-Like profile.
+ * A model in which we fit a Gaussian + Kallinger+2014 profile for the noise.
  * Parameters are assumed to be in that order: Maximum Height, variance/width, central frequency, White noise
+ * 	Using notations from Table 2 of Kallinger+2014 (https://arxiv.org/pdf/1408.0817.pdf)
+ *  Note that here we assume the instrumental noise to be Pinstrument(nu) = 0
+ *  The noise_params must have parameters in this order:
+ *	- Noise a : ka, sa, t
+ *		- Noise b1: k1, s1, ( and c1, the slope of the SuperLorentzian)
+ *		- Noise b2: k2, s2, ( and c2, the slope of the SuperLorentzian)
+ *	Such that at the end we have: [ka,sa,t,k1,s1,c1, k2,s2,c2, N0]
 */
+    const double x_nyquist=x.maxCoeff();
+    const double numax=std::abs(params[11]);
+    const double Mass=std::abs(params[13]);
+    const double mu_numax=params[14]; // hyper-parameter describing the deviation to f(numax) relations
     const double step=x[2]-x[1]; // used by the function that optimise the lorentzian calculation
-    const int Nrows=1, Ncols=3; // Number of parameters for each mode
-    int c=0;
+    const int Nrows=1, Ncols=4; // Number of parameters for each mode
     MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
 
+    
+	// ---- Setting the Gaussian + Leakage model -----
+    outparams=1;
+	// Compute the Leakage effect as a sinc function (Eq 1 of Kallinger+2014))
 	VectorXd nu0(x.size()), model_final(x.size()), noise_params;
-	int Nharvey;
+	int c=0;
+
+    
+	// Compute the Leakage effect as a sinc function (Eq 1 of Kallinger+2014)
+	const VectorXd eta_squared=eta_squared_Kallinger2014(x);
 
 	// ------ Setting the Gaussian -------
-	model_final= -0.5 * (x - nu0.setConstant(params[2])).array().square() /pow(std::abs(params[1]),2);
-	model_final= std::abs(params[0])*model_final.array().exp();
+	model_final= -0.5 * (x - nu0.setConstant(numax)).array().square() /pow(std::abs(params[12]),2);
+	model_final= std::abs(params[10])*eta_squared.array()* model_final.array().exp();
 	// ----------------------------------
-
-	// ---- Setting the Noise model -----
-	Nharvey=1;
-	noise_params=params.segment(3, 4); // pick the 3 elements, begining from the index 3
-	model_final=harvey1985(noise_params.array().abs(), x, model_final, Nharvey);
-	//model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey);
-	// ----------------------------------
-
+    // ---- Setting the Noise model -----
+    noise_params=params.segment(0, 10); // pick the first 10 elements, begining from the index 3: [ka,sa,t,k1,s1,c1, k2,s2,c2, N0]
+    model_final=Kallinger2014(numax, mu_numax, Mass, noise_params.array(), x, model_final);
+    // ----------------------------------
     if(outparams){
+        mode_params(0,0)=params[10]; // Amax
+        mode_params(0,1)=numax; // numax
+        mode_params(0,2)=params[12]; // sigma
+        mode_params(0,3)=Mass; // Mass
         std::string file_out="params.model";
         std::string modelname = __func__;
-        std::string name_params = "# Input Gaussian envelope parameters. Amax / numax / sigma";
+        std::string name_params = "# Input Gaussian envelope parameters. Amax / numax / sigma  / Mass";
         VectorXd spec_params(3);
         spec_params << x.minCoeff() , x.maxCoeff(), step;
-        MatrixXd noise(Nharvey+1, 3);
+        const int Nnoise=3; // [ka,sa,t],[k1,s1,c1], [k2,s2,c2] ... 3 blocks for the frequency-dependent noise
+        MatrixXd noise(Nnoise+1, 3);
         noise.setConstant(-2);
         for(int i=0;  i<noise.cols(); i++){
-            for(int j=0;j<Nharvey; j++){
+            for(int j=0;j<Nnoise; j++){
+                //std::cout << "i,j : " << i << ", " << j << std::endl;
                 noise(i,j)=noise_params(c);
                 c=c+1;
            }
         }
-        noise(Nharvey, 0) = noise_params(c); // White noise 
-        std::cout << "here" << std::endl;
-        write_star_params(spec_params, params, params_length, mode_params.block(0,0, 1, mode_params.cols()), noise, file_out, modelname, name_params);
+        noise(Nnoise, 0)=noise_params(c);
+        //std::cout << noise << std::endl;
+        std::string noise_name_params ="# Kallinger+2014 Noise (https://arxiv.org/pdf/1408.0817.pdf): [ka,sa,t],[k1,s1,c1], [k2,s2,c2] [N0]. Set at -1 if not used. -2 means that the parameter is not even written on the file (because irrelevant).";
+        write_star_params(spec_params, params, params_length, mode_params, noise, file_out, modelname, name_params,
+            noise_name_params);
     }
-	return model_final;
-}
-
-
-VectorXd model_Test_Gaussian(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
-/*
- * A model in which we fit a Gaussian + White noise.
- * Parameters are assumed to be in that order: Maximum Height, variance/width, central frequency, White noise
-*/
-	VectorXd nu0(x.size()), model_final(x.size()), tmp(x.size());
-
-	tmp.setConstant(params[3]);
-
-    if (outparams){
-        std::cout << " ERROR: outparams is not implemented for  " << __func__ << std::endl;
-        std::cout << "       If you want to get outputs in ascii format, you must review this function and implement outparams = true" << std::endl;
-        std::cout << "       The program will exit now" << std::endl;
-        exit(EXIT_FAILURE);
-    } 
-
-	model_final= -0.5 * (x - nu0.setConstant(params[2])).array().square() /pow(params[1],2);
-	model_final= params[0]*model_final.array().exp();
-	model_final= model_final + tmp;
+    //exit(EXIT_SUCCESS);
 	return model_final;
 }
 
@@ -5895,7 +5896,7 @@ VectorXd model_ajfit(const VectorXd& params, const VectorXi& params_length, cons
 
 ///// ----------- FOR ASCII OUTPUTS  ------------ //////
 void write_star_params(const VectorXd& spec_params, const VectorXd& raw_params, const VectorXi& plength, const MatrixXd& mode_params, const MatrixXd& noise_params, 
-    const std::string file_out, const std::string modelname, const std::string name_params){
+    const std::string file_out, const std::string modelname, const std::string name_params, const std::string noise_name_params){
 
     VectorXi Nchars_spec(3), Nchars_params(17), Nchars_noise(3), precision_spec(3), precision_params(17), precision_noise(3);
 
@@ -5927,8 +5928,8 @@ void write_star_params(const VectorXd& spec_params, const VectorXd& raw_params, 
 
         // ---------------------
         outfile << "# Configuration of mode parameters. This file was generated by models.cpp (TAMCMC code version >1.61)" << std::endl;
-        Nchars_params    << 5, 20, 20, 20, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16 , 16; // Handle max 15 input here. The only constrain is to have deg/freq/H/W first
-        precision_params << 1, 10, 10, 10, 8, 8 , 8 , 8 , 8 , 8 , 8 , 8 , 8 , 8 , 8, 8 , 8;
+        Nchars_params    << 16, 20, 20, 20, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16 , 16; // Handle max 15 input here. The only constrain is to have deg/freq/H/W first
+        precision_params << 5, 10, 10, 10, 8, 8 , 8 , 8 , 8 , 8 , 8 , 8 , 8 , 8 , 8, 8 , 8;
         outfile << name_params << std::endl; //"# Input mode parameters. degree / freq / H / W / splitting a1 / a2_0  / a2_1  / a2_2 / a3 / asymetry / inclination" << std::endl;   
         
         for(int i=0; i<mode_params.rows(); i++){
@@ -5943,7 +5944,7 @@ void write_star_params(const VectorXd& spec_params, const VectorXd& raw_params, 
         precision_noise << 6, 6, 6;
 
         outfile << "# Configuration of noise parameters. This file was generated by write_star_mode_params (write_star_params.cpp)" << std::endl;
-        outfile << "# Input mode parameters. H0 , tau_0 , p0 / H1, tau_1, p1 / N0. Set at -1 if not used. -2 means that the parameter is not even written on the file (because irrelevant)." << std::endl;
+        outfile << noise_name_params << std::endl;
 
         for(int i=0; i<noise_params.rows(); i++){
             for(int j=0;j<noise_params.cols(); j++){
@@ -6053,92 +6054,6 @@ void write_star_params_mixed(const VectorXd& spec_params, const VectorXd& raw_pa
     }
 }
 
-///// ----------- FOR DEBUG ------------/////
-
-/*
-bool debug(const VectorXd& model, const long double Hl, const long double fl, const long double a1, const long double eta, const long double a3,
-               const long double asym, const long double Wl, const long double el, const long double step, const double inclination, const VectorXd& ratios,
-               const long double trunc_c, const bool exit_c){
-// This function must be put after an 'optimum_lorentzian_Calc_a1etaa3()' function to verify that the set of paraneters given to that same function
-// Is not responsible of NaN in the likelihood, which can occur when models have negative entries of if the model itself contains NaN.
-// All the input parameters have the usual definition for a mode fit, execpt 'exit' that if set to true (default) force program exit
-
-    const long double mini=1e10;
-    const long double maxi=0;
-
-    bool leadtoNaN;
-    VectorXi posNotOK;
-
-    for (int i=0; i<model.size();i++){
-        if (model.array().isFinite()[i] != true){
-            leadtoNaN=true;
-            if (model.array().isNaN()[i] == true){
-                std::cout << "NaN detected into the model: " << std::endl;
-            } else{
-                if (model.array().isInf()[i] == true){
-                    std::cout << "Inf detected into the model:" << std::endl;
-                } else{
-                    std::cout << "Something wrong in model leading isFinite() to say that it is not finite, but it is neither a NaN or an Inf" << std::endl;
-                }
-            }
-            goto summary;
-        }
-    }
-
-    posNotOK=where_in_range(model, mini, maxi, 1);
-    if (posNotOK[0] != -1){
-        leadtoNaN=true;
-        std::cout << "Negative values in the model detected:" << std::endl;
-    }
-
-    summary:
-    if(leadtoNaN == true){
-        std::cout << " The error happens for the following parameter condition of the last calculated mode :" << std::endl;
-        std::cout << " l= " << el << std::endl;
-        std::cout << " fl= " << fl << std::endl;
-        std::cout << " Hl= " << Hl << std::endl;
-        std::cout << " Wl= " << Wl << std::endl;
-        std::cout << " a1= " << a1 << std::endl;
-        std::cout << " eta= " << eta << std::endl;
-        std::cout << " a3= " << a3 << std::endl;
-        std::cout << " asym= " << asym << std::endl;
-        std::cout << " inclination= " << inclination << std::endl;
-        std::cout << " ratios= " << ratios.transpose() << std::endl;
-        std::cout << " step= " << step << std::endl;
-        std::cout << " trunc_c= " << trunc_c << std::endl;   
-    }
-    if (exit_c == true && leadtoNaN == true){
-        std::cout << " Exit requested on debug() due to the detection of a NaN condition for the likelihood " << std::endl;
-        exit(EXIT_FAILURE);
-    }
-    return leadtoNaN;
-}
-*/
-
-/*
-bool debug_solver(const VectorXd& x, const VectorXd& fl1_all, const VectorXd& fl0_all, const int el, const long double delta0l, 
-                  const long double DPl, const long double alpha_g, const long double q_star, const long double sigma_p_l1){
-
-    bool error;
-
-    if ( fl1_all.minCoeff() < fl0_all.minCoeff() || fl1_all.minCoeff() < x.minCoeff() ||
-         fl1_all.maxCoeff() > fl0_all.maxCoeff() || fl1_all.maxCoeff() > x.maxCoeff()){
-        error=true;
-        std::cout << " Detected out of bound solution that may cause issues: " << std::endl;
-        std::cout << " fmin =" << x.minCoeff() << std::endl;
-        std::cout << " fmacx =" << x.maxCoeff() << std::endl;
-        std::cout << " el = " <<  el << std::endl;
-        std::cout << " fl0_all = " << fl0_all.transpose() << std::endl;
-        std::cout << " fl1_all = " << fl1_all.transpose() << std::endl;
-        std::cout << " delta0l = " << delta0l << std::endl;
-        std::cout << " DPl = " << DPl << std::endl;
-        std::cout << " alpha_g = " << alpha_g << std::endl;
-        std::cout << " q_star = " << q_star << std::endl;
-        std::cout << " sigma_p_l1 = " << sigma_p_l1 << std::endl;
-    }
-    return error;
-}
-*/
 
 double eta0_fct(const VectorXd& fl0_all){
     VectorXd xfit, rfit;

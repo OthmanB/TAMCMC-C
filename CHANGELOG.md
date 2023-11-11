@@ -1,5 +1,11 @@
 # Version history #
 
+## v1.86.4 New tool ##
+  - Converting envelope_measure.pro to python (envelope_measure.py) and move it to tools/Gaussfit_tools/
+  - Adding Kalinger+2014 noise model with hyper parameters (need comprehensive testing)
+  - Adding the handling of the fitting range with the *symbol in the model file for Gaussian fits
+  - outputs_targz.cpp is created. This will serve as a receptacle for functions that will write binary files within a compressed tar.gz to save space
+
 ### v1.86.0 Improvments ###
   - Refactoring of the CMake file to reduce redundancies and better management of options. You need to use the RELEASE option to compile it with all features
   - Refactoring of how the options work when starting the main program. I know use Boost::program_options which is a much better framework for options

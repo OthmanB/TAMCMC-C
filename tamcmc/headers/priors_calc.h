@@ -28,7 +28,7 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& param_lengt
 long double priors_asymptotic(const VectorXd& params, const VectorXi& params_length, 
             const MatrixXd& priors_params, const VectorXi& priors_names_switch, 
             const VectorXd& extra_priors,  const tabpriors& tabulated_priors={});
-long double priors_Test_Gaussian(const VectorXd& params, const VectorXi& param_length, 
+long double priors_Kallinger2014_Gaussian(const VectorXd& params, const VectorXi& param_length, 
             const MatrixXd& priors_params, const VectorXi& priors_names_switch,
              const tabpriors& tabulated_priors={});
 long double priors_Harvey_Gaussian(const VectorXd& params, const VectorXi& param_length, 
