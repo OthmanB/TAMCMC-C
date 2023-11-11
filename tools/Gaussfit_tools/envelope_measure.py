@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from astropy.io import fits
 from scipy.io import readsav
+from init_fit import do_data_file, do_model_file
+import os
 
 def read_Rafa_PSD(filein):
     d=fits.open(filein)
@@ -344,10 +346,60 @@ def envelope_measure(freq, spec_reg, fold_range, numax_step, fileout, sfactor=6,
     fig3.savefig(fileout + "_3.jpg")
     return numax_guess, uncertainty, Amax_guess, significance
 
+def make_guess_Kallinger2014(freq, spec_reg, outdir, ID, Amax_guess, numax_guess, numax_uncertainty_guess, rebin=1, do_Kallinger_model=False, do_data=False):
+    Fnyquist=np.max(freq)
+    if Fnyquist >= 1000.:
+        stype='SC'
+    else:
+        stype='LC'
 
-def test_envelope():
-    spec_file="/Users/obenomar/Work/dev/TAMCMC-C-v1.86.3/test/inputs/Kallinger2014_Gaussian/LC_CORR_FILT_INP_ASCII/kplr008379927_91_COR_PSD_filt_inp.data"
+    # ---- B0 ----
+    # SHORT CADENCE
+    if stype == 'SC' :
+        pos_0=np.min( np.where( freq >= (Fnyquist - 500.) )) # we take the last 500microHz to extract B0
+    # LONG CADENCE
+    if stype == 'LC':
+        pos_0=np.min( np.where( freq >= Fnyquist - 10.)) # we take the last 10microHz to extract B0
+    B0=np.mean(spec_reg[pos_0:])
+    # ------------
+
+    #The parameter sigma should be proportional to nu_np.max... # and is GUG(xnp.min, xnp.max, sig_np.min, sig_np.max)
+    if numax_guess <= 250: 
+        psigma=[numax_guess/7.,numax_guess/2,numax_guess/20,numax_uncertainty_guess]
+    if numax_guess > 250 and numax_guess 	<= 400: 
+        psigma=[20.,100.,5.,100.]
+    if numax_guess > 400 and numax_guess <= 700:
+        psigma=[25.,120.,30.,100]	
+    if numax_guess > 700 and numax_guess <= 1200:
+        psigma=[40.,200.,30.,100.]
+    if numax_guess > 1200 and numax_guess <= 2700:
+        psigma=[90.,250.,30.,100.]
+    if numax_guess > 2700:
+        psigma=[150.,300.,30.,110.]
+
+    init_param=      [  3710.     ,   -0.613       ,   -0.26      ,     0.317      ,    0.970       ,        2         ,       0.948      ,       0.992          ,         2.        ,        B0        ,  Amax_guess/10   ,    numax_guess-numax_uncertainty_guess  ,  (psigma[0] + psigma[1])/2     ,     1.2          ,      0.01           ,         1]
+    name_param=      [ "ka"        ,    "sa"       ,   "t"        ,   "k1"         ,    "s1"        ,     "c1"         ,      "k2"        ,       "s2"           ,      "c2"         ,      "N0"        ,    "Amax"        ,    "numax"                              ,   "Gauss_sigma"                ,    "Mass"        ,     "mu_numax"      ,    "omega_numax"]
+    prior_name=      ["Gaussian"   ,   "Gaussian"  ,  "Gaussian"  ,   "Gaussian"   ,   "Gaussian"   ,     "Uniform"    ,     "Gaussian"   ,     "Gaussian"       ,     "Uniform"     ,     "Uniform"    ,    "Jeffreys"    ,    "Uniform"                            ,     "GUG"                      ,    "Uniform"     ,     "Uniform_abs"    ,    "Uniform" ]
+    relax_param=     [  1         ,      1          ,       1      ,     1          ,    1           ,        1         ,        1         ,        1             ,         1         ,         1        ,       1          ,      1                                  ,       1                        ,     1            ,         1            ,        1 ]
+    prior_param=np.zeros((len(name_param),4)) - 9999
+    prior_param[:,0]=[  3710.     ,   -0.613       ,   -0.26      ,     0.317      ,    0.970       ,        2         ,       0.948      ,       0.992          ,         2.        ,        0.        ,     B0/10        ,    numax_guess-numax_uncertainty_guess  ,     psigma[0]                  ,     0.6          ,      0.01           ,         5]
+    prior_param[:,1]=[   21       ,     0.002      ,   0.03       ,    0.002       ,    0.002       ,        5         ,       0.003      ,       0.002          ,         5         ,      10*B0       , np.max(spec_reg) ,    np.max(freq)                         ,     psigma[1]                  ,     4.0          ,        100          ,      20  ]
+    prior_param[:,2]=[-9999.000000, -9999.000000   , -9999.000000 , -9999.000000   , -9999.000000   , -9999.000000     ,  -9999.000000    ,   -9999.000000       ,    -9999.000000   ,  -9999.000000    ,  -9999.000000    ,         -9999.0000                      ,     psigma[2]                  ,  -9999.000000    ,  -9999.00000        , -9999.000]
+    prior_param[:,3]=[-9999.000000, -9999.000000   , -9999.000000 , -9999.000000   , -9999.000000   , -9999.000000     ,  -9999.000000    ,   -9999.000000       ,    -9999.000000   ,  -9999.000000    ,  -9999.000000    ,         -9999.0000                      ,     psigma[3]                  ,  -9999.000000    ,  -9999.00000        , -9999.000]
+    if do_data == True:
+         err=do_data_file(freq, spec_reg, outdir + "/" + ID +"_KGaussfit.data", rebin=rebin)
+    if do_Kallinger_model == True:
+         err=do_model_file(init_param, relax_param, name_param, prior_param, prior_name, outdir + "/" + ID + "_KGaussfit.model", 
+   			np.min(freq), np.max(freq), header="# File auto-generated by envelope_measure.py\n# Fit of Gaussian mode Envelope with Kallinger2014 noise function\n# ID:"+ str(ID)+"\n# rebin="+str(rebin)+"\n")
+
+
+def do_envelope(spec_file, outdir, do_Kallinger_model=False, do_data=False, search_range=[500,4400], numax_step=10, rebin=1):
+    sfactor=6
+    nu_rebin=None
     # get the extension of spec_file
+    directory = os.path.dirname(spec_file)
+    filename = os.path.basename(spec_file)
+    ID = os.path.splitext(filename)[0]
     extension = spec_file.split('.')[-1]
     passed=False
     if extension == 'sav':
@@ -357,6 +409,9 @@ def test_envelope():
         passed=True
     if extension == 'data':
         freq, spec_reg, models, extended, true_xmin=read_data_file(spec_file, extend_to_0=True)
+        allowed_fmin=5
+        if np.min(freq) > allowed_fmin:
+             raise("Error: You must provide a full spectrum, not a section of it. The min(freq) should exceed 5")
         passed=True
     if extension == "fits":
         try:
@@ -367,9 +422,14 @@ def test_envelope():
     if passed == False:
          raise("Format not recognized. Only .sav, .data and .fits are accepted.")
     
-    fold_range=[500, 4400]
-    numax_step=10.
-    fileout=spec_file + "_guess"
-    numax_guess, uncertainty, Amax_guess, significance=envelope_measure(freq, spec_reg, fold_range, 
-                                                    numax_step, fileout, sfactor=6, nu_rebin=None)
+    fileout_jpg=ID + "_guess"
+    numax_guess, uncertainty, Amax_guess, significance=envelope_measure(freq, spec_reg, search_range, 
+                                                    numax_step, fileout_jpg, sfactor=sfactor, nu_rebin=nu_rebin)
+    make_guess_Kallinger2014(freq, spec_reg, outdir, ID, Amax_guess, numax_guess, uncertainty, 
+                             rebin=rebin, do_Kallinger_model=do_Kallinger_model, do_data=do_data)
+
+def test_envelope():
+    outdir="/Users/obenomar/Work/dev/TAMCMC-C-v1.86.4/test/inputs/Kallinger2014_Gaussian/LC_CORR_FILT_INP_ASCII/rebinned/"
+    spec_file="/Users/obenomar/Work/dev/TAMCMC-C-v1.86.4/test/inputs/Kallinger2014_Gaussian/LC_CORR_FILT_INP_ASCII/kplr008379927_91_COR_PSD_filt_inp.data"
+    do_envelope(spec_file, outdir, do_Kallinger_model=True, do_data=True, rebin=10)
     print("Done")
