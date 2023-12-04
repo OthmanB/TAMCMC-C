@@ -2,11 +2,12 @@
 @read_bin2txt_files
 ; A small program that plot the pdfs, after having converted binary files into text files (if requested)
 ; It returns the histograms and a summary of the statistical information (min_samples, med-2s, med-1s, med, med+1s, med+2s, max_samples, max_pdf)
-function histograms_bin2txt_params, dir_out, Nb_classes, root_filename, dir_bin2txt, modelname, parameters_length, index0 = index0, keep_period = keep_period, delete_txt_outputs = delete_txt_outputs, skip_plot = skip_plot
+function histograms_bin2txt_params, dir_out, Nb_classes, root_filename, dir_bin2txt, modelname, parameters_length, index0 = index0, keep_period = keep_period, delete_txt_outputs = delete_txt_outputs, skip_plot = skip_plot, chain = chain
   compile_opt idl2
 
   tab_critere = [2.25, 16, 50, 84, 97.75] ; defini les mediane +/- 2sigma,mediane, mediane +/- 1sigma
 
+  if n_elements(chain) eq 0 then chain = 0
   if n_elements(index0) eq 0 then index0 = 0 ;
   if n_elements(keep_period) eq 0 then begin ; Keep all samples by defaut
     keep_period = 1
@@ -21,7 +22,7 @@ function histograms_bin2txt_params, dir_out, Nb_classes, root_filename, dir_bin2
   ; ' ' + strtrim(round(keep_period),2)  + ' 0' ; The last '1' means that we DO NOT replicate the constant in the ascii file
   ; New instructions since v1.85.0
   txt = ' --rootname ' + root_filename
-  txt = txt + ' --chain-index 0'
+  txt = txt + ' --chain-index ' + strtrim(chain, 2)
   txt = txt + ' --output-dir ' + dir_out
   txt = txt + ' --first-kept-element ' + strtrim(round(index0), 2)
   txt = txt + ' --last-kept-element -1'
@@ -53,56 +54,6 @@ function histograms_bin2txt_params, dir_out, Nb_classes, root_filename, dir_bin2
   endif
 
   struc = plot_pdf(files, N, Nb_classes, dir_out)
-
-  ; hist_empty=build_histogram(randomu(seed, N),Nb_classes)
-  ; hist_all=dblarr(n_elements(files), 2, n_elements(hist_empty[0,*])) ; all the pdfs for all variables
-  ; Stat_Synthese_unsorted=dblarr(8, n_elements(files))
-  ; for i=long(0), n_elements(files)-1 do begin
-  ; print, 'processing file: ' + files[i] + '...'
-  ; restore, files[i]
-  ; print, '   - build_histogram ...'
-  ; if n_elements(param) eq N then begin
-  ; hist=build_histogram(param,Nb_classes)
-  ; hist_all[i, *,*]=hist
-  ; distrib_stats=estimate_1_sigma_error( hist[0,*],hist[1,*],68.3,2,tab_critere)
-  ; Stat_synthese_unsorted[0:6,i]=distrib_stats[3:*] ; les deciles, quartiles,mediane,...
-  ; Stat_synthese_unsorted[7,i]=distrib_stats[0] ; le max
-  ; endif
-  ; if n_elements(param) eq 1 then begin ; Case of a constant... we generate a pseudo histogram around the constant value
-  ; hist=build_histogram(replicate(param, N),Nb_classes)
-  ; hist_all[i, *,*]=hist
-  ; ;distrib_stats=estimate_1_sigma_error( hist[0,*],hist[1,*],68.3,2,tab_critere)
-  ; Stat_synthese_unsorted[*,i]=param[0] ;distrib_stats[3:*] ; les deciles, quartiles,mediane,...
-  ; ;Stat_synthese_unsorted[7,i]=param[0];distrib_stats[0] ; le max
-  ; ;stop
-  ; endif
-  ; if n_elements(param) ne 1 AND n_elements(param) ne N then begin
-  ; print, 'Incorrect number of samples in file: ', files[i]
-  ; print, 'Cannot proceed as the histogram is of fixed size'
-  ; print, 'Debug required'
-  ; print, 'The program will stop now'
-  ; stop
-  ; endif
-  ;
-  ; b=byte(files[i])
-  ; posslash=max(where((b eq 47) OR (b eq 92))) ; detect last '/' OR '\'
-  ; posdot=max(where(b eq 46)) ; detect last dot
-  ; file_core=strtrim(b[posslash+1:posdot-1],2)
-  ; if skip_plot eq 0 then begin
-  ; nimp,name=dir_out + file_core +'.eps',/paper,/eps ; Savita's code
-  ; nice_hist1D, hist, ps=1, file_out=file_out, xr=xr, $
-  ; title=title, xtitle=variable_name[0], col=col, show_stats=1, $
-  ; legendsize=legendsize, legend_precision=legend_precision
-  ; fimp
-  ; endif
-  ; ;if n_elements(param) eq 1 then stop ; THIS IS A DEBUG STOP ONLY. REMOVE IF YOU DO NOT KNOW THE FUNCTION OF THIS STOP
-  ; endfor
-
-  ; struc={stat_synthese_unsorted:dblarr(8, n_elements(files)), hists:dblarr(n_elements(files), 2, N/Nb_classes), Nb_classes:0., Nsamples:0.}
-  ; struc.stat_synthese_unsorted=stat_synthese_unsorted
-  ; struc.hists=hist_all
-  ; struc.Nb_classes=Nb_classes
-  ; struc.Nsamples=Nsamples
 
   return, struc
 end
