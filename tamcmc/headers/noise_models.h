@@ -54,3 +54,4 @@ double get_ksinorm(const double b, const double c, const Eigen::VectorXd& x);
  * @note The function returns the noise background.
  */
 VectorXd Kallinger2014(const double numax, const double mu_numax, const double Mass, const VectorXd& noise_params,const VectorXd& x, const VectorXd& y);
+VectorXd Kallinger2014_V2(const double numax, const double mu_numax, const VectorXd& noise_params,const VectorXd& x, const VectorXd& y);

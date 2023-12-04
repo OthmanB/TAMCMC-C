@@ -106,7 +106,7 @@ VectorXd Kallinger2014(const double numax, const double mu_numax, const double M
 		- Noise a : ka, sa, t
 		- Noise b1: k1, s1, ( and c1, the slope of the SuperLorentzian)
 		- Noise b2: k2, s2, ( and c2, the slope of the SuperLorentzian)
-	Such that at the end we have: [ka,sa,t,k1,s1,c1, k2,s2,c2, N0]
+	Such that at the end we have: [ka,sa,t,k1,s1,c1, k2,s2,c2, N0, mu_numax, omega_numax, mu_a, omega_a]
 */
 	const long Nx=x.size();
 	VectorXd ones(Nx), white_noise(Nx), tmp0(Nx), tmp1(Nx), tmp2(Nx), y0(Nx), Power(Nx);
@@ -114,11 +114,13 @@ VectorXd Kallinger2014(const double numax, const double mu_numax, const double M
 	// Compute the Leakage effect as a sinc function (Eq 1 of Kallinger+2014)
 	const VectorXd eta_squared=eta_squared_Kallinger2014(x);
 	// Compute b1, b2 and a
-	const double a=std::abs(noise_params[0])*std::pow(std::abs(numax + mu_numax),noise_params[1]) * std::pow(Mass,noise_params[2]);
-	const double b1=std::abs(noise_params[3]*std::pow(std::abs(numax + mu_numax),noise_params[4]));
-	const double b2=std::abs(noise_params[6]*std::pow(std::abs(numax + mu_numax),noise_params[7]));
-	const double c1=std::abs(noise_params[5]);
-	const double c2=std::abs(noise_params[8]);
+	//const double tau_eff=std::abs(noise_params[0])*std::pow(std::abs(numax + mu_numax),noise_params[1]);
+	const double a2=noise_params[0];
+	const double a1=std::abs(noise_params[2])*std::pow(std::abs(numax + mu_numax),noise_params[3]) * std::pow(Mass,noise_params[4]);
+	const double b1=std::abs(noise_params[5]*std::pow(std::abs(numax + mu_numax),noise_params[6]));
+	const double b2=std::abs(noise_params[8]*std::pow(std::abs(numax + mu_numax),noise_params[9]));
+	const double c1=std::abs(noise_params[7]);
+	const double c2=std::abs(noise_params[10]);
 	// Compute the normalisation constants ksi1 and ksi2
 	const double ksi1=get_ksinorm(b1, c1, x);
 	const double ksi2=get_ksinorm(b2, c2, x);
@@ -126,14 +128,16 @@ VectorXd Kallinger2014(const double numax, const double mu_numax, const double M
 	// White noise first, added to the input y-vector
 	white_noise.setConstant(noise_params.tail(1)(0));
  	Power=y + white_noise;
+
 	// First SuperLorentzian
 	tmp0=(x/b1).array().pow(c1); // Denominator
-	tmp1=(eta_squared * ksi1 * std::pow(a,2)/b1).cwiseProduct((tmp0 + ones).cwiseInverse()); // Numerator/Denominator
+	tmp1=(eta_squared * ksi1 * std::pow(a1,2)/b1).cwiseProduct((tmp0 + ones).cwiseInverse()); // Numerator/Denominator
 	Power=Power + tmp1;
 	// Second SuperLorentzian
 	tmp0=(x/b2).array().pow(c2); // Denominator
-	tmp2= (eta_squared *ksi2*std::pow(a,2)/b2).cwiseProduct((tmp0 + ones).cwiseInverse()); // Numerator/Denominator
+	tmp2= (eta_squared *ksi2*std::pow(a2,2)/b2).cwiseProduct((tmp0 + ones).cwiseInverse()); // Numerator/Denominator
 	Power=Power + tmp2;
+
 	/*
     std::ofstream debugFile("debug.txt"); // Open the debug file for writing
 	debugFile << "!a=" << a << std::endl;
@@ -148,8 +152,60 @@ VectorXd Kallinger2014(const double numax, const double mu_numax, const double M
         debugFile << x[i] << "\t " << Power[i]  << "\t " << eta_squared[i]  << "\t " << tmp1[i] << "\t " << tmp2[i]  << "\t " << white_noise[i] << "\t " << y0[i] << std::endl;
     }
     debugFile.close();
+	exit(EXIT_SUCCESS);
 	*/
 	return Power;
 
 }
 
+
+
+VectorXd Kallinger2014_V2(const double numax, const double mu_numax, const VectorXd& noise_params,const VectorXd& x, const VectorXd& y){
+/*
+	Using notations from Table 2 of Kallinger+2014 (https://arxiv.org/pdf/1408.0817.pdf)
+	Not that here we assume the instrumental noise to be Pinstrument(nu) = 0
+	The noise_params must have parameters in this order:
+		- Noise a1, a2 : ka, sa, t
+		- Noise b1: k1, s1, ( and c1, the slope of the SuperLorentzian)
+		- Noise b2: k2, s2, ( and c2, the slope of the SuperLorentzian)
+	Such that at the end we have: [ka,sa,t,k1,s1,c1, k2,s2,c2, N0]
+*/
+	const long Nx=x.size();
+	VectorXd ones(Nx), white_noise(Nx), tmp0(Nx), tmp1(Nx), tmp2(Nx), y0(Nx), Power(Nx);
+	ones.setOnes();
+	// Compute the Leakage effect as a sinc function (Eq 1 of Kallinger+2014)
+	const VectorXd eta_squared=eta_squared_Kallinger2014(x);
+	// Compute b1, b2 and a
+	const double a0=std::abs(noise_params[0]*std::pow(std::abs(numax),noise_params[1])); // Very Low frequencies
+	const double b0=std::abs(noise_params[2]*std::pow(std::abs(numax + mu_numax),noise_params[3]));
+	const double c0=std::abs(noise_params[4]);
+	const double a1=noise_params[5];
+	const double a2=noise_params[6];
+	const double b1=std::abs(noise_params[7]*std::pow(std::abs(numax + mu_numax),noise_params[8])); // Intermediate
+	const double b2=std::abs(noise_params[10]*std::pow(std::abs(numax + mu_numax),noise_params[11])); // Below numax
+	const double c1=std::abs(noise_params[9]);
+	const double c2=std::abs(noise_params[12]);
+	const double N0=std::abs(noise_params[13]);
+	// Compute the normalisation constants ksi1 and ksi2
+	const double ksi0=get_ksinorm(b0, c0, x);
+	const double ksi1=get_ksinorm(b1, c1, x);
+	const double ksi2=get_ksinorm(b2, c2, x);
+	y0=y;
+	// White noise first, added to the input y-vector
+	white_noise.setConstant(N0);
+ 	Power=y + white_noise;
+	// Granulation SuperLorentzian
+	tmp0=(x/b0).array().pow(c0); // Denominator
+	tmp1=(eta_squared * ksi0 * std::pow(a0,2)/b0).cwiseProduct((tmp0 + ones).cwiseInverse()); // Numerator/Denominator
+	Power=Power + tmp1;
+	// First SuperLorentzian
+	tmp0=(x/b1).array().pow(c1); // Denominator
+	tmp1=(eta_squared * ksi1 * std::pow(a1,2)/b1).cwiseProduct((tmp0 + ones).cwiseInverse()); // Numerator/Denominator
+	Power=Power + tmp1;
+	// Second SuperLorentzian
+	tmp0=(x/b2).array().pow(c2); // Denominator
+	tmp2= (eta_squared *ksi2*std::pow(a2,2)/b2).cwiseProduct((tmp0 + ones).cwiseInverse()); // Numerator/Denominator
+	Power=Power + tmp2;
+	return Power;
+
+}

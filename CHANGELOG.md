@@ -1,5 +1,9 @@
 # Version history #
 
+## v.186.5 Bug Fix ##
+  - Major changes in the way Kalinger+2014 is implemented after realising that it uses 3 harvey-like profile, not 2.
+  - Added Data from Kallinger+2014 in the external_data directory to always keep in hands the reference of his analysis on RGB
+
 ## v1.86.4 New tool ##
   - Converting envelope_measure.pro to python (envelope_measure.py) and move it to tools/Gaussfit_tools/
   - Adding Kalinger+2014 noise model with hyper parameters (need comprehensive testing)

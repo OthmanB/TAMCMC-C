@@ -4644,6 +4644,7 @@ VectorXd model_RGB_asympt_aj_CteWidth_HarveyLike_v4(const VectorXd& params, cons
        -------------------------------------------------------
     */
     model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
+
     if(outparams){
         if (bias_type == 0){
             VectorXd b;
@@ -4676,7 +4677,6 @@ VectorXd model_RGB_asympt_aj_CteWidth_HarveyLike_v4(const VectorXd& params, cons
             outfile << params.transpose() << std::endl;
         outfile.close();
     }
-    //exit(EXIT_SUCCESS);
     return model_final;
 }
 
@@ -4872,7 +4872,7 @@ VectorXd model_RGB_asympt_aj_AppWidth_HarveyLike_v4(const VectorXd& params, cons
             b[i]=bias(fl1_all[i]);
             fl1_all[i] = fl1_all[i] + b[i];
         }
-    } 
+    }
      // Generating widths profiles for l=1 modes using the ksi function
     ksi_pg=ksi_fct2(fl1_all, freqs_l1.nu_p, freqs_l1.nu_g, freqs_l1.dnup, freqs_l1.dPg, q_star, "precise"); //"precise" // assume Dnu_p, DPl and q constant
     h1_h0_ratio=h_l_rgb(ksi_pg, Hfactor); //  Valid assummption only not too evolved RGB stars (below the bump, see Kevin mail 10 August 2019). Hence Hfactor to depart from asymptotic
@@ -5738,38 +5738,48 @@ VectorXd model_Kallinger2014_Gaussian(const VectorXd& params, const VectorXi& pa
  *		- Noise b2: k2, s2, ( and c2, the slope of the SuperLorentzian)
  *	Such that at the end we have: [ka,sa,t,k1,s1,c1, k2,s2,c2, N0]
 */
+//name_param=      [ "a1"       ,    "a2"        ,   "k1"       ,    "s1"        ,     "c1"         ,      "k2"        ,       "s2"           ,      "c2"        ,     "N0"         ,    "Amax"        ,    "numax"                              ,   "Gauss_sigma"                ,   "mu_numax"      ,    "omega_numax"]
+    
     const double x_nyquist=x.maxCoeff();
-    const double numax=std::abs(params[11]);
-    const double Mass=std::abs(params[13]);
-    const double mu_numax=params[14]; // hyper-parameter describing the deviation to f(numax) relations
+    const double Amax=std::abs(params[14]);
+    const double numax=std::abs(params[15]);
+    const double sig_numax=std::abs(params[16]);
+    const double mu_numax=params[17]; // hyper-parameter describing the deviation to f(numax) relations
+    //const double mu_a=params[17]; //hyper-parameter describing the deviation to f(a) relation
     const double step=x[2]-x[1]; // used by the function that optimise the lorentzian calculation
     const int Nrows=1, Ncols=4; // Number of parameters for each mode
     MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
 
-    // ---- Setting the Gaussian + Leakage model -----
+    
+	// ---- Setting the Gaussian + Leakage model -----
     outparams=1;
 	// Compute the Leakage effect as a sinc function (Eq 1 of Kallinger+2014))
 	VectorXd nu0(x.size()), model_final(x.size()), noise_params;
-	int c=0;
-
-    
+	int c=0;    
 	// Compute the Leakage effect as a sinc function (Eq 1 of Kallinger+2014)
 	const VectorXd eta_squared=eta_squared_Kallinger2014(x);
 
 	// ------ Setting the Gaussian -------
-	model_final= -0.5 * (x - nu0.setConstant(numax)).array().square() /pow(std::abs(params[12]),2);
-	model_final= std::abs(params[10])*eta_squared.array()* model_final.array().exp();
+	model_final= -0.5 * (x - nu0.setConstant(numax)).array().square() /pow(std::abs(sig_numax),2);
+	model_final= std::abs(Amax)*eta_squared.array()* model_final.array().exp();
 	// ----------------------------------
     // ---- Setting the Noise model -----
-    noise_params=params.segment(0, 10); // pick the first 10 elements, begining from the index 3: [ka,sa,t,k1,s1,c1, k2,s2,c2, N0]
-    model_final=Kallinger2014(numax, mu_numax, Mass, noise_params.array(), x, model_final);
+    //noise_params=params.segment(0, 12); // pick the first 10 elements, begining from the index 3: [ka,sa,t,k1,s1,c1, k2,s2,c2, N0]
+    noise_params=params.segment(0, 14); // pick the first 14 elements, begining from the index 3: [k_Agran, s_Agran, k_taugran, s_taugran, c_gran, a1,a2,k1,s1,c1, k2,s2,c2, N0]
+    //model_final=Kallinger2014(numax, mu_numax, Mass, noise_params.array(), x, model_final);
+    //std::cout << "noise_params = " << noise_params.transpose() << std::endl;
+    //std::cout << "numax = " << numax << std::endl;
+    //std::cout << "mu_numax = " << mu_numax << std::endl;
+    //std::cout << "Amax = " << Amax << std::endl;
+    //std::cout << "sig_numax = " << sig_numax << std::endl;
+    model_final=Kallinger2014_V2(numax, mu_numax, noise_params.array(), x, model_final);
     // ----------------------------------
     
     if(outparams){
-        mode_params(0,0)=params[10]; // Amax
+        mode_params(0,0)=Amax; // Amax
         mode_params(0,1)=numax; // numax
-        mode_params(0,2)=params[12]; // sigma
-        mode_params(0,3)=Mass; // Mass
+        mode_params(0,2)=sig_numax; // sigma
+        mode_params(0,3)=-1; // Mass
         std::string file_out="params.model";
         std::string modelname = __func__;
         std::string name_params = "# Input Gaussian envelope parameters. Amax / numax / sigma  / Mass";
@@ -5786,12 +5796,10 @@ VectorXd model_Kallinger2014_Gaussian(const VectorXd& params, const VectorXi& pa
            }
         }
         noise(Nnoise, 0)=noise_params(c);
-        //std::cout << noise << std::endl;
         std::string noise_name_params ="# Kallinger+2014 Noise (https://arxiv.org/pdf/1408.0817.pdf): [ka,sa,t],[k1,s1,c1], [k2,s2,c2] [N0]. Set at -1 if not used. -2 means that the parameter is not even written on the file (because irrelevant).";
         write_star_params(spec_params, params, params_length, mode_params, noise, file_out, modelname, name_params,
             noise_name_params);
     }
-    //exit(EXIT_SUCCESS);
 	return model_final;
 }
 

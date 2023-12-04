@@ -693,14 +693,29 @@ long double priors_Kallinger2014_Gaussian(const VectorXd& params, const VectorXi
 
 	long double f=0;
 	// Stello2009 scaling relation between Dnu and numax to remove spurious spiky fits
+	const long double numax=params[15];
+	const long double sig_numax=params[16];
 	const long double beta0=0.263;
 	const long double beta1=0.77; 
-	const long double Dnu_expected=beta0*std::pow(params[11],beta1);  // numax=param2[11] must be numax here
-	const long double mu_numax = params[14];
-	const long double omega_numax=params[15];
-	const long double numax=params[11];
+	const long double Dnu_expected=beta0*std::pow(numax,beta1);  // 
+	const long double mu_numax = params[17];
+	const long double omega_numax=params[18];
+	//const long double mu_a= params[16];
+	//const long double omega_a=params[17];
+	//const double Mass=std::abs(params[15]);
+	const double ka=3382.;
+    const double sa=-0.609;
+    const double err_ka=9.;
+    const double err_sa=0.002;
+	//const double a=std::abs(params[0])*std::pow(std::abs(numax + mu_numax),params[1]) * std::pow(Mass,params[2]);
+	//const double a=std::abs(ka)*std::pow(std::abs(numax),sa);
+	//const double deriv_ka=std::pow(numax,sa);
+	//const double deriv_sa=std::pow(numax,sa) * log(numax);
+	//const double err_a=std::sqrt(std::pow(deriv_ka * err_ka,2) + std::pow(deriv_sa * err_sa,2));
+	//const double a1=params[0];
+	//const double a2=params[1];
 	//std::cout << "f = " << f << std::endl;
-	if (params[12] < Dnu_expected/2){
+	if (sig_numax < Dnu_expected/2){
 		f=f -INFINITY;  // If the width of gaussian is smaller than 1.5 times the numax, reject the solution
 		goto end;
 	}
@@ -708,10 +723,18 @@ long double priors_Kallinger2014_Gaussian(const VectorXd& params, const VectorXi
 		f=f -INFINITY;  // If bias factor on numax should not lead to negative numax + mu_numax
 		goto end;
 	}
+	//if (a + mu_a < 0){
+	//	f=f -INFINITY;  // If bias factor on numax should not lead to negative numax + mu_numax
+	//	goto end;
+	//}
 	f=f + logP_gaussian(0, std::abs(omega_numax), mu_numax);
+	//f=f + logP_gaussian(a, err_a, (a1+a2)/2); // the mean of the two amplitude terms must be close to the trend a
+	//f=f + logP_gaussian_uniform_gaussian(-0.45, 0.45, 0.05, 0.05, (a1-a2)/a); // the difference between the two amplitudes is smaller than 50
 	f=f + apply_generic_priors(params, priors_params, priors_names_switch, tabulated_priors);
-	//exit(EXIT_FAILURE);
+	//std::cout << "f = " << f << std::endl;
+	//exit(EXIT_SUCCESS);
 	end:
+
 return f;
 } 
 
