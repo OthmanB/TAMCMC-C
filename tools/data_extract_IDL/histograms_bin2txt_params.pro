@@ -21,6 +21,7 @@ function histograms_bin2txt_params, dir_out, Nb_classes, root_filename, dir_bin2
   ; spawn, dir_bin2txt + './bin2txt ' + root_filename + ' 0 ' + dir_out + ' ' + strtrim(round(index0), 2) + $
   ; ' ' + strtrim(round(keep_period),2)  + ' 0' ; The last '1' means that we DO NOT replicate the constant in the ascii file
   ; New instructions since v1.85.0
+  print, 'Chain = ', chain
   txt = ' --rootname ' + root_filename
   txt = txt + ' --chain-index ' + strtrim(chain, 2)
   txt = txt + ' --output-dir ' + dir_out

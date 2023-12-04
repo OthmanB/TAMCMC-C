@@ -53,7 +53,7 @@ pro showbestfit
     b = byte(dirs[i])
     pos = max(where(b eq 47 or b eq 92)) ; detect slashes
     if pos[0] eq -1 then starID = dirs[i] else starID = strtrim(b[pos + 1 : *], 2)
-    done = PostMCMC_showbestfit(dir_outputs, dir_inputs, dir_out, modelname, starID, phase, Nb_classes, index0, keep_period)
+    done = PostMCMC_showbestfit(dir_outputs, dir_inputs, dir_out, modelname, starID, phase, Nb_classes, index0, keep_period, chain)
     print, '    -------------------------------------------'
     Ok[i] = done
   endfor
@@ -92,7 +92,7 @@ function PostMCMC_showbestfit, root_outputs, root_inputs, dir_out, modelname, st
   binresultdir = root_outputs + starID + '/outputs/'
   diagsdir = root_outputs + starID + '/diags/'
   root_filename = binresultdir + starID + '_' + phase + '_params' ; here phase may contain and asterix
-  test = file_search(root_filename + '_chain-0.bin')
+  test = file_search(root_filename + '_chain-' + strtrim(chain, 2) + '.bin')
   if test eq '' then begin
     print, 'Could not find files compatible with requested phase'
     print, 'Change the phase name. The program will stop now'
