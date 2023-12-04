@@ -4506,7 +4506,6 @@ VectorXd model_RGB_asympt_aj_CteWidth_HarveyLike_v4(const VectorXd& params, cons
         for (int i=0; i< fl1_all.size(); i++){
             b[i]=bias(fl1_all[i]);
             fl1_all[i] = fl1_all[i] + b[i];
-            //std::cout << bias(fl1_all[i]) << "  "  << fl1_all[i] << std::endl;
         }
     }
 
@@ -4645,8 +4644,12 @@ VectorXd model_RGB_asympt_aj_CteWidth_HarveyLike_v4(const VectorXd& params, cons
        -------------------------------------------------------
     */
     model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
-
     if(outparams){
+        if (bias_type == 0){
+            VectorXd b;
+            b.resize(fl1_all.size());
+            b.setZero();
+        }
         int c=0;
         std::string file_out="params.model";
         std::string modelname = __func__;
@@ -4869,7 +4872,7 @@ VectorXd model_RGB_asympt_aj_AppWidth_HarveyLike_v4(const VectorXd& params, cons
             b[i]=bias(fl1_all[i]);
             fl1_all[i] = fl1_all[i] + b[i];
         }
-    }
+    } 
      // Generating widths profiles for l=1 modes using the ksi function
     ksi_pg=ksi_fct2(fl1_all, freqs_l1.nu_p, freqs_l1.nu_g, freqs_l1.dnup, freqs_l1.dPg, q_star, "precise"); //"precise" // assume Dnu_p, DPl and q constant
     h1_h0_ratio=h_l_rgb(ksi_pg, Hfactor); //  Valid assummption only not too evolved RGB stars (below the bump, see Kevin mail 10 August 2019). Hence Hfactor to depart from asymptotic
@@ -5014,6 +5017,10 @@ VectorXd model_RGB_asympt_aj_AppWidth_HarveyLike_v4(const VectorXd& params, cons
     */
     model_final=harvey_like(noise_params.array().abs(), x, model_final, Nharvey); // this function increment the model_final with the noise background
     if(outparams){
+        if (bias_type == 0){
+            b.resize(fl1_all.size());
+            b.setZero();
+        }
         // Prepare Mixed modes data arrays
         mixed_modes_params.resize(freqs_l1.nu_m.size(), 9);
         global_mixed_modes_name_params[0] = "model_type"; global_mixed_modes_name_params[1] = "Dnu_p"  ; global_mixed_modes_name_params[2] = "epsilon_p"; 
@@ -5739,8 +5746,7 @@ VectorXd model_Kallinger2014_Gaussian(const VectorXd& params, const VectorXi& pa
     const int Nrows=1, Ncols=4; // Number of parameters for each mode
     MatrixXd mode_params(Nrows, Ncols); // For ascii outputs, if requested
 
-    
-	// ---- Setting the Gaussian + Leakage model -----
+    // ---- Setting the Gaussian + Leakage model -----
     outparams=1;
 	// Compute the Leakage effect as a sinc function (Eq 1 of Kallinger+2014))
 	VectorXd nu0(x.size()), model_final(x.size()), noise_params;
@@ -5758,6 +5764,7 @@ VectorXd model_Kallinger2014_Gaussian(const VectorXd& params, const VectorXi& pa
     noise_params=params.segment(0, 10); // pick the first 10 elements, begining from the index 3: [ka,sa,t,k1,s1,c1, k2,s2,c2, N0]
     model_final=Kallinger2014(numax, mu_numax, Mass, noise_params.array(), x, model_final);
     // ----------------------------------
+    
     if(outparams){
         mode_params(0,0)=params[10]; // Amax
         mode_params(0,1)=numax; // numax
