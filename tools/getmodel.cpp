@@ -9,6 +9,8 @@
 #include <iomanip>
 //#include <filesystem> // ONLY FOR C++17
 #include <cstdio>
+#include <ios>
+#include <fstream>
 #include <cstring>
 #include <cerrno>
 
@@ -16,6 +18,7 @@
 #include "model_def.h"
 #include "data.h"
 #include "string_handler.h"
+//#include "linspace.h"
 #include "config.h"
 #include "version.h"
 
@@ -31,54 +34,135 @@ Data Data_Nd2Data(Data_Nd dat);
 int main(int argc, char* argv[]){
 
 		bool verbose=0;
-		int i, Nmaxlines, Nmodels, modelname_switch, testval, status_compat;
+		int i, Nmaxlines, Nmodels, modelname_switch, testval, status_compat, pos_option_file, pos_option_type;
 		VectorXi plength;
-		VectorXd arr0, model0;
+		VectorXd arr0, model0, data_range;
 		MatrixXd data_out;
 		MatrixXd models;
 		Data_Nd data;
 		Data data_model;
 		Config cfg;
-		std::string filename_data, filename_params, fileout, modelname;
+		std::string filename_data, filename_params, dirout, fileout, modelname;
 		std::string char0, line0;
 		std::ifstream cfg_session;
 		std::ofstream fileout_stream;
-		
+		std::vector<std::string> tmp;
 		Model_def model_list;
 		Data_Basic listoutputs;
 
 		// Set the current path variables
 		std::string cpath=getcwd(NULL, 0);
-
 		Nmaxlines=5; // Maximum of models that can be provided (and therefore generated)
-
 		testval=options(argc, argv, Nmaxlines);
-
+		std::cout << testval << std::endl;
 		filename_data=argv[1];
 		filename_params=argv[2];
 		modelname=argv[3]; 
-	
-		if(testval == 10){
-			std::cout << " Output file name not provided. Using the default output filename: output_model.ascii" << std::endl;
+		if(testval == 10 || testval == 13){
+			std::cout << " Output directory / Output file not provided " << std::endl;
+			std::cout << "       - Generating the output files within the current directory" << std::endl;
+			dirout="";
 			fileout="output_model.ascii";
-		} else{
-			fileout=argv[4];
+			std::cout <<"       - Default filename used: " << fileout << std::endl;
+			if(testval == 13){
+				pos_option_type=4;
+			}
+		} else{ //Then we expect the first option, followed by the second one
+			if(testval == 11 || testval == 12){
+				pos_option_file=4;
+				pos_option_type=5;
+			}
+			if(testval == 15){ // Case where the data_type argument is before the output dir
+				pos_option_file=5;
+				pos_option_type=4;
+			}
+			// Identifies if the user provided a directory (end by a '/') or a file (does not end by a '/')
+			tmp=strsplit(argv[pos_option_file], "/");
+			if(tmp[tmp.size()-1] == ""){ // In that case, we have a directory as input. Not a file. The default file for outputs will be provided
+				std::cout <<" Directory was provided as output... using it for outputs of the ascii and the param file" << std::endl;
+				dirout=argv[pos_option_file];
+				fileout="output_model.ascii";
+				std::cout <<"       Default filename used for the ASCII file: " << fileout << std::endl;
+			} else{
+				dirout="/";
+				if(tmp[0] != "."){
+					for(int i=0; i<tmp.size()-1;i++){
+						dirout=dirout + tmp[i] + "/";
+					}
+				} // Otherwise, the user specifically asked the current dir
+				fileout=argv[pos_option_file];
+				std::cout << " Directory and filename provided for outputs" << std::endl;
+				if (dirout !="/"){
+					std::cout << "       - Identified directory: " << dirout << std::endl;
+				} else{
+					std::cout << "       - Identified directory: " << "Current Directory" << std::endl;
+				}
+				std::cout << "       - Provided filename used for the ASCII file :" << tmp[tmp.size()-1] << std::endl;
+			}
 		}
-					
 		std::cout << "  0. Configuration: " << std::endl;
 		std::cout << "      - Model name: " << modelname << std::endl;		
-		std::cout << "      - Data file: " << filename_data << std::endl;
+		if(testval == 10 || testval == 11){
+			std::cout << "      - Data file: " << filename_data << std::endl;
+		} else{
+			tmp=strsplit(argv[pos_option_type], "="); // Dealing with case where data_type option is requested, but IS GIVEN BEFORE output dir provided
+			if(tmp[1] == "range"){
+				data_range=str_to_Xdarr(filename_data, ",");// filename_data contains 3 values the string in that scenario
+				if (data_range.size() !=3){
+					std::cout << " Error: A range was provided but it seems that it does not contain 3 elements" << std::endl;
+					std::cout << "        The expected syntax is: data_range=x_min,x_max,resolution (no spaces)" << std::endl;
+					std::cout << "        Inputs for the argument: "<< filename_data << std::endl;
+					exit(EXIT_FAILURE);
+				}
+				std::cout << "      - Data range: " << data_range.transpose() << std::endl;
+				filename_data="";
+			} else{
+				std::cout << "      - Data file: " << filename_data << std::endl;
+			}
+		}
 		std::cout << "      - Parameters file: " << filename_params << std::endl;
-		std::cout << "      - Output file: " << fileout << std::endl;
-	
-		std::cout << "  1. Reading the data file..." << std::endl;
-		verbose=0;
-		data=cfg.read_data_ascii_Ncols(filename_data, " \t", verbose); // the data in a matricial form				
-		data_model=Data_Nd2Data(data);
-
+		std::cout << "      - Output dir: " << dirout << std::endl;
+		
+		if(filename_data != ""){
+			std::cout << "  1. Reading the data file..." << std::endl;
+			verbose=0;
+			data=cfg.read_data_ascii_Ncols(filename_data, " \t", verbose); // the data in a matricial form				
+			data_model=Data_Nd2Data(data);
+		} else{
+			std::cout << "  1. Generating x-axis data according to the provided data_range values..." << std::endl;
+			//data_model.x=linspace(data_range[0], data_range[1], std::ceil(1 + (data_range[1]-data_range[0])/data_range[2])); // convert the resolution into a number of data points
+			data_model.x= Eigen::VectorXd::LinSpaced(std::ceil(1 + (data_range[1]-data_range[0])/data_range[2]), data_range[0], data_range[1]);
+			data_model.xrange.resize(2); data_model.y.resize(1); data_model.sigma_y.resize(1);
+			data_model.xrange[0]=data_model.x.minCoeff(); // Contains the min and max of x... in practice, it is used to limit the data range if requested by the cfg file (e.g. freq_range option in the .MCMC)
+			data_model.xrange[1]=data_model.x.maxCoeff(); // Contains the min and max of x... in practice, it is used to limit the data range if requested by the cfg file (e.g. freq_range option in the .MCMC)
+			data_model.y[0]=-1; data_model.sigma_y[0]=-1;
+			data_model.Nx=data_model.x.size(); // Ny is not checked but should be as long as x
+			data_model.xlabel="x-axis"; // label for x-axis. In ASCII file, the axis labels are identified by the symbol ! at the begining of the line
+			data_model.ylabel="NOT USED";
+			data_model.xunit="Unknown";
+			data_model.yunit="NOT USED";
+			// To ensure that we write the x-axis in the output file, we also set a minimalistic data_Nd raw structure (without y-axis, header, units and labels)
+			data.data.resize(data_model.Nx,1);
+			data.data.col(0)=data_model.x;
+		}
 		// Getting the list of models that are currently implemented
-		std::string file_list=cpath + "/models_ctrl.list";
-		listoutputs=cfg.read_listfiles(file_list, 1);	 // The file must be in the same folder as the main getmodel compiled file
+		std::string file_list = "models_ctrl.list";
+		std::string file_path = cpath + "/" + file_list;
+		std::ifstream file(file_path);
+		if (!file.good()) {
+			file_path = cpath + "/../" + file_list;
+			file.open(file_path);
+		}
+		if (file.good()) {
+			listoutputs = cfg.read_listfiles(file_path, 1);
+		} else {
+			std::cerr << " Fatal error in Fonction name: Config::read_listfiles():\n";
+			std::cerr << " Accessing file:" << file_list << " failed\n";
+			std::cerr << " The file was searched in execution directory and the path below :\n";
+			std::cerr << " Execution directory: " << cpath << std::endl; 
+			exit(EXIT_FAILURE);
+		}
+		//listoutputs=cfg.read_listfiles(file_list, 1);	 // The file must be in the same folder as the execution directory
 		modelname_switch=cfg.convert_model_fct_name_to_switch(modelname, listoutputs); // look for the case number that is going to be used in call_model
 
 		std::cout << "  2. Reading the file with the parameters of the model and computing model(s)..." << std::endl;
@@ -113,17 +197,16 @@ int main(int argc, char* argv[]){
 					plength.conservativeResize(plength.size() +1);
 					plength[plength.size()-1]=1; // adding c0
 					arr0=adapt2new_MSGlobal(plength, arr0, 20.); // last value is c0
-				}				
-				model0=model_list.call_model_explicit(&data_model, plength, arr0, modelname_switch);
+				}	
+				model0=model_list.call_model_explicit(&data_model, plength, arr0, modelname_switch, true);
 				if(i==0){// Initialisation of the Matrix of parameters
 					models.resize(Nmaxlines, model0.size());
 				} 
-				models.row(i) = model0; //call_model_solo(&data, arr0, plength, modelname);
+				models.row(i) = model0; 
 				std::getline(cfg_session, line0);
 				// Taking care of the params.model file that is created since version 1.61
-				//std::string file_out;
-				//file_out="params_" + int_to_str(i) + ".model";
-				mvfile("params.model", "params_" + int_to_str(i) + ".model");
+				mvfile(cpath + "/params.model", dirout + "/params_" + int_to_str(i) + ".model");
+				std::cout << "    " << cpath + "/params.model" << " --> " << dirout + "/params_" + int_to_str(i) + ".model" << std::endl;
 				i=i+1;
 			}	
 			Nmodels=i;	
@@ -135,7 +218,7 @@ int main(int argc, char* argv[]){
    			std::cout << "The program will exit now" << std::endl;
    			exit(EXIT_FAILURE);
 		}
-		std::cout << "  4. Writing outputs into the output file in a simple matricial format... " << std::endl;
+		std::cout << "  3. Writing outputs into the output file in a simple matricial format... " << std::endl;
 		data_out.resize(data.data.rows(), data.data.cols() + Nmodels) ; //We take the initial data and the models as additional columns
 		data_out.block(0, 0, data.data.rows(), data.data.cols())=data.data; // Put the data first
 		for( i=0; i<Nmodels; i++){
@@ -195,12 +278,14 @@ void showversion()
 
 int options(int argc, char* argv[], int Nmaxlines){
 
-	std::string arg1, arg2;
+	std::string arg1;
+	std::vector<std::string> tmp_str;
 	int val;
 	
 	val=-1;
 	arg1="";
-	
+	 // Deal with the case that any of the argument happens to be requesting for parameters only (no spectrum)
+	 // This case is useful to get for example only the l=1 mixed modes, which are a solution of fitting parameters
 	if(argc == 2){
 		arg1=argv[1];
 		if(arg1 == "version"){
@@ -211,7 +296,25 @@ int options(int argc, char* argv[], int Nmaxlines){
 		val=10;
 	}
 	if(argc == 5){
-		val=11;
+		val=11; // Case where we had ONE optional parameter
+		tmp_str=strsplit(argv[4], "="); // Dealing with case where data_type option is requested, but NO output dir provided (no first option)
+		if (tmp_str[0] == "data_type"){
+			val=13;
+			//if(tmp_str[1] == "range"){
+			//	val=13;
+			//}
+		}
+	}
+	if(argc == 6){ // Case where we had TWO optional parameters 
+		val=12; // The expected order for the argument (directory first, then data_type)
+		tmp_str=strsplit(argv[4], "="); // Dealing with case where data_type option is requested, but IS GIVEN BEFORE output dir provided
+		if (tmp_str[0] == "data_type"){
+			val=15;
+			//if(tmp_str[1] == "range"){
+			//	val=15;
+			//}
+		}
+
 	}
 
 	if (val == -1){ // Error code
@@ -224,6 +327,7 @@ int options(int argc, char* argv[], int Nmaxlines){
 	if (val > 0 ){
 		return val; // Execution code val
 	} else{
+		usage(argc, argv, Nmaxlines);
 		return -1; // Default value is to return an error code
 	}
 }
@@ -232,13 +336,18 @@ void usage(int argc, char* argv[], int Nmaxlines){
 
 		if( argc < 4){
 			std::cout << " You need to provide at least three argument to that function. The available arguments are: " << std::endl;
-			std::cout << "     [1] The data filename. Should be in the same format as those provided to TAMCMC (*.data file)" << std::endl;
+			std::cout << "     [1] The data filename or range. By default a file is expected and it should be in the same format as those provided to TAMCMC (*.data file)" << std::endl;
 			std::cout << "     [2] The filename for the parameters to read. After comments ('#'), this files contains on row(1) plength and on row(2:2+Nmaxlines) the model parameters. Maximum number of models is Nmaxlines=" << Nmaxlines << std::endl;
 			std::cout << "         THIS FILE IS NOT A DIRECT OUTPUT OF THE TAMCMC program. You must make it yourself, using e.g. the mean of the parameters (that can be extracted the bin2txt program)" <<std::endl;
 			std::cout << "     [3] The model name among the family of MS_Global models (e.g. model_MS_Global_a1etaa3_HarveyLike)" << std::endl;
-			std::cout << "     [4] [Optional] the output filename. If not given, then the output file 'output_model.ascii'" << std::endl;
+			std::cout << "     [4] [Optional] the output directory for files. If not given, then the output directory is the current one" << std::endl;
+			std::cout << "     [5] [Optional argument] data_type=[string]. [string] can be:" << std::endl;
+			std::cout << "               - 'range' in that case arg[1] must be 3 values (xmin,xmax,resolution) without spaces" << std::endl; 
+			std::cout << "               - 'file' in that case arg[1] must be the full path to a data file " << std::endl;
+			std::cout << "         Remark concerning data_type: If data_type is 'range', the output file will not have a copy of the observational data" << std::endl;
+			std::cout << "         Remark concerning the options: There is no order requirement. However, there is no consistency check between the data_type and the arg1 content" << std::endl;
 			std::cout << " Call sequence: " << std::endl;
-			std::cout << "     " << argv[0] << " [data filename] [model name] [parameter filename] [output filename]" << std::endl;
+			std::cout << "     " << argv[0] << " [data filename] [parameter filename]  [model name] [output filename] [Options]" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 	
@@ -250,7 +359,7 @@ int check_retrocompatibility(VectorXi plength, std::string modelname){
 
 	int Nplength_expected=-1; // By defaut, consider that plength is not compatible with the current program
 	int status=2; // DEFAULT IS EVERYTHING OK (EXPERIMENTAL... IF FAILS NEED TO BE TO -1)
-	if (modelname == "model_MS_Global_a1etaa3_HarveyLike" || modelname == "model_MS_Global_a1etaa3_Harvey1985" || modelname == "model_MS_Global_a1l_etaa3_HarveyLike" ||
+	if (modelname == "model_MS_Global_a1l_etaa3_HarveyLike" ||
 	   modelname == "model_MS_Global_a1n_etaa3_HarveyLike" || modelname == "model_MS_Global_a1nl_etaa3_HarveyLike"){
 		Nplength_expected = 11;
 		if(Nplength_expected != plength.size()){
@@ -272,16 +381,6 @@ int check_retrocompatibility(VectorXi plength, std::string modelname){
         //std::cout << "Status set to 2 (Classic model)" << std::endl;
         status=2;
     }
-    if (modelname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2" ){ // This new function appears in version 1.5 so it is ok
-        //std::cout << "Status set to 2 (Classic model)" << std::endl;
-        status=2;
-    }
-    /*if (modelname =="model_MS_local_basic"){
-    	std::cout << "   >> The model 'model_MS_local_basic' is not handled by getmodel yet" << std::endl;
-    	std::cout << "      Currently working on its support... please wait that it gets released" << std::endl;
-    	exit(EXIT_FAILURE);
-    }
-    */
 	if(status >1){
 		std::cout << "   >> Compatibility/Consistency test with earlier version passed..." << std::endl;
 	}
@@ -317,20 +416,9 @@ VectorXd adapt2new_MSGlobal(const VectorXi plength, const VectorXd params, const
 	return newparams;
 }
 
-/*
-   ONLY FOR C++17
-*/
-/*void mvfile(std::string file_in, std::string file_out) {
-  try {
-    std::filesystem::rename(file_in, file_out);
-  } catch (std::filesystem::filesystem_error& e) {
-    std::cout << e.what() << '\n';
-  }
-}
-*/
+// Another version that should work always
 void mvfile(std::string file_in, std::string file_out) {
   if(std::rename(file_in.c_str(), file_out.c_str()) < 0) {
     std::cout << strerror(errno) << '\n' << std::endl;
   }
 }
-
