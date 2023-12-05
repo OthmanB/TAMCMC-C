@@ -101,14 +101,15 @@ def do_all_show(dir_mcmc, phase, model_name, do_loglog=False):
 		do_show(dir_mcmc, process_name, model_name, fileout, phase=phase, do_loglog=do_loglog)
 		print("    -> File saved at : ", fileout)
 
-dir_mcmc="/Users/obenomar/Work/dev/test_Kallinger2014/TAMCMC-C-v1.86.4/test/outputs/Kallinger2014_Gaussian/LC_CORR_FILT_INP_ASCII/"
+dir_mcmc="/Users/obenomar/Work/dev/test_Kallinger2014/Data/outputs/Kallinger2014_Gaussian/LC_CORR_FILT_INP_ASCII_REBINNED/"
 phase="L"
 model_name="model_Kallinger2014_Gaussian"
 do_loglog=True
 do_all_show(dir_mcmc, phase, model_name, do_loglog=do_loglog)
 
 '''
-dir_mcmc="/Users/obenomar/Work/dev/test_Kallinger2014/TAMCMC-C-v1.86.4/test/outputs/Kallinger2014_Gaussian/LC_CORR_FILT_INP_ASCII/"
+dir_mcmc="/Users/obenomar/Work/dev/test_Kallinger2014/Data/outputs/Kallinger2014_Gaussian/LC_CORR_FILT_INP_ASCII_REBINNED/"
+
 fileout=None
 process_name="kplr008379927_91_COR_PSD_filt_inp_KGaussfit"
 phase="L"

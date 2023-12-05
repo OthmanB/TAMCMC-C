@@ -26,7 +26,7 @@
 	will be compatible with the envelope_measure.pro program. Eventually a conversion of envelope_measure.pro into a python code would avoid
 	this conversion gameplay, but this is not yet the case
 
-### Purpose of envelope_measure.pro ###
+### Purpose of envelope_measure.pro and envelope_measure.py ###
      This program allows you to get guesses for Amax and numax. It also performs some plots in order to see what the code found.
      For further explanations on how to use it, read instruction_envelope.md
 

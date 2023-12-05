@@ -426,9 +426,8 @@ long double Model_def::call_prior(Data *data_struc, const int m){
 	double p;
 
 	switch(prior_fct_name_switch){
-		case 0: // model_Test_Gaussian
+		case 0: // model_Kallinger2014_Gaussian
 		  return priors_Kallinger2014_Gaussian(params.row(m), plength, priors_params, priors_params_names_switch, tabulated_priors);
-		  //return priors_Test_Gaussian(params.row(m), plength, priors_params, priors_params_names_switch, tabulated_priors);
 		  break;
 		case 1: // model_Harvey_Gaussian
 		  return priors_Harvey_Gaussian(params.row(m), plength, priors_params, priors_params_names_switch, tabulated_priors);

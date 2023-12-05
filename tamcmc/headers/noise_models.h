@@ -45,7 +45,6 @@ double get_ksinorm(const double b, const double c, const Eigen::VectorXd& x);
  *      - Characteristic frequency ~ 1/timescale b2: k2, s2, ( and c2, the slope of the SuperLorentzian)
  * Such that at the end we have: [ka,sa,t,k1,s1,c1, k2,s2,c2, N0]
  * @param numax The frequency at maximum power of the modes 
- * @param Mass The stellar mass of the star. If not known, you must set it to Mass=1 and also set t=1
  * @param noise_params The noise parameters structured as explained in the function help
  * @param x A vector that contains the frequencies of the data points
  * @param y An initial vector of the same size as x and that contains the power. This vector could be initialised to 0 or be initialised using an instrumental noise
@@ -53,5 +52,4 @@ double get_ksinorm(const double b, const double c, const Eigen::VectorXd& x);
  * 
  * @note The function returns the noise background.
  */
-VectorXd Kallinger2014(const double numax, const double mu_numax, const double Mass, const VectorXd& noise_params,const VectorXd& x, const VectorXd& y);
-VectorXd Kallinger2014_V2(const double numax, const double mu_numax, const VectorXd& noise_params,const VectorXd& x, const VectorXd& y);
+VectorXd Kallinger2014(const double numax, const double mu_numax, const VectorXd& noise_params,const VectorXd& x, const VectorXd& y);

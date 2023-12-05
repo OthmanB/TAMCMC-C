@@ -20,7 +20,6 @@
 #include "string_handler.h"
 #include "../../external/Alm/Alm_cpp/data.h"
 #include "../../external/Alm/Alm_cpp/Alm_interpol.h"
-//#include "../../external/Alm/Alm_cpp/bilinear_interpol.h"
 
 Config::Config(std::string current_path, std::string cfg_file_in, std::string cfg_file_errors, 
 			   std::string cfg_models_ctrl_file_in, std::string cfg_priors_ctrl_file_in, std::string cfg_likelihoods_ctrl_file_in,
@@ -195,7 +194,7 @@ void Config::setup(const int slice_ind){
     std::cout << "       - Converting prior function names into integers..." << std::endl;
     modeling.prior_fct_name_switch=convert_prior_fct_name_to_switch(modeling.prior_fct_name);
 	// --- Read tabulated priors if provided ---
-	// Added on 1st July
+	// Added on 1st July 2023
 	// This section update the modeling.inputs structure (of type Input_Data) by adding to it the tabulated_priors. 
 	// This must be done here, hafter 'read_inputs_files()' is done, as that function generate the Input_Data, specific to a model
 	// While the prior data are somewhat 'external' to the model.
@@ -261,69 +260,6 @@ void Config::setup(const int slice_ind){
 						block_vector.push_back(row_vector);
 					}
 					data_tmp.z=block_vector; 
-					/*
-					std::cout << " -- " << std::endl;
-					std::cout << "data_tmp.x = ";
-					for (int i=0;i<data_tmp.x.size();i++){
-						std::cout << data_tmp.x[i] << "  ";
-					}
-					std::cout << std::endl;
-					std::cout << "data_tmp.y = ";
-					for (int i=0;i<data_tmp.y.size();i++){
-						std::cout << data_tmp.y[i] << "  ";
-					}
-					std::cout << std::endl;
-					std::cout << "data_tmp.z.size() = " << data_tmp.z.size() << std::endl;
-					std::cout << "data_tmp.z[0].size() = " << data_tmp.z[0].size() << std::endl;
-					
-					for (const auto& row : data_tmp.z) {
-        				for (const auto& element : row) {
-            				std::cout << element << "\t";
-       					}
-        				std::cout << std::endl;
-    				}
-					std::cout << " -- " << std::endl;
-					*/	
-					/*
-					switch (i)
-					{
-					case 0:
-						modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A10= flatten_grid(data_tmp);
-						modeling.inputs.tabulated_priors.interpolator_2d.interp_A10= init_2dgrid(modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A10);
-						break;
-					case 1:
-						modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A11= flatten_grid(data_tmp);
-						modeling.inputs.tabulated_priors.interpolator_2d.interp_A11= init_2dgrid(modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A11);
-					case 2:
-						modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A20= flatten_grid(data_tmp);
-						modeling.inputs.tabulated_priors.interpolator_2d.interp_A20= init_2dgrid(modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A20);
-					case 3:
-						modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A21= flatten_grid(data_tmp);
-						modeling.inputs.tabulated_priors.interpolator_2d.interp_A21= init_2dgrid(modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A21);
-					case 4:
-						modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A22= flatten_grid(data_tmp);
-						modeling.inputs.tabulated_priors.interpolator_2d.interp_A22= init_2dgrid(modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A22);
-					case 5:
-						modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A30= flatten_grid(data_tmp);
-						modeling.inputs.tabulated_priors.interpolator_2d.interp_A30= init_2dgrid(modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A30);
-					case 6:
-						modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A31= flatten_grid(data_tmp);
-						modeling.inputs.tabulated_priors.interpolator_2d.interp_A31= init_2dgrid(modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A31);
-					case 7:
-						modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A32= flatten_grid(data_tmp);
-						modeling.inputs.tabulated_priors.interpolator_2d.interp_A32= init_2dgrid(modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A32);
-					case 8:
-						modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A33= flatten_grid(data_tmp);
-						modeling.inputs.tabulated_priors.interpolator_2d.interp_A33= init_2dgrid(modeling.inputs.tabulated_priors.interpolator_2d.flat_grid_A33);
-					default:
-						std::cerr << "  You Have Exceded the maximum number of allowed tabulated priors!" << std::endl;
-						std::cerr << "  The maximum is 9" << std::endl;
-						exit(EXIT_FAILURE);
-						break;
-					}			
-					modeling.inputs.tabulated_priors.interpolator_2d.valid[i]=true;
-					*/
-					
 					modeling.inputs.tabulated_priors.interpolator_2d[i].flat_grid_A10= flatten_grid(data_tmp);
 					modeling.inputs.tabulated_priors.interpolator_2d[i].interp_A10= init_2dgrid(modeling.inputs.tabulated_priors.interpolator_2d[i].flat_grid_A10);
 					modeling.inputs.tabulated_priors.interpolator_2d[i].valid=true;
@@ -375,15 +311,12 @@ void Config::setup(const int slice_ind){
     // ----- Define which columns are containing the x values, the y values and ysig_ind ----
 	if(data.data.xrange[0] == -9999 && data.data.xrange[1] == -9999){ // Case where no range was given in the cfg file ==> Take all
 		imin=0;
-		//imax=data_in.data.rows();
 		imax=data.data_all.data.rows();
 	} else{ // Case where a range was set ==> select the appropriate data range
 		imin=0;
-		//while(imin<data_in.data.rows() && data_in.data(imin, data.x_col) <data.data.xrange[0]){
 		while(imin<data.data_all.data.rows() && data.data_all.data(imin, data.x_col) <data.data.xrange[0]){
 			imin=imin+1.;
         }
-		//if(imin >= data_in.data.rows()){
         if(imin >= data.data_all.data.rows()){
 			std::cout << "Warning: Found that xmin > max(data.x)" << std::endl;
 			std::cout << "         The requested xrange[0] is inconsistent with the given data" << std::endl;
@@ -412,15 +345,11 @@ void Config::setup(const int slice_ind){
 	
 	if(data.y_col >=0){
 		std::cout << "Importing data...";
-		//if(data_in.data.cols() > data.y_col){
 		if(data.data_all.data.cols() > data.y_col){
-			//data.data.y=data_in.data.col(data.y_col).segment(imin, imax-imin);
 			data.data.y=data.data_all.data.col(data.y_col).segment(imin, imax-imin);
 			std::cout << "labels...";
-			//data.data.ylabel=data_in.labels[data.y_col];
 			data.data.ylabel=data.data_all.labels[data.y_col];
 			std::cout << "units";
-			//data.data.yunit=data_in.units[data.y_col];
 			data.data.yunit=data.data_all.units[data.y_col];
 			std::cout << "...Done" << std::endl;
 		}else{
@@ -435,7 +364,6 @@ void Config::setup(const int slice_ind){
 		exit(EXIT_FAILURE);
 	}
 	if(data.ysig_col >= 0){
-		//data.data.sigma_y=data_in.data.col(data.ysig_col).segment(imin, imax-imin);
 		data.data.sigma_y=data.data_all.data.col(data.ysig_col).segment(imin, imax-imin);
 	} else {
 		std::cout << "Warning: Config::Config.data.data.sigma_y was not specified in the data file" << std::endl;
@@ -445,7 +373,6 @@ void Config::setup(const int slice_ind){
 		VectorXd tmp(data.data.x.size());
 		data.data.sigma_y=tmp.setConstant(1);
 	}
-	//data.data.header=data_in.header;
 	data.data.header=data.data_all.header;
 	data.data.Nx=data.data.x.size();
 
@@ -672,7 +599,7 @@ void Config::read_inputs_prior_Simple_Matrix(){
 		} else{
 			msg_handler(modeling.cfg_model_file, "text_indicator", "Config::read_inputs_prior_Simple_Matrix()", "", 1);
 		}
-		std::cout << "line0 : " << line0 << std::endl;
+		//std::cout << "line0 : " << line0 << std::endl;
 		// ----------- Dealing with the inputs values ------------
 		std::getline(cfg_session, line0);
 		line0=strtrim(line0);
@@ -717,7 +644,7 @@ void Config::read_inputs_prior_Simple_Matrix(){
 	cfg_session.close();
 
 	// -------- Determining plength using the parameters names ------
-	std::cout << "inputs_names = ";
+	//std::cout << "inputs_names = ";
 	for(i=0; i<modeling.inputs.inputs_names.size(); i++){
 		std::cout << modeling.inputs.inputs_names[i] << "  ";
 	}

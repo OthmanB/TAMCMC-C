@@ -99,32 +99,35 @@ def read_data_file(datafile, extend_to_0=False, extend_type='max'):
 	x=x[0:i-1]
 	y=y[0:i-1]
 	if extend_to_0 == True:
-		print('Warning: Extend to 0 is True: We will add datapoint using psf to the low range...')
 		resol=x[2]-x[1]
 		Nextra=int(np.floor(x.min()/resol)-1)
-		xextra=np.linspace(0, x.min()-resol, Nextra)
-		xnew=np.zeros(len(x) + len(xextra))
-		ynew=np.zeros(len(xnew))
-		xnew[0:Nextra]=xextra
-		xnew[Nextra:]=x
+		if Nextra > 0:
+			print('Warning: Extend to 0 is True: We will add datapoint using psf to the low range...')
+			xextra=np.linspace(0, x.min()-resol, Nextra)
+			xnew=np.zeros(len(x) + len(xextra))
+			ynew=np.zeros(len(xnew))
+			xnew[0:Nextra]=xextra
+			xnew[Nextra:]=x
+			true_xmin=x.min()
+			if extend_type == 'max':
+				print('extension using the max all the data points ')
+				ynew[0:Nextra]=y[0:100].max()
+			if extend_type == 'mean':
+				print('extension using the mean of the lower freq 1microHz (or the first 10 bin) data points ')
+				pos=np.where(x<=x.min()+0.5)
+				if len(pos) <= 10:
+					#print(' Warning: The lower 0.5 microHz range has less than 10 data points... using the 10 lowest frequency data points...')
+					ynew[0:Nextra]=np.mean(y[0:10])
+					#ynew[0:Nextra]=np.max(y[0:10])
+				else:
+					ynew[0:Nextra]=np.mean(y[pos])
+			ynew[Nextra:]=y
+			x=xnew
+			y=ynew
+		else:
+			true_xmin=x.min()
+	else:
 		true_xmin=x.min()
-		if extend_type == 'max':
-			print('extension using the max all the data points ')
-			ynew[0:Nextra]=y[0:100].max()
-		if extend_type == 'mean':
-			print('extension using the mean of the lower freq 1microHz (or the first 10 bin) data points ')
-			pos=np.where(x<=x.min()+0.5)
-			#print('resol = ', resol)
-			#print("Ndata_low_range=",len(pos[0]))
-			if len(pos) <= 10:
-				#print(' Warning: The lower 0.5 microHz range has less than 10 data points... using the 10 lowest frequency data points...')
-				ynew[0:Nextra]=np.mean(y[0:10])
-				#ynew[0:Nextra]=np.max(y[0:10])
-			else:
-				ynew[0:Nextra]=np.mean(y[pos])
-		ynew[Nextra:]=y
-		x=xnew
-		y=ynew
 	if nmodels >0:
 		m=m[:,0:i-1]
 	return x,y, m, extend_to_0, true_xmin
@@ -294,7 +297,7 @@ def envelope_measure(freq, spec_reg, fold_range, numax_step, fileout, sfactor=6,
     yfit = yfit/max(yfit)
 
     # plot
-    fig1, ax1 = plt.subplots()  # create figure and axes
+    fig1, ax1 = plt.subplots(1, figsize=(12, 6), num=1, clear=True)  # create figure and axes
     ax1.plot(x_r, s_r, linewidth=2)  # plot data
     ax1.set_xlabel('Frequency (microHz)')
     ax1.set_ylabel('No unit')
@@ -307,7 +310,7 @@ def envelope_measure(freq, spec_reg, fold_range, numax_step, fileout, sfactor=6,
     ax1.plot(x_r[rzone], yfit, color='green', linewidth=3)  # overlay plot
 
     # Second plot: original spectra in search range
-    fig2, ax2 = plt.subplots()  # create figure and axes
+    fig2, ax2 = plt.subplots(1, figsize=(12, 6), num=2, clear=True)  # create figure and axes
     ax2.plot(x0, s4Amax, linewidth=2)  # plot data
     ax2.set_xlabel('Frequency (microHz)')
     ax2.set_ylabel('ppm^2/microHz')
@@ -320,7 +323,7 @@ def envelope_measure(freq, spec_reg, fold_range, numax_step, fileout, sfactor=6,
     ax2.text(numax_guess + (fold_range[1]-fold_range[0])/100, Amax_guess + (Amax_guess*2)/100, f'$A_{{max}}$={Amax_guess:.2f}', color='blue', fontsize=12)
 
     # Third plot: The whole original spectra
-    fig3, ax3 = plt.subplots()  # create figure and axes
+    fig3, ax3 = plt.subplots(1, figsize=(12, 6), num=3, clear=True)  # create figure and axes
     ax3.plot(x0, s4Amax, linewidth=2)  # plot data
     ax3.set_xlabel('Frequency (microHz)')
     ax3.set_ylabel('ppm^2/microHz')
@@ -337,6 +340,7 @@ def envelope_measure(freq, spec_reg, fold_range, numax_step, fileout, sfactor=6,
 
 def make_guess_Kallinger2014(freq, spec_reg, outdir, ID, Amax_guess, numax_guess, numax_uncertainty_guess, rebin=1, do_Kallinger_model=False, do_data=False):
     Fnyquist=np.max(freq)
+    
     if Fnyquist >= 1000.:
         stype='SC'
     else:
@@ -365,25 +369,84 @@ def make_guess_Kallinger2014(freq, spec_reg, outdir, ID, Amax_guess, numax_guess
         psigma=[90.,250.,30.,100.]
     if numax_guess > 2700:
         psigma=[150.,300.,30.,110.]
-
+    # ------ Values as per defined by Kallinger+2014, Table 2 ------
+    # ---> a0
+    k_Agran0=[3335, 9]
+    s_Agran0=[-0.564, 0.002]
+    k_taugran0=[836, 4]
+    s_taugran0=[-0.886, 0.002]
+    k_Agran=[k_Agran0[0], "k_Agran", "Gaussian", 1, k_Agran0[0], 10*k_Agran0[1], -9999, -9999]
+    s_Agran=[s_Agran0[0], "s_Agran", "Gaussian", 1, s_Agran0[0], 10*s_Agran0[1], -9999, -9999]
+    k_taugran=[k_taugran0[0],"k_taugran", "Gaussian", 1,  k_taugran0[0], 10*k_taugran0[1], -9999, -9999]
+    s_taugran=[s_taugran0[0],"s_taugran", "Gaussian", 1,  s_taugran0[0], 10*s_taugran0[1], -9999, -9999]
+    c0=[2, "c0", "GUG", 1, 2, 4, 0.1, 0.1]
+    ''' We will not use this as we do not need a precise description of the very low frequencies for the mode fitting. The global parameters in Gaussian are used instead.
+    a0_val=k_Agran*  numax_guess**s_Agran
+    deriv_a0_k, deriv_a0_s, deriv_a0_numax=derivatives_power_law(k_Agran, s_Agran, numax_guess)
+    err_a0=np.sqrt((deriv_a0_k*k_Agran[1])**2 + (deriv_a0_s*s_Agran[1])**2 + (deriv_a0_numax*numax_uncertainty_guess)**2)
+    a0=[a0_val[0], "a0", "Gaussian", 1, a0_val[0], 5*err_a0, -9999, -9999]
+    '''
+    #
+    # ---> a1
+    k_a1=[3382,9]
+    s_a1=[-0.609, 0.002]
+    a1_val=k_a1[0]*  numax_guess**s_a1[0]
+    deriv_a1_k, deriv_a1_s, deriv_a1_numax=derivatives_power_law(k_a1[0], s_a1[0], numax_guess)
+    err_a1=np.sqrt((deriv_a1_k*k_a1[1])**2 + (deriv_a1_s*s_a1[1])**2 + (deriv_a1_numax*numax_uncertainty_guess)**2)
+    a1=[a1_val, "a1", "Gaussian", 1, a1_val, 5*err_a1, -9999, -9999]
+    #a1=[a1_val[0], "a1", "Uniform", 1, a1_val[0]/2, a1_val[0]*2, -9999, -9999]
+    # ---> a2
+    a2=[a1_val, "a2", "Gaussian", 1, a1_val, 5*err_a1, -9999, -9999]
+    # ---> b1 :
+    k1=[0.317, "k1", "Gaussian", 1, 0.317, 0.002, -9999, -9999]
+    s1=[0.970, "s1", "Gaussian", 1, 0.970, 0.002, -9999, -9999]
+    c1=[2    , "c1", "GUG"     , 1, 2   ,  4    , 0.1  , 0.1  ]
+    # ---> b2 :
+    k2=[0.948, "k2", "Gaussian", 1, 0.948, 0.003, -9999, -9999]
+    s2=[0.992, "s2", "Gaussian", 1, 0.992, 0.002, -9999, -9999]
+    c2=[2    , "c2", "GUG"     , 1, 2   ,  4    , 0.1  , 0.1  ]
+    # ---> N0 :
+    N0=[B0    , "N0", "Uniform" ,1, 0   , 10*B0 , -9999, -9999]
+    # ---> Amax :
+    Amax=[Amax_guess/10, "Amax", "Jeffreys", 1, B0/10, np.max(spec_reg), -9999, -9999]
+    # ---> numax :
     numax_min=numax_guess-2*numax_uncertainty_guess
-    init_param=      [  3710.     ,   -0.613       ,   -0.26      ,     0.317      ,    0.970       ,        2         ,       0.948      ,       0.992          ,         2.        ,        B0        ,  Amax_guess/10   ,    numax_guess-numax_uncertainty_guess  ,  (psigma[0] + psigma[1])/2     ,     1.2          ,      0.01           ,         5]
-    name_param=      [ "ka"       ,    "sa"        ,   "t"        ,   "k1"         ,    "s1"        ,     "c1"         ,      "k2"        ,       "s2"           ,      "c2"         ,      "N0"        ,    "Amax"        ,    "numax"                              ,   "Gauss_sigma"                ,    "Mass"        ,     "mu_numax"      ,    "omega_numax"]
-    prior_name=      ["Gaussian"  ,   "Gaussian"   ,  "Gaussian"  ,   "Gaussian"   ,   "Gaussian"   ,     "Uniform"    ,     "Gaussian"   ,     "Gaussian"       ,     "Uniform"     ,     "Uniform"    ,    "Jeffreys"    ,    "Uniform"                            ,     "GUG"                      ,    "Uniform"     ,     "Uniform_abs"    ,    "Uniform" ]
-    relax_param=     [  1         ,      1         ,       1      ,     1          ,    1           ,        1         ,        1         ,        1             ,         1        ,         1        ,       1          ,      1                                  ,       1                        ,     1            ,         1            ,        1 ]
-    prior_param=np.zeros((len(name_param),4)) - 9999
-    prior_param[:,0]=[  3710.     ,   -0.613       ,   -0.26      ,     0.317      ,    0.970       ,        1         ,       0.948      ,       0.992          ,         1         ,        0.        ,     B0/10        ,    numax_min                            ,     psigma[0]                  ,     0.6          ,      0.00           ,         0]
-    prior_param[:,1]=[   21       ,     0.002      ,   0.03       ,    0.002       ,    0.002       ,        5         ,       0.003      ,       0.002          ,         5         ,      10*B0       , np.max(spec_reg) ,    np.max(freq)                         ,     psigma[1]                  ,     4.0          ,        100          ,      20  ]
-    prior_param[:,2]=[-9999.000000, -9999.000000   , -9999.000000 , -9999.000000   , -9999.000000   , -9999.000000     ,  -9999.000000    ,   -9999.000000       ,    -9999.000000   ,  -9999.000000    ,  -9999.000000    ,         -9999.0000                      ,     psigma[2]                  ,  -9999.000000    ,  -9999.00000        , -9999.000]
-    prior_param[:,3]=[-9999.000000, -9999.000000   , -9999.000000 , -9999.000000   , -9999.000000   , -9999.000000     ,  -9999.000000    ,   -9999.000000       ,    -9999.000000   ,  -9999.000000    ,  -9999.000000    ,         -9999.0000                      ,     psigma[3]                  ,  -9999.000000    ,  -9999.00000        , -9999.000]
+    numax_max=np.max(freq)
+    numax=[numax_guess, "numax", "Uniform", 1, numax_min, numax_max, -9999, -9999]
+    # ---> Gauss_sigma :
+    Gauss_sigma=[(psigma[0] + psigma[1])/2, "Gauss_sigma", "GUG", 1, psigma[0], psigma[1], psigma[2], psigma[3]]
+    # ---> Mass : # This parameter has been show to make no sense in the context of individual fitting
+    #Mass=[1.2, "Mass", "Uniform", 1, 0.6, 4.0, -9999, -9999]
+    # ---> mu_numax :
+    mu_numax=[0.01, "mu_numax", "Uniform_abs", 1, 0.00, 0.05*numax_guess, -9999, -9999]
+    # ---> omega_numax :
+    omega_numax=[0.0025*numax_guess/5, "omega_numax", "Uniform", 1, 0.0, 0.05*numax_guess/5, -9999, -9999]
+    # -------- Regrouping --------
+    init_param= [k_Agran[0]    , s_Agran[0]  , k_taugran[0], s_taugran[0], c0[0], a1[0], a2[0], k1[0], s1[0], c1[0], k2[0], s2[0], c2[0], N0[0], Amax[0], numax[0], Gauss_sigma[0], mu_numax[0], omega_numax[0]]
+    name_param= [k_Agran[1]    , s_Agran[1]  , k_taugran[1], s_taugran[1], c0[1], a1[1], a2[1], k1[1], s1[1], c1[1], k2[1], s2[1], c2[1], N0[1], Amax[1], numax[1], Gauss_sigma[1], mu_numax[1], omega_numax[1]]
+    prior_name= [k_Agran[2]    , s_Agran[2]  , k_taugran[2], s_taugran[2], c0[2], a1[2], a2[2], k1[2], s1[2], c1[2], k2[2], s2[2], c2[2], N0[2], Amax[2], numax[2], Gauss_sigma[2], mu_numax[2], omega_numax[2]]
+    relax_param=[k_Agran[3]    , s_Agran[3]  , k_taugran[3], s_taugran[3], c0[3], a1[3], a2[3], k1[3], s1[3], c1[3], k2[3], s2[3], c2[3], N0[3], Amax[3], numax[3], Gauss_sigma[3], mu_numax[3], omega_numax[3]]
+    Nparams=len(name_param)
+    prior_param=np.zeros((Nparams,4)) - 9999
+    for j in range(4):
+         prior_param[:,j]=[k_Agran[4+j]    , s_Agran[4+j]  , k_taugran[4+j], s_taugran[4+j], c0[4+j],  a1[4+j], a2[4+j], k1[4+j], s1[4+j], c1[4+j], k2[4+j], s2[4+j], c2[4+j], N0[4+j], Amax[4+j], numax[4+j], Gauss_sigma[4+j], mu_numax[4+j], omega_numax[4+j]]
     if do_data == True:
          err=do_data_file(freq, spec_reg, outdir + "/" + ID +"_KGaussfit.data", rebin=rebin)
     if do_Kallinger_model == True:
+         hdr=      "# File auto-generated by envelope_measure.py\n"
+         hdr=hdr + "# Fit of Gaussian mode Envelope with Kallinger2014 noise function\n"
+         hdr=hdr + "# ID:"+ str(ID)+"\n# rebin="+str(rebin)+"\n"
+         hdr=hdr + "# model_fullname= model_Kallinger2014_Gaussian\n" 
          err=do_model_file(init_param, relax_param, name_param, prior_param, prior_name, outdir + "/" + ID + "_KGaussfit.model", 
-   			np.min(freq), np.max(freq), header="# File auto-generated by envelope_measure.py\n# Fit of Gaussian mode Envelope with Kallinger2014 noise function\n# ID:"+ str(ID)+"\n# rebin="+str(rebin)+"\n")
+   			np.min(freq), np.max(freq), header=hdr)
 
+def derivatives_power_law(k, s, numax):
+     deriv_k=numax**s
+     deriv_s=k*np.log(numax)* numax**s
+     deriv_numax=k*s* numax**(s-1)
+     return deriv_k, deriv_s, deriv_numax
 
-def do_envelope(spec_file, outdir, do_Kallinger_model=False, do_Harvey_model=False, do_data=False, search_range=[500,4400], numax_step=10, rebin=1):
+def do_envelope(spec_file, outdir, do_Kallinger_model=False, do_Harvey_model=False, do_data=False, search_range=[500,4400], numax_step=10, rebin_resol=1):
     sfactor=6
     nu_rebin=None
     # get the extension of spec_file
@@ -414,7 +477,10 @@ def do_envelope(spec_file, outdir, do_Kallinger_model=False, do_Harvey_model=Fal
          passed=True
     if passed == False:
          raise("Format not recognized. Only .sav, .data .pow and .fits are accepted.")
-    
+
+    # Compute the level of rebining in bins, using the requested frequency resolution
+    resol=freq[10] - freq[9]
+    rebin=np.max([1,int(rebin_resol/resol)])
     fileout_jpg=outdir + "/" + ID + "_guess"
     numax_guess, uncertainty, Amax_guess, significance=envelope_measure(freq, spec_reg, search_range, 
                                                     numax_step, fileout_jpg, sfactor=sfactor, nu_rebin=nu_rebin)
@@ -425,10 +491,43 @@ def do_envelope(spec_file, outdir, do_Kallinger_model=False, do_Harvey_model=Fal
          mode_initial_setup(spec_file, ID, numax_guess, numax_guess, Amax_guess, outdir, 
                             fmin=0, fmax=5000, rebin=1, do_S1=None, datatype='data',
                             do_data=False, do_model=True, extend_to_0=False)
+    return ID, rebin
 
-def test_envelope():
-    outdir="/Users/obenomar/Work/dev/TAMCMC-C-v1.86.4/test/inputs/Kallinger2014_Gaussian/LC_CORR_FILT_INP_ASCII/rebinned/"
-    spec_file="/Users/obenomar/Work/dev/TAMCMC-C-v1.86.4/test/inputs/Kallinger2014_Gaussian/LC_CORR_FILT_INP_ASCII/kplr008379927_91_COR_PSD_filt_inp.data"
-    do_envelope(spec_file, outdir, do_Kallinger_model=True, do_Harvey_model=False, 
-                numax_step=10, search_range=[500,4400], do_data=True, rebin=10)
-    print("Done")
+
+def do_all_envelopes(indir, outdir, extension='.data', do_Kallinger_model=True, do_data=True, 
+                     rebin_resol=1, search_range=[500,4400], numax_step=10):
+    # Check if outdir is a subdirectory of indir
+    common_path = os.path.commonpath([indir, outdir])
+    if common_path == indir:
+        raise ValueError("outdir cannot be a subdirectory of indir")
+
+    # Rest of the code...
+    print(" ...Scanning for files with extension " + extension + "...")
+    spec_files=[]
+    for root, dirs, files in os.walk(indir):
+        for f in files:
+            if f.endswith(extension):
+                spec_files.append(os.path.join(root, f))
+    print(" ...Number of found files: ", len(spec_files))
+    # Now do the envelope for each file
+    print(" ...Processing found files...")
+    index=1
+    list_IDs=[]
+    for spec_file in spec_files:
+        print("[{}/{}] {}".format(index, len(spec_files), spec_file))
+        ID, rebin=do_envelope(spec_file, outdir, do_Kallinger_model=do_Kallinger_model, do_data=do_data, 
+                              rebin_resol=rebin_resol,search_range=search_range, numax_step=numax_step)
+        index=index+1
+        list_IDs.append("{:<80} {};".format(ID+"_KGaussfit",rebin))
+    
+    print("List to copy/past at the end of the config_presets.cfg")
+    print("   table_ids= {} , 2; Number of lines and number of columns".format(len(list_IDs)))
+    for l in list_IDs:
+        print(l)
+
+#outdir="/Users/obenomar/Work/dev/test_Kallinger2014/Data/inputs/Kallinger2014_Gaussian/LC_CORR_FILT_INP_ASCII_REBINNED/"
+#indir="/Users/obenomar/Work/dev/test_Kallinger2014/Data/inputs/Kallinger2014_Gaussian/LC_CORR_FILT_INP_ASCII/"
+print("  ----- Program to compute the noise + envelope parameters of a MCMC fit with TAMCMC ----")
+indir = input("Enter the input directory (indir): ")
+outdir = input("Enter the output directory (outdir): ")
+do_all_envelopes(indir, outdir, extension='.data', do_Kallinger_model=True, do_data=False, rebin_resol=1, search_range=[250, 4400])

@@ -5738,7 +5738,7 @@ VectorXd model_Kallinger2014_Gaussian(const VectorXd& params, const VectorXi& pa
  *		- Noise b2: k2, s2, ( and c2, the slope of the SuperLorentzian)
  *	Such that at the end we have: [ka,sa,t,k1,s1,c1, k2,s2,c2, N0]
 */
-//name_param=      [ "a1"       ,    "a2"        ,   "k1"       ,    "s1"        ,     "c1"         ,      "k2"        ,       "s2"           ,      "c2"        ,     "N0"         ,    "Amax"        ,    "numax"                              ,   "Gauss_sigma"                ,   "mu_numax"      ,    "omega_numax"]
+//name_param=      [ "Agran",  "Agran" , "tau1gran", "tau2gran",  "a1"       ,    "a2"        ,   "k1"       ,    "s1"        ,     "c1"         ,      "k2"        ,       "s2"           ,      "c2"        ,     "N0"         ,    "Amax"        ,    "numax"                              ,   "Gauss_sigma"                ,   "mu_numax"      ,    "omega_numax"]
     
     const double x_nyquist=x.maxCoeff();
     const double Amax=std::abs(params[14]);
@@ -5764,15 +5764,8 @@ VectorXd model_Kallinger2014_Gaussian(const VectorXd& params, const VectorXi& pa
 	model_final= std::abs(Amax)*eta_squared.array()* model_final.array().exp();
 	// ----------------------------------
     // ---- Setting the Noise model -----
-    //noise_params=params.segment(0, 12); // pick the first 10 elements, begining from the index 3: [ka,sa,t,k1,s1,c1, k2,s2,c2, N0]
     noise_params=params.segment(0, 14); // pick the first 14 elements, begining from the index 3: [k_Agran, s_Agran, k_taugran, s_taugran, c_gran, a1,a2,k1,s1,c1, k2,s2,c2, N0]
-    //model_final=Kallinger2014(numax, mu_numax, Mass, noise_params.array(), x, model_final);
-    //std::cout << "noise_params = " << noise_params.transpose() << std::endl;
-    //std::cout << "numax = " << numax << std::endl;
-    //std::cout << "mu_numax = " << mu_numax << std::endl;
-    //std::cout << "Amax = " << Amax << std::endl;
-    //std::cout << "sig_numax = " << sig_numax << std::endl;
-    model_final=Kallinger2014_V2(numax, mu_numax, noise_params.array(), x, model_final);
+    model_final=Kallinger2014(numax, mu_numax, noise_params.array(), x, model_final);
     // ----------------------------------
     
     if(outparams){
