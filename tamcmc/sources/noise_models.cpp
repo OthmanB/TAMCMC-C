@@ -136,16 +136,19 @@ VectorXd Kallinger2014(const double numax, const double mu_numax, const VectorXd
  	Power=y + white_noise;
 	// Granulation SuperLorentzian
 	tmp0=(x/b0).array().pow(c0); // Denominator
-	tmp1=(eta_squared * ksi0 * std::pow(a0,2)/b0).cwiseProduct((tmp0 + ones).cwiseInverse()); // Numerator/Denominator
+	//tmp1=(eta_squared * ksi0 * std::pow(a0,2)/b0).cwiseProduct((tmp0 + ones).cwiseInverse()); // Numerator/Denominator
+	tmp1=(ksi0 * std::pow(a0,2)/b0)*  (tmp0 + ones).cwiseInverse(); // Numerator/Denominator
 	Power=Power + tmp1;
 	// First SuperLorentzian
 	tmp0=(x/b1).array().pow(c1); // Denominator
-	tmp1=(eta_squared * ksi1 * std::pow(a1,2)/b1).cwiseProduct((tmp0 + ones).cwiseInverse()); // Numerator/Denominator
+	tmp1=(ksi1 * std::pow(a1,2)/b1)*  (tmp0 + ones).cwiseInverse(); // Numerator/Denominator
 	Power=Power + tmp1;
 	// Second SuperLorentzian
 	tmp0=(x/b2).array().pow(c2); // Denominator
-	tmp2= (eta_squared *ksi2*std::pow(a2,2)/b2).cwiseProduct((tmp0 + ones).cwiseInverse()); // Numerator/Denominator
+	tmp2= (ksi2*std::pow(a2,2)/b2)*  (tmp0 + ones).cwiseInverse(); // Numerator/Denominator
 	Power=Power + tmp2;
+	// Apply the leakage filter on the whole spectrum (should also include the gaussian or the modes if y is initialised with them)
+	Power.cwiseProduct(eta_squared);
 	return Power;
 
 }

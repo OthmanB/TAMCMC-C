@@ -42,7 +42,7 @@ def quickshow(x,y,m, xm=None, c=['red', 'orange', 'blue', 'cyan', 'purple'], do_
 		fig.savefig(fileout, dpi=300)
 
 def do_show(dir_mcmc, process_name, model_name, fileout, cpp_path="../../bin/",
-				phase="A", chain=0, first_index=0, last_index=-1, period=1, 
+				phase="A", chain=0, first_index=10000, last_index=-1, period=1, 
 				single_param_index=-1,erase_tmp=True,
 				do_loglog=False):
 	'''
@@ -101,20 +101,13 @@ def do_all_show(dir_mcmc, phase, model_name, do_loglog=False):
 		do_show(dir_mcmc, process_name, model_name, fileout, phase=phase, do_loglog=do_loglog)
 		print("    -> File saved at : ", fileout)
 
-dir_mcmc="/Users/obenomar/Work/dev/test_Kallinger2014/Data/outputs/Kallinger2014_Gaussian/LC_CORR_FILT_INP_ASCII_REBINNED/"
-phase="L"
-model_name="model_Kallinger2014_Gaussian"
+print("  ----- Program to visualise outputs ----")
+dir_mcmc = input("Enter the output directory for the tamcmc data: ")
+phase = input("Enter the phase of the analysis (B/L/A): ")
+model_name = input("Enter the model name for the analysis: ")
+
+#dir_mcmc="/Users/obenomar/Work/dev/test_Kallinger2014/Data/outputs/Kallinger2014_Gaussian/LC_CORR_FILT_INP_ASCII_REBINNED/"
+#phase="L"
+#model_name="model_Kallinger2014_Gaussian"
 do_loglog=True
 do_all_show(dir_mcmc, phase, model_name, do_loglog=do_loglog)
-
-'''
-dir_mcmc="/Users/obenomar/Work/dev/test_Kallinger2014/Data/outputs/Kallinger2014_Gaussian/LC_CORR_FILT_INP_ASCII_REBINNED/"
-
-fileout=None
-process_name="kplr008379927_91_COR_PSD_filt_inp_KGaussfit"
-phase="L"
-model_name="model_Kallinger2014_Gaussian"
-do_loglog=True
-do_show(dir_mcmc, process_name, model_name, fileout, phase=phase, do_loglog=do_loglog)
-print("All done")
-'''
