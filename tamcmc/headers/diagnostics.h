@@ -98,12 +98,6 @@ class Diagnostics{
 		~Diagnostics();
 
 		// --- String Handling procedures ----
-		//std::string int_to_str(const int value);
-		//std::string dbl_to_str(const double ind);
-		//std::string strtrim(const std::string& str);
-		//std::vector<std::string> strsplit(const std::string str, const std::string delimiters);
-		//Eigen::VectorXd str_to_Xdarr(const std::string str, const std::string delimiters);
-		//std::vector<double> str_to_dblarr(const std::string str, const std::string delimiters);
 		std::string formated_int_to_str(const int ind_param);
 		std::vector<double> vectXd_to_vec(const VectorXd& vecXd_in);
 
@@ -124,12 +118,12 @@ class Diagnostics{
 
 		void gnuplt_pdfs_diags_main(const int i);
 		void gnuplt_pdfs_diags(const std::string dir_pdfs_files, const std::vector<std::string> varnames);
-
-		//Ptempering_out ptemp;
 	
 		// ---- Handling binary outputs -----
 		// Function to read *stat_criteria.bin, *params_chain-*.bin, *model*.bin *sigmas.bin and *mus.bin files. Basically anything that has only double in it
 		Eigen::MatrixXd read_bin_matrix_dbl(const std::string binfile, const long Ncols, const long Nrows, const std::string type); 
+		// case of a compressed binary
+		Eigen::MatrixXd read_tar_gz_bin_matrix_dbl(const std::string tarGzFile, const long Ncols, const long Nrows, const std::string type);
 		// Reading the parallel_tempering outputs
 		Ptempering_out read_bin_parallel_temp_params(const std::string binfile, const long Nrows);
 		// Reading the Pmoves and moveds variables
@@ -147,6 +141,6 @@ class Diagnostics{
 		// ------ Execute Shell commands ------
 		std::string shell_exec(const std::string cmd);
 
-        	// ------ Error Handler ------
-        	int file_error(const std::string file, const std::string error_type, const std::string fct_name);
+        // ------ Error Handler ------
+        int file_error(const std::string file, const std::string error_type, const std::string fct_name);
 };

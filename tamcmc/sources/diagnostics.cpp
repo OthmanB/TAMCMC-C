@@ -15,6 +15,8 @@
 #include <stdexcept>
 #include <stdio.h>
 #include "diagnostics.h"
+#include <archive.h>
+#include <archive_entry.h>
 
 Diagnostics::Diagnostics(Config *cfg){
 /*
@@ -674,6 +676,68 @@ void Diagnostics::gnuplt_pdfs_diags_main(const int i){
 // -----------------------------------------------------------------------------------
 // ------------------------ READING FUNCTIONS FOR THE OUTPUTS ------------------------
 // -----------------------------------------------------------------------------------
+
+Eigen::MatrixXd Diagnostics::read_tar_gz_bin_matrix_dbl(const std::string tarGzFile, const long Ncols, const long Nrows, const std::string type) {
+    long Nread_rows;
+    double val_dbl = 0;
+    long double val_ldbl = 0;
+    size_t size_ldbl = sizeof(val_ldbl);
+    size_t size_dbl = sizeof(val_dbl);
+
+    Eigen::MatrixXd vals(Nrows, Ncols);
+    std::vector<char> buffer;
+
+    struct archive* ar = archive_read_new();
+    archive_read_support_filter_gzip(ar);
+    archive_read_support_format_tar(ar);
+
+    int r = archive_read_open_filename(ar, tarGzFile.c_str(), 10240);
+    if (r != ARCHIVE_OK) {
+        // Handle error
+        archive_read_free(ar);
+        file_error(tarGzFile, "openfile", "Diagnostics::read_tar_gz_bin_matrix_dbl");
+    }
+
+    struct archive_entry* entry;
+    r = archive_read_next_header(ar, &entry);
+    if (r != ARCHIVE_OK) {
+        // Handle error
+        archive_read_close(ar);
+        archive_read_free(ar);
+        file_error(tarGzFile, "readheader", "Diagnostics::read_tar_gz_bin_matrix_dbl");
+    }
+
+    Nread_rows = 0;
+    if (type == "ldbl") {
+        buffer.resize(size_ldbl * Ncols);
+        while (Nread_rows < Nrows && archive_read_data(ar, &buffer[0], size_ldbl * Ncols) > 0) {
+            std::istringstream iss(std::string(buffer.begin(), buffer.end()));
+            for (int i = 0; i < Ncols; i++) {
+                iss.read(reinterpret_cast<char*>(&val_ldbl), size_ldbl);
+                vals(Nread_rows, i) = val_ldbl;
+            }
+            Nread_rows++;
+        }
+    } else if (type == "dbl") {
+        buffer.resize(size_dbl * Ncols);
+        while (Nread_rows < Nrows && archive_read_data(ar, &buffer[0], size_dbl * Ncols) > 0) {
+            std::istringstream iss(std::string(buffer.begin(), buffer.end()));
+            for (int i = 0; i < Ncols; i++) {
+                iss.read(reinterpret_cast<char*>(&val_dbl), size_dbl);
+                vals(Nread_rows, i) = val_dbl;
+            }
+            Nread_rows++;
+        }
+    }
+
+    archive_read_close(ar);
+    archive_read_free(ar);
+
+    vals.conservativeResize(Nread_rows, Ncols);
+    return vals;
+}
+
+
 Eigen::MatrixXd Diagnostics::read_bin_matrix_dbl(const std::string binfile, const long Ncols, const long Nrows, const std::string type){
 /*
  * Function that read the outputs file that contains inputs in double and in Matricial format (Columns - Rows).
@@ -715,7 +779,6 @@ Eigen::MatrixXd Diagnostics::read_bin_matrix_dbl(const std::string binfile, cons
 	} else {
         file_error(binfile, "openfile", "Diagnostics::read_bin_matrix_dbl");
 	}
-
 	vals.conservativeResize(Nread_rows-1, Ncols);
 	return vals;
 }

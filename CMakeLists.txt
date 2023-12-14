@@ -76,6 +76,11 @@ if(WITH_GSL)
     	set(GSL_LIB GSL::gsl)
     endif()
 endif()
+#find_package(ZLIB REQUIRED)
+# Set LibArchive_INCLUDE_DIR and LibArchive_LIBRARY in your bashrc
+include_directories($ENV{LibArchive_INCLUDE_DIR})
+find_library(LibArchive_LIBRARY NAMES archive)
+find_path(LibArchive_INCLUDE_DIR archive.h)
 
 
 #Bring the core program sources into the project
@@ -166,9 +171,7 @@ include_directories( "$ENV{EIGEN3_INCLUDE_DIR}" )
 include_directories(tamcmc/headers)
 
 #Dependencies that are not portable (BOOST)
-#set(Boost_USE_MULTITHREADED=OFF)
 find_package(Boost COMPONENTS system filesystem iostreams program_options REQUIRED)
-#find_package(Boost REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 
@@ -206,8 +209,8 @@ if (WITH_STATIC)
 		/usr/local/lib/libgsl.a
 		-lz)
 else()
-	target_link_libraries(${CMAKE_PROJECT_NAME} ${Boost_LIBRARIES} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY}) # Boost::boost)
-	target_link_libraries(bin2txt ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY})
-	target_link_libraries(getstats ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY})# Boost::boost)
-	target_link_libraries(getmodel  ${Boost_LIBRARIES} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY}) # Boost::boost)
+	target_link_libraries(${CMAKE_PROJECT_NAME} ${Boost_LIBRARIES} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY}) # ${ZLIB_LIBRARIES}
+	target_link_libraries(bin2txt ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY})  # ${ZLIB_LIBRARIES}
+	target_link_libraries(getstats ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY})
+	target_link_libraries(getmodel  ${Boost_LIBRARIES} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY}) 
 endif()

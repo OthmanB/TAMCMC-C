@@ -8,6 +8,8 @@
 #include <vector>
 #include <Eigen/Dense>
 #include <iomanip>
+#include <archive.h>
+#include <archive_entry.h>
 #include "string_handler.h"
 #include "version.h"
 
@@ -19,6 +21,7 @@ using Eigen::VectorXi;
 void showversion();
 int options(int argc, char* argv[]);
 void usage(int argc, char* argv[]);
+bool file_exists (const std::string& name);
 
 struct Proba_out{
 	/*
@@ -38,7 +41,7 @@ struct Proba_hdr{
 
 Proba_hdr read_proba_header(const std::string file);
 Proba_out read_bin_proba_params(const std::string binfile, const long Nrows, const long Ncols);
-
+Proba_out read_tar_gz_bin_proba_params(const std::string tarGzFile, const long Nrows, const long Ncols);
 
 int main(int argc, char* argv[]){
 /*
@@ -46,13 +49,14 @@ int main(int argc, char* argv[]){
  * about the parallel chains. See the structure Ptempering_out for further
  * information about the retrieved variables.
 */
+	bool istar=false;
     const int Nchars=20;
     const int precision=10;
 	int readchain; // index of the chain to be read
 	int cpt, lcpt, testval; // for the options
 	int ind0=0, indmax=-1, Samples_period=1; // The Samples_period defines out of all samples, how many we keep.
 	long Nrows, Nchains;
-	std::string file_proba, file_proba_hdr, file_out;
+	std::string file_proba, file_proba_bin, file_proba_hdr, file_out;
 	std::ifstream file;
 	std::ostringstream strg;
 	std::ofstream outfile_proba;
@@ -64,6 +68,7 @@ int main(int argc, char* argv[]){
 		file_proba=argv[1];
 		file_proba_hdr=argv[1];
 		file_proba=file_proba + ".bin";
+		file_proba_bin=file_proba;
 		file_proba_hdr=file_proba_hdr + ".hdr";
 		std::istringstream(argv[2]) >> readchain; 
 		file_out=argv[3]; 
@@ -105,14 +110,33 @@ int main(int argc, char* argv[]){
 
 	std::cout << "# Nchains=" << hdr.Nchains << std::endl;
 
-	std::cout << "# Reading Filename:" << file_proba << std::endl;
-	proba=read_bin_proba_params(file_proba, hdr.Nsamples_done, hdr.Nchains);
+	std::cout << "# Reading Filename:" << std::endl;// << file_proba << std::endl;
+	if(!file_exists(file_proba.c_str())){
+		file_proba=argv[1];
+		file_proba=file_proba + ".tar.gz";
+		if(!file_exists(file_proba.c_str())){
+			std::cerr << "Error: no binary or tar.gz file of this name found" << std::endl;
+			std::cerr << "       check the usage or debug the program" << std::endl;
+			std::cerr << "---" << std::endl;
+			//usage(desc);
+		} else{
+			std::cout << "   tar.gz  >> " << file_proba << " file detected... proceeding in reading it..." << std::endl;
+		}
+		istar=true;
+	} else{
+		std::cout << "  bin   >> " << file_proba <<  " file detected... proceeding in reading it..." << std::endl;
+	}
+	if(istar == false){
+		proba=read_bin_proba_params(file_proba, hdr.Nsamples_done, hdr.Nchains);
+	}
+	else{
+		proba=read_tar_gz_bin_proba_params(file_proba, hdr.Nsamples_done, hdr.Nchains);
+	}
 	// Consistency checks on optional arguements
 	if (indmax < 0){
 		std::cout << std::endl;
 		std::cout << "    Warning: Negative indmax provided ==> the last sample is going to be the last sample of the chain" << std::endl;
 		std::cout << std::endl;
-		//indmax=data_array.rows();
 		indmax=hdr.Nsamples_done;
 	}
 	if (indmax < ind0+Samples_period){
@@ -124,48 +148,44 @@ int main(int argc, char* argv[]){
 		std::cout << "    Warning: Negative sampling period provided ==> sampling period will be fixed to 1 " << std::endl; 
 		Samples_period=1;
 	}
-
 	/////// Write the parameters ////////	
 	outfile_proba.open(file_out.c_str()); 
 		 if (outfile_proba.is_open()){
-	    		outfile_proba << "# This File contains the likelihood/priors/posteriors of a MCMC process \n";
+				outfile_proba << "# This File contains the likelihood/priors/posteriors of a MCMC process \n";
 				// ----			
 				outfile_proba << "# Header file:" << file_proba_hdr << "\n";
 				outfile_proba << "# Data file:" << file_proba << "\n";
 				outfile_proba << "# Nsamples= " <<  hdr.Nsamples_done << "\n";
-				outfile_proba << "# Nchains= " <<hdr. Nchains << "\n";
+				outfile_proba << "# Nchains= " <<hdr.Nchains << "\n";
 				outfile_proba << "# readchain= " << readchain << "\n";
 				outfile_proba << "# ";
 				outfile_proba << "     logLikelihood  " << "   logPrior  " << "  logPosterior     " << "\n";
 				outfile_proba.flush(); // Explicitly specify to flush the header into the disk
-				
 				// Writing Data 
 				if(Samples_period <= 1){ // Case where we return all samples
 					for(int i=0; i<hdr.Nsamples_done; i++){	
 						strg.str(std::string());	
-						strg << std::setw(Nchars) << std::setprecision(precision) << proba.logL(i,readchain) << "   " << proba.logPr(i,readchain)  << "   " << proba.logP(i,readchain) << "\n";
+						strg << std::setw(Nchars) << std::setprecision(precision) << proba.logL(i,readchain)  << std::setw(Nchars) << std::setprecision(precision) << proba.logPr(i,readchain)  << std::setw(Nchars) << std::setprecision(precision) << proba.logP(i,readchain) << "\n";
     					outfile_proba << strg.str().c_str();
 					}
 				} else{
 					// ---- Selecting only 1 sample out every Sample_period samples -----
 					std::cout << "  2. Applying the selection rule..." << std::endl;
 					std::cout << "     Operation is of the type: ";
-					std::cout << "     Ouputs[" << ind0 << "]  --> New_Outputs[" << ind0 + Samples_period-1 << "]  "  << std::endl;		
+					std::cout << "     Outputs[" << ind0 << "]  --> New_Outputs[" << ind0 + Samples_period-1 << "]  "  << std::endl;		
 					std::cout << "     ..." << std::endl;
 					cpt=ind0; lcpt=0;
 					while(cpt<hdr.Nsamples_done){
 						strg.str(std::string());	
-						strg << std::setw(Nchars) << std::setprecision(precision) << proba.logL(cpt,readchain) << "   " << proba.logPr(cpt,readchain)  << "   " << proba.logP(cpt,readchain) << "\n";
+						strg << std::setw(Nchars) << std::setprecision(precision) << proba.logL(cpt,readchain) << std::setw(Nchars) << std::setprecision(precision) << proba.logPr(cpt,readchain)  <<std::setw(Nchars) << std::setprecision(precision) << proba.logP(cpt,readchain) << "\n";
     					outfile_proba << strg.str().c_str();
 						cpt=cpt+Samples_period;
 						lcpt=lcpt+1;
 					}
-//					std::cout << " Final index of flushed samples: " << lcpt-1 << std::endl;
 					std::cout << "                       New size : " << (indmax -ind0)/Samples_period << std::endl;
 				}
 			outfile_proba.flush(); // Explicitly specify to flush the data into the disk
 			strg.str(std::string());
-			
 			outfile_proba.close();
   		} // End of the if with is_open()
   		else {
@@ -198,6 +218,8 @@ Proba_out read_bin_proba_params(const std::string binfile, const long Nrows, con
 	proba_read.logPr.resize(Nrows, Ncols); 
 	proba_read.logP.resize(Nrows, Ncols); 
 
+	std::cout << "Ncols = " << Ncols << std::endl;
+	std::cout << "Nrows = " << Nrows << std::endl;
 	// Reading the file until the end;
 	file.open(binfile.c_str(), std::ios::binary); // Open the binary file in read only
 	if (file.is_open()){
@@ -223,6 +245,64 @@ Proba_out read_bin_proba_params(const std::string binfile, const long Nrows, con
 		exit(EXIT_FAILURE);
 	}
 return proba_read;
+}
+
+
+Proba_out read_tar_gz_bin_proba_params(const std::string tarGzFile, const long Nrows, const long Ncols) {
+    double val_dbl = 0;
+    size_t size_dbl = sizeof(val_dbl);
+    Proba_out proba_read;
+    proba_read.logL.resize(Nrows, Ncols);
+    proba_read.logPr.resize(Nrows, Ncols);
+    proba_read.logP.resize(Nrows, Ncols);
+
+    struct archive *a;
+    struct archive_entry *entry;
+    int r;
+
+    a = archive_read_new();
+    archive_read_support_filter_all(a);
+    archive_read_support_format_all(a);
+    r = archive_read_open_filename(a, tarGzFile.c_str(), 10240);
+
+    if (r != ARCHIVE_OK) {
+        std::cout << "Unable to open tar.gz file " << tarGzFile << std::endl;
+        std::cout << "Check that the file exists" << std::endl;
+        std::cout << "The program will exit now" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    entry = archive_entry_new();
+    r = archive_read_next_header(a, &entry);
+
+    if (r != ARCHIVE_OK) {
+        std::cout << "Unable to read header from tar.gz file" << std::endl;
+        std::cout << "The program will exit now" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    //std::string filename(archive_entry_pathname(entry));
+
+    std::vector<char> buffer(archive_entry_size(entry));
+    archive_read_data(a, buffer.data(), buffer.size());
+    std::istringstream iss(std::string(buffer.begin(), buffer.end()));
+
+    for (int i = 0; i < Nrows; i++) {
+        for (int j = 0; j < Ncols; j++) {
+            iss.read(reinterpret_cast<char*>(&proba_read.logL(i, j)), size_dbl);
+        }
+        for (int j = 0; j < Ncols; j++) {
+            iss.read(reinterpret_cast<char*>(&proba_read.logPr(i, j)), size_dbl);
+        }
+        for (int j = 0; j < Ncols; j++) {
+            iss.read(reinterpret_cast<char*>(&proba_read.logP(i, j)), size_dbl);
+        }
+    }
+
+    archive_read_close(a);
+    archive_read_free(a);
+
+    return proba_read;
 }
 
 Proba_hdr read_proba_header(const std::string file){
@@ -352,7 +432,7 @@ int options(int argc, char* argv[]){
 void usage(int argc, char* argv[]){
 
 			std::cout << " You need to provide at least three argument to that function. The available arguments are: " << std::endl;
-			std::cout << "     [1] The data and header full path and name without extension (e.g: /Users/me/myfile). Extensions are assumed to be .bin and .hdr" << std::endl;
+			std::cout << "     [1] The data and header full path and name without extension (e.g: /Users/me/myfile). Extensions are assumed to be .bin (or tar.gz) and .hdr" << std::endl;
 			std::cout << "     [2] The index of the parallel chain that should be read (e.g.: 0 for the main parallel chain)" << std::endl;
 			std::cout << "     [3] The output filename fullpath (e.g.: /Users/me/myoutput.txt)" << std::endl;
 			std::cout << " .   [4] Optional arguments (must be all provided): first_index, last_index, period" << std::endl;
@@ -363,3 +443,6 @@ void usage(int argc, char* argv[]){
 }
 
 
+bool file_exists(const std::string& name) {
+    return ( access( name.c_str(), F_OK ) != -1 );
+}
