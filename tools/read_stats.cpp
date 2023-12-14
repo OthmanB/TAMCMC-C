@@ -247,7 +247,6 @@ Proba_out read_bin_proba_params(const std::string binfile, const long Nrows, con
 return proba_read;
 }
 
-
 Proba_out read_tar_gz_bin_proba_params(const std::string tarGzFile, const long Nrows, const long Ncols) {
     double val_dbl = 0;
     size_t size_dbl = sizeof(val_dbl);
@@ -256,37 +255,27 @@ Proba_out read_tar_gz_bin_proba_params(const std::string tarGzFile, const long N
     proba_read.logPr.resize(Nrows, Ncols);
     proba_read.logP.resize(Nrows, Ncols);
 
-    struct archive *a;
     struct archive_entry *entry;
-    int r;
-
-    a = archive_read_new();
-    archive_read_support_filter_all(a);
-    archive_read_support_format_all(a);
-    r = archive_read_open_filename(a, tarGzFile.c_str(), 10240);
-
+    struct archive* ar = archive_read_new();
+    archive_read_support_filter_gzip(ar);
+    archive_read_support_format_tar(ar);
+    int r = archive_read_open_filename(ar, tarGzFile.c_str(), 10240);
     if (r != ARCHIVE_OK) {
         std::cout << "Unable to open tar.gz file " << tarGzFile << std::endl;
         std::cout << "Check that the file exists" << std::endl;
         std::cout << "The program will exit now" << std::endl;
         exit(EXIT_FAILURE);
     }
-
     entry = archive_entry_new();
-    r = archive_read_next_header(a, &entry);
-
+	r = archive_read_next_header(ar, &entry);
     if (r != ARCHIVE_OK) {
         std::cout << "Unable to read header from tar.gz file" << std::endl;
         std::cout << "The program will exit now" << std::endl;
         exit(EXIT_FAILURE);
     }
-
-    //std::string filename(archive_entry_pathname(entry));
-
     std::vector<char> buffer(archive_entry_size(entry));
-    archive_read_data(a, buffer.data(), buffer.size());
+    archive_read_data(ar, buffer.data(), buffer.size());
     std::istringstream iss(std::string(buffer.begin(), buffer.end()));
-
     for (int i = 0; i < Nrows; i++) {
         for (int j = 0; j < Ncols; j++) {
             iss.read(reinterpret_cast<char*>(&proba_read.logL(i, j)), size_dbl);
@@ -298,10 +287,8 @@ Proba_out read_tar_gz_bin_proba_params(const std::string tarGzFile, const long N
             iss.read(reinterpret_cast<char*>(&proba_read.logP(i, j)), size_dbl);
         }
     }
-
-    archive_read_close(a);
-    archive_read_free(a);
-
+    archive_read_close(ar);
+    archive_read_free(ar);
     return proba_read;
 }
 
