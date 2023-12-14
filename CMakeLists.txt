@@ -211,6 +211,6 @@ if (WITH_STATIC)
 else()
 	target_link_libraries(${CMAKE_PROJECT_NAME} ${Boost_LIBRARIES} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY}) # ${ZLIB_LIBRARIES}
 	target_link_libraries(bin2txt ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY})  # ${ZLIB_LIBRARIES}
-	target_link_libraries(getstats ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY})
+	target_link_libraries(getstats ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY})
 	target_link_libraries(getmodel  ${Boost_LIBRARIES} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY}) 
 endif()
