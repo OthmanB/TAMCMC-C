@@ -78,9 +78,13 @@ if(WITH_GSL)
 endif()
 #find_package(ZLIB REQUIRED)
 # Set LibArchive_INCLUDE_DIR and LibArchive_LIBRARY in your bashrc
-include_directories($ENV{LibArchive_INCLUDE_DIR})
-find_library(LibArchive_LIBRARY NAMES archive)
-find_path(LibArchive_INCLUDE_DIR archive.h)
+if(CMAKE_COMPILER_IS_GNUCXX)
+    find_package(LibArchive REQUIRED)
+else()
+	include_directories($ENV{LibArchive_INCLUDE_DIR})
+    find_library(LibArchive_LIBRARY NAMES archive)
+    find_path(LibArchive_INCLUDE_DIR archive.h)
+endif()
 
 
 #Bring the core program sources into the project
