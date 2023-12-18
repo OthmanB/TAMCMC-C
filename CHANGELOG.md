@@ -4,6 +4,7 @@
   - Adding new function in diagnostics.cpp to read a tar.gz file containing a bin file within it. This in preparation of the implementation of the capability to read and write on binary compressed tar files (to save space)
   - Handling tar.gz in bin2txt and getstats
   - Implementation of an automatic detection of the extension (either bin or tar.gz) in order to convert saved TAMCMC data into ASCII. 
+  - Updating getstats to use the boost library for options
 
 ## v1.86.5 Bug Fix ##
   - Major changes in the way Kalinger+2014 is implemented after realising that it uses 3 harvey-like profile, not 2.

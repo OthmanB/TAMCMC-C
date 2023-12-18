@@ -12,15 +12,16 @@
 #include <archive_entry.h>
 #include "string_handler.h"
 #include "version.h"
+#include <boost/program_options.hpp>
 
 using Eigen::MatrixXd;
 using Eigen::MatrixXi;
 using Eigen::VectorXd;
 using Eigen::VectorXi;
+namespace po = boost::program_options;
 
 void showversion();
-int options(int argc, char* argv[]);
-void usage(int argc, char* argv[]);
+void usage(const po::options_description& desc);
 bool file_exists (const std::string& name);
 
 struct Proba_out{
@@ -54,7 +55,7 @@ int main(int argc, char* argv[]){
     const int precision=10;
 	int readchain; // index of the chain to be read
 	int cpt, lcpt, testval; // for the options
-	int ind0=0, indmax=-1, Samples_period=1; // The Samples_period defines out of all samples, how many we keep.
+	int ind0, indmax, Samples_period; // The Samples_period defines out of all samples, how many we keep.
 	long Nrows, Nchains;
 	std::string file_proba, file_proba_bin, file_proba_hdr, file_out;
 	std::ifstream file;
@@ -63,42 +64,69 @@ int main(int argc, char* argv[]){
 	Proba_hdr hdr;
 	Proba_out proba;
 	
-		testval=options(argc, argv); // return 10 if correct number of arguments. Return code version if requested. Show usage otherwise.
+	namespace po = boost::program_options;
+	po::options_description desc("Allowed options");
+	desc.add_options()
+		("help,h", "Print help message")
+        ("version,v", "Print version information")
+		("file-stats,i", po::value<std::string>(&file_proba)->required(), "input file name, without extension. Example: '4671239_A_stat_criteria'")
+		("chain-index,c", po::value<int>(&readchain)->required(), "index of the chain to be read")
+		("file-out,o", po::value<std::string>(&file_out)->required(), "output file name")
+		("first-kept-element,S", po::value<int>(&ind0)->default_value(0), "[Optional] index of the first kept sample. All index below that will be discarded")
+		("last-kept-element,L", po::value<int>(&indmax)->default_value(-1), "[Optional] index of the last kept sample. All index above that will be discarded")
+		("periodicity,p", po::value<int>(&Samples_period)->default_value(1), "[Optional] sampling periodicity");
 
-		file_proba=argv[1];
-		file_proba_hdr=argv[1];
-		file_proba=file_proba + ".bin";
-		file_proba_bin=file_proba;
-		file_proba_hdr=file_proba_hdr + ".hdr";
-		std::istringstream(argv[2]) >> readchain; 
-		file_out=argv[3]; 
-
-		std::cout << "  0. Configuration: " << std::endl;
-		std::cout << "      - Header file: " << file_proba_hdr << std::endl;		
-		std::cout << "      - Binary file: " << file_proba << std::endl;
-		std::cout << "      - Reading chain: " << readchain << std::endl;
-		std::cout << "      - Output ASCII file: " << file_out << std::endl;
-
-		if (testval == 11){ // Add the optional arguments
-			std::istringstream(argv[4]) >> ind0;
-			std::istringstream(argv[5]) >> indmax;
-			std::istringstream(argv[6]) >> Samples_period;			
-			std::cout << "      Optional Arguments: " << std::endl;
-			std::cout << "      	- Index of the first kept sample: " << ind0 << std::endl;
-			std::cout << "      	- Index of the last kept sample: " << indmax << std::endl;
-			std::cout << "      	- Samples_period: " << Samples_period << " ==> ";
-			std::cout << " Keep 1 sample every " << Samples_period << " samples" << std::endl;
+	po::variables_map vm;
+	try {
+		po::store(po::command_line_parser(argc, argv).options(desc).allow_unregistered().run(), vm);
+		if (vm.count("help")) {
+			usage(desc);
 		}
-		if(Samples_period < 1){
-			std::cout << "Warning: The given periodicity value is smaller than 1... The program will use the default value instead (Period =1)" << std::endl;
-			std::cout << "          ===> All samples will be returned" << std::endl;
-			Samples_period=1;
+		if (vm.count("version")) {
+			showversion();
+			return EXIT_SUCCESS;
 		}
+		po::notify(vm);
+	}
+	catch (const po::error& e) {
+		std::cerr << "Error: " << e.what() << std::endl;
+		usage(desc);
+	}
+	file_proba = vm["file-stats"].as<std::string>();
+	file_out = vm["file-out"].as<std::string>();
+	readchain = vm["chain-index"].as<int>();
 
+	std::cout << "  0. Configuration: " << std::endl;
+	std::cout << "      - Header file: " << file_proba_hdr << std::endl;        
+	std::cout << "      - Binary file: " << file_proba << " (.bin or .tar.gz supported)"  << std::endl;
+	std::cout << "      - Reading chain: " << readchain << std::endl;
+	std::cout << "      - Output ASCII file: " << file_out << std::endl;
 
+	if (vm.count("first-kept-element")) {
+		ind0 = vm["first-kept-element"].as<int>();
+		std::cout << "      Optional Arguments: " << std::endl;
+		std::cout << "          - Index of the first kept sample: " << ind0 << std::endl;
+	}
+	if (vm.count("last-kept-element")) {
+		indmax = vm["last-kept-element"].as<int>();
+		std::cout << "          - Index of the last kept sample: " << indmax << std::endl;
+	}
+	if (vm.count("periodicity")) {
+		Samples_period = vm["periodicity"].as<int>();
+		std::cout << "          - Samples_period: " << Samples_period << " ==> ";
+		std::cout << " Keep 1 sample every " << Samples_period << " samples" << std::endl;
+	}
+	if(Samples_period < 1){
+		std::cout << "Warning: The given periodicity value is smaller than 1... The program will use the default value instead (Period =1)" << std::endl;
+		std::cout << "          ===> All samples will be returned" << std::endl;
+		Samples_period=1;
+	}
+		
+	file_proba_hdr=file_proba + ".hdr";
+	file_proba_bin=file_proba;
 	std::cout << "  1. Reading the data file..." << std::endl;
 
-	std::cout << "# Reading Header file:" << file_proba_hdr << std::endl;
+	std::cout << "      # Reading Header file:" << file_proba_hdr << std::endl;
 	hdr=read_proba_header(file_proba_hdr);
 
 	std::cout << "# labels= ";
@@ -106,31 +134,29 @@ int main(int argc, char* argv[]){
 		std::cout << hdr.labels[i] << "    ";
 	}
 	std::cout << std::endl;
-	std::cout << "# Nsamples_done=" << hdr.Nsamples_done << std::endl;
+	std::cout << "      # Nsamples_done=" << hdr.Nsamples_done << std::endl;
 
-	std::cout << "# Nchains=" << hdr.Nchains << std::endl;
+	std::cout << "      # Nchains=" << hdr.Nchains << std::endl;
 
-	std::cout << "# Reading Filename:" << std::endl;// << file_proba << std::endl;
-	if(!file_exists(file_proba.c_str())){
-		file_proba=argv[1];
-		file_proba=file_proba + ".tar.gz";
-		if(!file_exists(file_proba.c_str())){
+	std::cout << "      # Reading Filename:" << std::endl;// << file_proba << std::endl;
+	if(!file_exists(file_proba_bin.c_str())){
+		file_proba_bin=file_proba + ".tar.gz";
+		if(!file_exists(file_proba_bin.c_str())){
 			std::cerr << "Error: no binary or tar.gz file of this name found" << std::endl;
 			std::cerr << "       check the usage or debug the program" << std::endl;
 			std::cerr << "---" << std::endl;
-			//usage(desc);
 		} else{
-			std::cout << "   tar.gz  >> " << file_proba << " file detected... proceeding in reading it..." << std::endl;
+			std::cout << "   tar.gz  >> " << file_proba_bin << " file detected... proceeding in reading it..." << std::endl;
 		}
 		istar=true;
 	} else{
-		std::cout << "  bin   >> " << file_proba <<  " file detected... proceeding in reading it..." << std::endl;
+		std::cout << "  bin   >> " << file_proba_bin <<  " file detected... proceeding in reading it..." << std::endl;
 	}
 	if(istar == false){
-		proba=read_bin_proba_params(file_proba, hdr.Nsamples_done, hdr.Nchains);
+		proba=read_bin_proba_params(file_proba_bin, hdr.Nsamples_done, hdr.Nchains);
 	}
 	else{
-		proba=read_tar_gz_bin_proba_params(file_proba, hdr.Nsamples_done, hdr.Nchains);
+		proba=read_tar_gz_bin_proba_params(file_proba_bin, hdr.Nsamples_done, hdr.Nchains);
 	}
 	// Consistency checks on optional arguements
 	if (indmax < 0){
@@ -154,7 +180,7 @@ int main(int argc, char* argv[]){
 				outfile_proba << "# This File contains the likelihood/priors/posteriors of a MCMC process \n";
 				// ----			
 				outfile_proba << "# Header file:" << file_proba_hdr << "\n";
-				outfile_proba << "# Data file:" << file_proba << "\n";
+				outfile_proba << "# Stats file:" << file_proba_bin << "\n";
 				outfile_proba << "# Nsamples= " <<  hdr.Nsamples_done << "\n";
 				outfile_proba << "# Nchains= " <<hdr.Nchains << "\n";
 				outfile_proba << "# readchain= " << readchain << "\n";
@@ -376,57 +402,11 @@ void showversion()
 
 }
 
-int options(int argc, char* argv[]){
+void usage(const po::options_description& desc){
 
-	std::string arg1, arg2;
-	int val;
-	
-	val=-1;
-	arg1="";
-	
-	if(argc == 2){
-		arg1=argv[1];
-		if(arg1 == "version"){
-			 val=0;
-		} 
-	}
-	if(argc == 4){
-		val=10;
-	}
-	if(argc == 7){
-		val=11;
-	}
-	if(argc >=5 && argc <=6){
-		// When using optional arguments, All of the tree optional
-		// arguments must be provided
-		usage(argc, argv);
-	}
-
-	if (val == -1){ // Error code
-		usage(argc, argv);
-	} 
-	if (val == 0){ // Version code
-		showversion(); 
-		exit(EXIT_SUCCESS);
-	}
-	if (val > 0 ){
-		return val; // Execution code val
-	} else{
-		return -1; // Default value is to return an error code
-	}
-}
-
-void usage(int argc, char* argv[]){
-
-			std::cout << " You need to provide at least three argument to that function. The available arguments are: " << std::endl;
-			std::cout << "     [1] The data and header full path and name without extension (e.g: /Users/me/myfile). Extensions are assumed to be .bin (or tar.gz) and .hdr" << std::endl;
-			std::cout << "     [2] The index of the parallel chain that should be read (e.g.: 0 for the main parallel chain)" << std::endl;
-			std::cout << "     [3] The output filename fullpath (e.g.: /Users/me/myoutput.txt)" << std::endl;
-			std::cout << " .   [4] Optional arguments (must be all provided): first_index, last_index, period" << std::endl;
-			std::cout << " Call sequence: " << std::endl;
-			std::cout << "     " << argv[0] << " [input path+name] [chain index] [output filename] [Optional arg]" << std::endl;
-			exit(EXIT_FAILURE);
-
+    std::cerr << " You need to provide at least 3 arguments to that function. The available arguments are: " << std::endl;
+    std::cerr << desc << std::endl;
+	exit(EXIT_FAILURE);
 }
 
 

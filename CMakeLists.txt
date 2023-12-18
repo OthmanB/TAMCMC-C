@@ -80,12 +80,14 @@ endif()
 # Set LibArchive_INCLUDE_DIR and LibArchive_LIBRARY in your bashrc
 if(CMAKE_COMPILER_IS_GNUCXX)
     find_package(LibArchive REQUIRED)
+	find_package(ZLIB REQUIRED)
+	get_filename_component(ZLIB_LIBRARIES_DIR ${ZLIB_LIBRARIES} DIRECTORY)
 else()
 	include_directories($ENV{LibArchive_INCLUDE_DIR})
     find_library(LibArchive_LIBRARY NAMES archive)
     find_path(LibArchive_INCLUDE_DIR archive.h)
 endif()
-
+get_filename_component(LibArchive_LIBRARY_DIR ${LibArchive_LIBRARY} DIRECTORY)
 
 #Bring the core program sources into the project
 set(SOURCES_MAIN  #_COMMON
@@ -135,7 +137,7 @@ set(SOURCES_TOOLS_BIN2TXT
 	)
 #Define the sources for the getstats program
 set(SOURCES_TOOLS_GETSTATS
-	tools/read_stats.cpp
+	tools/getstats.cpp
 	tamcmc/sources/string_handler.cpp
 	)
 
@@ -192,19 +194,27 @@ if (WITH_STATIC)
 		${Boost_LIBRARY_DIRS}/libboost_iostreams.a
 		${Boost_LIBRARY_DIRS}/libboost_program_options.a
 		/usr/local/lib/libgsl.a
-		-lz)
+		-lz 
+		${LibArchive_LIBRARY_DIR}/libarchive.a
+		${ZLIB_LIBRARIES_DIR}/libz.a)
 	target_link_libraries(bin2txt -static
   		${Boost_LIBRARY_DIRS}/libboost_system.a
   		${Boost_LIBRARY_DIRS}/libboost_filesystem.a
   		${Boost_LIBRARY_DIRS}/libboost_iostreams.a
   		${Boost_LIBRARY_DIRS}/libboost_program_options.a
-  		/usr/local/lib/libgsl.a)
+  		/usr/local/lib/libgsl.a  
+		-lz
+		${LibArchive_LIBRARY_DIR}/libarchive.a
+		${ZLIB_LIBRARIES_DIR}/libz.a)
 	target_link_libraries(getstats -static
 		${Boost_LIBRARY_DIRS}/libboost_system.a
 		${Boost_LIBRARY_DIRS}/libboost_filesystem.a
 		${Boost_LIBRARY_DIRS}/libboost_iostreams.a
 		${Boost_LIBRARY_DIRS}/libboost_program_options.a
-		/usr/local/lib/libgsl.a)
+		/usr/local/lib/libgsl.a
+		-lz 
+		${LibArchive_LIBRARY_DIR}/libarchive.a
+		${ZLIB_LIBRARIES_DIR}/libz.a)
 	target_link_libraries(getmodel -static
 		${Boost_LIBRARY_DIRS}/libboost_system.a
 		${Boost_LIBRARY_DIRS}/libboost_filesystem.a
