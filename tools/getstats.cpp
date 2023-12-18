@@ -123,7 +123,7 @@ int main(int argc, char* argv[]){
 	}
 		
 	file_proba_hdr=file_proba + ".hdr";
-	file_proba_bin=file_proba;
+	file_proba_bin=file_proba + ".bin";
 	std::cout << "  1. Reading the data file..." << std::endl;
 
 	std::cout << "      # Reading Header file:" << file_proba_hdr << std::endl;

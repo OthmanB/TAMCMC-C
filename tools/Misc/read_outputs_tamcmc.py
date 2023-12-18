@@ -202,7 +202,9 @@ def test_getmodel_bin():
 	x, model, params_dic=getmodel_bin(dir_tamcmc_outputs, model_name, params, plength, xr, cpp_path=cpp_path, outdir=outdir, read_output_params=True)
 	os.chdir('source')
 
-def getstats_bin(dir_tamcmc_outputs, process_name, phase='A', chain=0, first_index=0, period=1, erase_tmp=True, cpp_path='cpp_prg/', outdir='tmp/'):
+def getstats_bin(dir_tamcmc_outputs, process_name, phase='A', chain=0, first_index=0, 
+					period=1, erase_tmp=True, cpp_path='cpp_prg/', outdir='tmp/',
+					version="1.86.6"):
 	'''
 		Convert a binary output file from the tamcmc process into a simple text format
 		The function makes use of the get_stats program created upon compilation of the tamcmc program
@@ -211,20 +213,20 @@ def getstats_bin(dir_tamcmc_outputs, process_name, phase='A', chain=0, first_ind
 		phase: The phase of the analysis
 		chain: The chain index that need to be unpacked
 		outfile: The name of the output file
+		version: If version="1.86.6" (default), use the boost::option system. Otherwise, use the old option system
 		18 nov 2022 Addition: introducing first_index and period. REQUIRES getstats compiles with TAMCMC v>1.83.5
+		18 Dec 2023 Addition: version 1.86.6 new statemen (see condition). 
 	'''
 	outfile=outdir + '/posteriors.txt'
 	core_filename=dir_tamcmc_outputs + '/' + process_name + '/outputs/' + process_name + '_' + phase + '_stat_criteria' 
-	#process = Popen([cpp_path + "./getstats", core_filename, str(chain), outfile], stdout=PIPE, stderr=PIPE)
-	call([cpp_path + "./getstats", core_filename, str(chain), outfile, str(first_index), str(-1), str(period)])
-	#time.sleep(1)
+	if version != "1.86.6":
+		call([cpp_path + "./getstats", core_filename, str(chain), outfile, str(first_index), str(-1), str(period)])
+	else:
+		call([cpp_path + "./getstats", "-i", core_filename, "-o", outfile, "-c", str(chain), "-S", str(first_index), "-L",str(-1), "-p", str(period)])
+
 	loglikelihood, logprior, logposterior, header, labels=getstats_txt(outfile)
-	#time.sleep(1)
-	#exit()
 	if erase_tmp == True:
 		process = os.remove(outfile)
-	#print(header)
-	#print('--')
 	return loglikelihood, logprior, logposterior
 
 def bin2txt(dir_tamcmc_outputs, process_name, phase='A', chain=0, 
@@ -527,7 +529,7 @@ def read_getmodel_out(file_in):
 	for d in data[1:]:
 		if d != '':
 			v=d.split()
-			print(d)
+			#print(d)
 			x.append(v[0])
 			y.append(v[1])	
 	return np.asarray(x, dtype=float), np.asarray(y, dtype=float)
@@ -764,7 +766,9 @@ def read_global_likelihood(filein, evidence_only=True):
 	return evidence, err_evidence
 
 def version():
-	print('read_output_tacmcmc version 2.22')
+	print('read_output_tacmcmc version 2.23')
+	print("  Changes since 2.23: ")
+	print("     - Update of getstats to handle the new option format")
 	print('  Changes since 2.22: ')
 	print('     - Modifying the function read_getmodel_out to handle more than two columns outputs')
 	print('     - Removing process.communicate in case of error within bin2txt: This was obselete')
