@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 set(CMAKE_BUILD_TYPE Release)
-project(cpptamcmc VERSION 1.7.0)
+project(cpptamcmc VERSION 1.86.7)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -141,6 +141,14 @@ set(SOURCES_TOOLS_GETSTATS
 	tamcmc/sources/string_handler.cpp
 	)
 
+#Define the sources for the getevidence program
+set(SOURCES_TOOLS_GETEVIDENCE
+tools/getevidence.cpp
+tamcmc/sources/string_handler.cpp
+tamcmc/sources/interpol.cpp
+tamcmc/sources/diagnostics.cpp
+)
+
 #Define the sources for the getmodel program
 set(SOURCES_TOOLS_GETMODEL
 	tools/getmodel.cpp
@@ -170,7 +178,7 @@ set(SOURCES_TOOLS_GETMODEL
 	external/Alm/Alm_cpp/activity.cpp
 	external/Alm/Alm_cpp/Alm_interpol.cpp
 	external/Alm/Alm_cpp/bilinear_interpol.cpp
-        )
+    )
 	
 #Look for eigen and explicitly specify to use it. EIGEN3_INCLUDE_DIR Must be specified in the bashrc
 include_directories( "$ENV{EIGEN3_INCLUDE_DIR}" )
@@ -184,6 +192,7 @@ link_directories(${Boost_LIBRARY_DIRS})
 add_executable(${CMAKE_PROJECT_NAME} ${SOURCES_MAIN} ${DIAG_SRC})
 add_executable(bin2txt ${SOURCES_TOOLS_BIN2TXT} ${DIAG_SRC})
 add_executable(getstats  ${SOURCES_TOOLS_GETSTATS})
+add_executable(getevidence  ${SOURCES_TOOLS_GETEVIDENCE})
 add_executable(getmodel ${SOURCES_TOOLS_GETMODEL})
 
 #target_link_libraries(bin2txt ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY})
@@ -215,6 +224,15 @@ if (WITH_STATIC)
 		-lz 
 		${LibArchive_LIBRARY_DIR}/libarchive.a
 		${ZLIB_LIBRARIES_DIR}/libz.a)
+	target_link_libraries(getevidence -static
+		${Boost_LIBRARY_DIRS}/libboost_system.a
+		${Boost_LIBRARY_DIRS}/libboost_filesystem.a
+		${Boost_LIBRARY_DIRS}/libboost_iostreams.a
+		${Boost_LIBRARY_DIRS}/libboost_program_options.a
+		/usr/local/lib/libgsl.a
+		-lz 
+		${LibArchive_LIBRARY_DIR}/libarchive.a
+		${ZLIB_LIBRARIES_DIR}/libz.a)
 	target_link_libraries(getmodel -static
 		${Boost_LIBRARY_DIRS}/libboost_system.a
 		${Boost_LIBRARY_DIRS}/libboost_filesystem.a
@@ -226,5 +244,6 @@ else()
 	target_link_libraries(${CMAKE_PROJECT_NAME} ${Boost_LIBRARIES} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY}) # ${ZLIB_LIBRARIES}
 	target_link_libraries(bin2txt ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY})  # ${ZLIB_LIBRARIES}
 	target_link_libraries(getstats ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY})
+	target_link_libraries(getevidence ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY})
 	target_link_libraries(getmodel  ${Boost_LIBRARIES} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY}) 
 endif()

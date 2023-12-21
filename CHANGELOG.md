@@ -1,5 +1,9 @@
 # Version history #
 
+## v1.86.7 Introduction of the getevidence tools + minor refactoring ##
+  - This version introduces the getevidence binary tool that allows to recompute the Bayesian evidence from the parallel chains with more controls on the parameters. 
+  - This version does not include yet the bootstrap method to compute uncertainty of the evidence, but this is planned for rapid implementation.
+
 ## v1.86.6 New functionality ##
   - Adding new function in diagnostics.cpp to read a tar.gz file containing a bin file within it. This in preparation of the implementation of the capability to read and write on binary compressed tar files (to save space)
   - Handling tar.gz in bin2txt and getstats
