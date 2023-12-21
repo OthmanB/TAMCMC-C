@@ -48,6 +48,7 @@ struct Evidence_out{
 		long double evidence; // Integral of the L_beta which gives P(M|D, I), USES OF THE INTERPOLATED VALUES.
 };
 
+
 class Diagnostics{
 	private:
 		bool ps;
@@ -135,8 +136,8 @@ class Diagnostics{
 		void write_txt_matrix_dbl(const MatrixXd& Mat, const std::string file_out);
 
 		// Handling the Evidence
-		Evidence_out evidence_calc(const VectorXd& Tcoefs, const MatrixXd& Likelihoods);
-		void write_evidence(const Evidence_out& evidence, const int i);
+		Evidence_out evidence_calc(const VectorXd& Tcoefs, const MatrixXd& Likelihoods, const int interpol_factor);
+		void write_evidence(const std::string file, const Evidence_out& evidence, const int i, const int firsttime);
 
 		// ------ Execute Shell commands ------
 		std::string shell_exec(const std::string cmd);
