@@ -7,9 +7,10 @@ find_package(Boost COMPONENTS unit_test_framework REQUIRED)
 # Set C++ standard to C++17
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+include_directories( "$ENV{EIGEN3_INCLUDE_DIR}" )
 
 # Add the executable for the main program
-add_executable(bootstrap_tests main.cpp)
+add_executable(bootstrap_tests bootstrap_algos.cpp bootstrap_algos_unit_test.cpp)
 
 # Link the Boost libraries
 target_include_directories(bootstrap_tests PRIVATE ${Boost_INCLUDE_DIRS})

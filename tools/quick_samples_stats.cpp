@@ -3,9 +3,12 @@
 
 double mean_fct(Eigen::VectorXd samples){
    double sum = 0;
+   /*
    for (int i = 0; i < samples.size(); i++)
       sum = sum + samples[i];
    return sum/samples.size();
+   */
+  return samples.mean();
 }
 
 //calculate median
@@ -19,8 +22,8 @@ double median_fct(Eigen::VectorXd samples){
 
 double stddev_fct(Eigen::VectorXd samples){
     double sum = 0.0;
-    const double mean=mean_fct(samples);
-
+    //const double mean=mean_fct(samples);
+   const double mean=samples.mean();
     for(int i=0;i<samples.size();i++)
     {
         sum = sum + (samples[i]-mean)*(samples[i]-mean);

@@ -144,6 +144,8 @@ set(SOURCES_TOOLS_GETSTATS
 #Define the sources for the getevidence program
 set(SOURCES_TOOLS_GETEVIDENCE
 tools/getevidence.cpp
+tools/quick_samples_stats.cpp
+tools/bootstrap/bootstrap_algos.cpp
 tamcmc/sources/string_handler.cpp
 tamcmc/sources/interpol.cpp
 tamcmc/sources/diagnostics.cpp
@@ -183,6 +185,7 @@ set(SOURCES_TOOLS_GETMODEL
 #Look for eigen and explicitly specify to use it. EIGEN3_INCLUDE_DIR Must be specified in the bashrc
 include_directories( "$ENV{EIGEN3_INCLUDE_DIR}" )
 include_directories(tamcmc/headers)
+include_directories(tools/bootstrap)
 
 #Dependencies that are not portable (BOOST)
 find_package(Boost COMPONENTS system filesystem iostreams program_options REQUIRED)

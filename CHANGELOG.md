@@ -1,5 +1,8 @@
 # Version history #
 
+## v1.86.75 Adding bootstrap to getevidence ##
+  - The bootstrap method with two variant (by block or standard) is introduced to compute uncertainties on the evidence. By default this is turned off as it may be timeconsuming. Check options to turn it on.
+
 ## v1.86.7 Introduction of the getevidence tools + minor refactoring ##
   - This version introduces the getevidence binary tool that allows to recompute the Bayesian evidence from the parallel chains with more controls on the parameters. 
   - This version does not include yet the bootstrap method to compute uncertainty of the evidence, but this is planned for rapid implementation.

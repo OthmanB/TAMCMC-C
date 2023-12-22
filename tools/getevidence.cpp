@@ -14,7 +14,8 @@
 #include "version.h"
 #include <boost/program_options.hpp>
 #include "data.h"
-//#include "interpol.h"
+#include "quick_samples_stats.h"
+#include "bootstrap_algos.h"
 #include "diagnostics.h"
 
 using Eigen::MatrixXd;
@@ -49,11 +50,12 @@ struct Ptemp_hdr{
 void showversion();
 void usage(const po::options_description& desc);
 bool file_exists (const std::string& name);
-VectorXd reduce_data(VectorXd& samples, const int Samples_period, const int ind0, const int indmax);
+VectorXd reduce_data(VectorXd& samples, const int Samples_period, const int ind0, const int indmax, bool verbose=false);
 Proba_hdr read_proba_header(const std::string file);
 Ptemp_hdr read_ptemp_header(const std::string file);
 Proba_out read_bin_proba_params(const std::string binfile, const long Nrows, const long Ncols);
 Proba_out read_tar_gz_bin_proba_params(const std::string tarGzFile, const long Nrows, const long Ncols);
+MatrixXd Bootstrap_chains(const MatrixXd& logL_chains, const std::string bootstrap_method, const int bootstrap_blocksize);
 
 int main(int argc, char* argv[]){
 /*
@@ -64,7 +66,7 @@ int main(int argc, char* argv[]){
 	bool istar=false;
     const int Nchars=20;
     const int precision=10;
-	int interpolation_factor;
+	int interpolation_factor, bootstrap_samples, bootstrap_blocksize, bootstrap_blocksize_percent;
 	int cpt, lcpt, testval; // for the options
 	int ind0, indmax, Samples_period; // The Samples_period defines out of all samples, how many we keep.
 	long Nrows, Nchains;
@@ -87,7 +89,9 @@ int main(int argc, char* argv[]){
 		("first-kept-element,S", po::value<int>(&ind0)->default_value(0), "[Optional] index of the first kept sample. All index below that will be discarded. By default, it will start at the element 0")
 		("last-kept-element,L", po::value<int>(&indmax)->default_value(-1), "[Optional] index of the last kept sample. All index above that will be discarded. By default, it will take up to the last element (-1)")
 		("periodicity,p", po::value<int>(&Samples_period)->default_value(7), "[Optional] sampling periodicity to perform the bootstrap with independent samples. The default value assumes a MH sampling rejection rate of 70%")
-		("bootstrap-method,b", po::value<std::string>(&bootstrap_method)->default_value("none"), "Bootstrap method to compute uncertainties: 'none', 'standard' or 'block' (default: 'none')");
+		("bootstrap-method,b", po::value<std::string>(&bootstrap_method)->default_value("none"), "Bootstrap method to compute uncertainties: 'none', 'standard' or 'block' (default: 'none', recommended: 'block')")
+		("bootstrap-samples-number,n", po::value<int>(&bootstrap_samples)->default_value(10000), "Number of samples for the Bootstrap (default: 10000)")
+		("bootstrap-blocksize-percent", po::value<int>(&bootstrap_blocksize_percent)->default_value(5), "In the case of a bootstrap with the 'block' method, defines the size of each block in percentage of the total size (default: 5%)");
 	po::variables_map vm;
 	try {
 		po::store(po::command_line_parser(argc, argv).options(desc).allow_unregistered().run(), vm);
@@ -119,11 +123,11 @@ int main(int argc, char* argv[]){
 		std::cout << "          - Interpolation factor for P<P(D|M,I)>(beta): " << interpolation_factor << std::endl;
 	}
 	if (vm.count("first-kept-element")) {
-		ind0 = vm["first-kept-element"].as<int>();
+		//ind0 = vm["first-kept-element"].as<int>();
 		std::cout << "          - Index of the first kept sample: " << ind0 << std::endl;
 	}
 	if (vm.count("last-kept-element")) {
-		indmax = vm["last-kept-element"].as<int>();
+		//indmax = vm["last-kept-element"].as<int>();
 		std::cout << "          - Index of the last kept sample: " << indmax;
 		if(indmax == -1){
 			std::cout << " (until last sample)" << std::endl;
@@ -132,7 +136,7 @@ int main(int argc, char* argv[]){
 		}
 	}
 	if (vm.count("periodicity")) {
-		Samples_period = vm["periodicity"].as<int>();
+		//Samples_period = vm["periodicity"].as<int>();
 		std::cout << "          - Samples_period: " << Samples_period << " ==> ";
 		std::cout << "            Keep 1 sample every " << Samples_period << " samples" << std::endl;
 	}
@@ -144,8 +148,24 @@ int main(int argc, char* argv[]){
 	if(bootstrap_method != "standard" and bootstrap_method != "block" and bootstrap_method != "none"){
 		std::cerr << "Error while setting the bootstrap argument" << std::endl;
 		usage(desc);
-	}
-		
+	} else{
+		if (vm.count("bootstrap-samples-number")) {
+			if (bootstrap_samples < 1){
+				std::cout << "            Warning: The given sample number for the bootstrap is smaller than 1... The program will not perform a bootstrap" << std::endl;
+				bootstrap_samples=1;
+				bootstrap_method="none";
+			}  
+		}	
+		if (vm.count("bootstrap-blocksize-percent")) {
+			if (bootstrap_blocksize_percent < 0.01 && bootstrap_method == "block"){
+				std::cout << "            Warning: The given blocksize is too small (<0.01% of the sample size)... The program will exit" << std::endl;
+				std::cout << "                      provided blocksize : " << bootstrap_blocksize_percent << "%" << std::endl;
+				exit(EXIT_FAILURE);
+				//bootstrap_blocksize_percent=0.01;
+				//bootstrap_method="none";
+			} 
+		}	
+	}	
 	
 	std::cout << "  1. Reading the data files..." << std::endl;
 
@@ -198,8 +218,9 @@ int main(int argc, char* argv[]){
 	// Apply filtering rules
 	std::cout << "      # Reducing data by applying selection rules..." << std::endl;
 	MatrixXd logL_chains;
+	std::cout << "       >> chain: " << std::flush;
 	for (int n=0;n<ptemp_header.Tcoefs.size();n++){ 
-		std::cout << "       >> chain: " << n << " ... " << std::endl;
+		std::cout << n << "..." << std::flush;
 		VectorXd tmp0=proba.logL.col(n);
 		VectorXd tmp=reduce_data(tmp0, Samples_period, ind0, indmax);
 		if (n==0){ // Declare a matrix of size determined by the size of the reduced data
@@ -207,13 +228,37 @@ int main(int argc, char* argv[]){
 		}
 		logL_chains.col(n)=tmp;
 	}
+	std::cout << std::endl;
 	/////// Write the parameters ////////	
 	// Compute evidence
-	Evidence_out evidence=diags.evidence_calc(ptemp_header.Tcoefs, logL_chains, interpolation_factor);
-	const bool firstpass=1;
-    diags.write_evidence(file_out, evidence, proba_header.Nsamples_done, firstpass);
-	std::cout << "Evidence : " << evidence.evidence << std::endl;
-	std::cout << "All done successfully" << std::endl;
+	bool firstpass=true;
+	Evidence_out evidence;
+	if (bootstrap_method !="none"){
+		std::cout << "      # Performing a bootstrap (" << bootstrap_method << ") with " << bootstrap_samples <<  " Samples..." << std::endl;
+		VectorXd evidence_all(bootstrap_samples);
+		MatrixXd resampled;
+		bootstrap_blocksize=bootstrap_blocksize_percent*logL_chains.rows()/100;
+		for(int i=0; i<bootstrap_samples;i++){
+			resampled=Bootstrap_chains(logL_chains, bootstrap_method, bootstrap_blocksize); // Control the logic behind all kind of bootstrap for all chains
+			evidence=diags.evidence_calc(ptemp_header.Tcoefs, resampled, interpolation_factor);
+			diags.write_evidence(file_out, evidence, resampled.size(), firstpass);
+			firstpass=false;
+			evidence_all[i]=evidence.evidence;
+		}
+		if (bootstrap_samples < 10){
+			std::cout << "Evidence (full serie): " << std::setprecision(precision) << evidence.evidence <<  "  too few samples  ("<< bootstrap_samples << " less than 10) to compute uncertainty" << std::endl;
+		} else{
+			std::cout << "Evidence (full serie)       : " << std::setprecision(precision) << evidence.evidence << std::endl;
+			std::cout << "Bootstrap::mean(Evidence)   : " << std::setprecision(precision) << evidence_all.mean() << std::endl;
+			std::cout << "Bootstrap::median(Evidence) : " << std::setprecision(precision) << median_fct(evidence_all) << std::endl;
+			std::cout << "Bootstrap::stdev(Evidence)  : " << std::setprecision(precision) << stddev_fct(evidence_all) << std::endl;
+		}
+	} else{
+		evidence=diags.evidence_calc(ptemp_header.Tcoefs, logL_chains, interpolation_factor);
+		diags.write_evidence(file_out, evidence, proba_header.Nsamples_done, firstpass);		
+		std::cout << "Evidence : " << std::setprecision(precision) << evidence.evidence <<  " (no bootstrap requested -> no error)" << std::endl;
+	}
+	std::cout << "See file: " << file_out << " for details" << std::endl;
 
 return 0;
 }
@@ -445,7 +490,7 @@ void showversion()
 
 void usage(const po::options_description& desc){
 
-    std::cerr << " You need to provide at least 3 arguments to that function. The available arguments are: " << std::endl;
+    std::cerr << " You need to provide at least 2 arguments to that function. The available arguments are: " << std::endl;
 	std::cerr << desc << std::endl;
 	exit(EXIT_FAILURE);
 }
@@ -455,17 +500,19 @@ bool file_exists(const std::string& name) {
     return ( access( name.c_str(), F_OK ) != -1 );
 }
 
-VectorXd reduce_data(VectorXd& samples, const int Samples_period, const int ind0, const int indmax){
+VectorXd reduce_data(VectorXd& samples, const int Samples_period, const int ind0, const int indmax, const bool verbose){
 		int cpt, lcpt;
 		VectorXd samples_out;
 		if(Samples_period < 1){ // Case where we return all samples
-			std::cout << "           Warning : Sample_period = " << Samples_period << " <= 1   ... Imposing Sample_period=1" << std::endl;
+			std::cout << "           	Warning : Sample_period = " << Samples_period << " <= 1   ... Imposing Sample_period=1" << std::endl;
 		} 
 		samples_out.resize((indmax -ind0)/Samples_period + 1);
 		// ---- Selecting only 1 sample out every Sample_period samples -----
 		if (Samples_period != 1){ 
-			std::cout << "           Operation is of the type: ";
-			std::cout << "           Outputs[" << ind0 << "]  --> New_Outputs[" << ind0 + Samples_period-1 << "]  "  << std::endl;		
+			if(verbose == true){
+				std::cout << "           Operation is of the type: ";
+				std::cout << "           Outputs[" << ind0 << "]  --> New_Outputs[" << ind0 + Samples_period-1 << "]  "  << std::endl;		
+			}
 			cpt=ind0; lcpt=0;
 			while(cpt<samples.size()){
 				samples_out[lcpt]=samples[cpt];
@@ -473,10 +520,44 @@ VectorXd reduce_data(VectorXd& samples, const int Samples_period, const int ind0
 				lcpt=lcpt+1;
 			}
 			samples_out.conservativeResize(lcpt-1);
-			std::cout << "                       New size : " << (indmax -ind0)/Samples_period << std::endl;
+			if(verbose == true){
+				std::cout << "                       New size : " << (indmax -ind0)/Samples_period << std::endl;
+			}
 		} else{
 			samples_out=samples;
-			std::cout << "                       size kept at: " << samples.size() << std::endl;
+			if(verbose == true){			
+				std::cout << "                       size kept at: " << samples.size() << std::endl;
+			}
 		}
 	return samples_out;
+}
+
+
+MatrixXd Bootstrap_chains(const MatrixXd& logL_chains, const std::string bootstrap_method, const int bootstrap_blocksize){
+	bool passed = false;
+	int Nchains = logL_chains.cols();
+	int Nsamples = logL_chains.rows();
+	
+	MatrixXd mat(Nsamples, Nchains);
+	if (bootstrap_method == "standard"){
+		for (int i = 0; i< Nchains ; i++){
+			VectorXd tmp=logL_chains.col(i);
+			VectorXd s=Bootstrap(tmp);
+			mat.col(i)=s;
+		}
+		passed=true;
+	}
+	if (bootstrap_method == "block"){
+		for (int i = 0; i< Nchains ; i++){
+			VectorXd tmp=logL_chains.col(i);
+			VectorXd s=blockBootstrap(tmp, bootstrap_blocksize);
+			mat.col(i)=s;
+		}
+		passed=true;
+	}
+	if (passed == false){
+		std::cerr << "Error : bootstrap method incorrect or not implemented. Debug required" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	return mat;
 }
