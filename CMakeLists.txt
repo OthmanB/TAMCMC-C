@@ -71,7 +71,12 @@ if(WITH_GSL)
 		message(FATAL_ERROR "GSL not found. Use -DWITH_GSL=OFF to build without GSL")
 	endif()
 	if(WITH_STATIC)
-    	set(GSL_LIB /usr/local/lib/libgsl.a)
+		find_library(GSL_LIB
+			NAMES gsl
+			PATHS /usr/local/lib  /usr/lib/x86_64-linux-gnu
+		)
+		get_filename_component(GSL_LIB_DIR  ${GSL_LIB} DIRECTORY)
+	    	#set(GSL_LIB /usr/local/lib/libgsl.a)
     else()
     	set(GSL_LIB GSL::gsl)
     endif()
@@ -205,7 +210,8 @@ if (WITH_STATIC)
 		${Boost_LIBRARY_DIRS}/libboost_filesystem.a
 		${Boost_LIBRARY_DIRS}/libboost_iostreams.a
 		${Boost_LIBRARY_DIRS}/libboost_program_options.a
-		/usr/local/lib/libgsl.a
+		#/usr/local/lib/libgsl.a
+                ${GSL_LIB_DIR}/libgsl.a
 		-lz 
 		${LibArchive_LIBRARY_DIR}/libarchive.a
 		${ZLIB_LIBRARIES_DIR}/libz.a)
@@ -214,7 +220,8 @@ if (WITH_STATIC)
   		${Boost_LIBRARY_DIRS}/libboost_filesystem.a
   		${Boost_LIBRARY_DIRS}/libboost_iostreams.a
   		${Boost_LIBRARY_DIRS}/libboost_program_options.a
-  		/usr/local/lib/libgsl.a  
+  		#/usr/local/lib/libgsl.a  
+  		${GSL_LIB_DIR}/libgsl.a
 		-lz
 		${LibArchive_LIBRARY_DIR}/libarchive.a
 		${ZLIB_LIBRARIES_DIR}/libz.a)
@@ -223,7 +230,8 @@ if (WITH_STATIC)
 		${Boost_LIBRARY_DIRS}/libboost_filesystem.a
 		${Boost_LIBRARY_DIRS}/libboost_iostreams.a
 		${Boost_LIBRARY_DIRS}/libboost_program_options.a
-		/usr/local/lib/libgsl.a
+                ${GSL_LIB_DIR}/libgsl.a
+		#/usr/local/lib/libgsl.a
 		-lz 
 		${LibArchive_LIBRARY_DIR}/libarchive.a
 		${ZLIB_LIBRARIES_DIR}/libz.a)
@@ -232,7 +240,8 @@ if (WITH_STATIC)
 		${Boost_LIBRARY_DIRS}/libboost_filesystem.a
 		${Boost_LIBRARY_DIRS}/libboost_iostreams.a
 		${Boost_LIBRARY_DIRS}/libboost_program_options.a
-		/usr/local/lib/libgsl.a
+                ${GSL_LIB_DIR}/libgsl.a
+		#/usr/local/lib/libgsl.a
 		-lz 
 		${LibArchive_LIBRARY_DIR}/libarchive.a
 		${ZLIB_LIBRARIES_DIR}/libz.a)
@@ -241,7 +250,8 @@ if (WITH_STATIC)
 		${Boost_LIBRARY_DIRS}/libboost_filesystem.a
 		${Boost_LIBRARY_DIRS}/libboost_iostreams.a
 		${Boost_LIBRARY_DIRS}/libboost_program_options.a
-		/usr/local/lib/libgsl.a
+		${GSL_LIB_DIR}/libgsl.a
+		#/usr/local/lib/libgsl.a
 		-lz)
 else()
 	target_link_libraries(${CMAKE_PROJECT_NAME} ${Boost_LIBRARIES} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY}) # ${ZLIB_LIBRARIES}

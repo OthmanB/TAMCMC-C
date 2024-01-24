@@ -2,6 +2,7 @@
 
 ## v1.86.75 Adding bootstrap to getevidence ##
   - The bootstrap method with two variant (by block or standard) is introduced to compute uncertainties on the evidence. By default this is turned off as it may be timeconsuming. Check options to turn it on.
+  - patch of the CMakefile to be more flexible while compiling statically and for gsl. Now GSL is looked for in two different places (one more likely in a AMD system while the other more likely in a INTEL system)
 
 ## v1.86.7 Introduction of the getevidence tools + minor refactoring ##
   - This version introduces the getevidence binary tool that allows to recompute the Bayesian evidence from the parallel chains with more controls on the parameters. 
