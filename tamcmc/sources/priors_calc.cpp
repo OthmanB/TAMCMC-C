@@ -357,7 +357,7 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 	VectorXd tmp, fit;
 	Deriv_out frstder, scdder;
 	
-	a3=params[Nmax+lmax+Nf+3];
+	a3=params[Nmax+lmax+Nf+4];
 	rot_env=std::abs(params[Nmax + lmax + Nf]);
 
 	//std::cout << "[1] f =" << f << std::endl;
@@ -375,11 +375,7 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 		f=-INFINITY;
 		goto end;
 	}
-	// Implement securities to avoid unphysical quantities that might lead to NaNs
-	if(params[Nmax+lmax+Nf+4] < 0){ // Impose that the power coeficient of magnetic effect is positive
-		f=-INFINITY;
-		goto end;
-	}
+	//std::cout << "priors_names_switch[Nmax+lmax+Nf+Nsplit+Nwidth+3] : " << priors_names_switch[Nmax+lmax+Nf+Nsplit+Nwidth+3] << std::endl;
 	if(priors_names_switch[Nmax+lmax+Nf+Nsplit+Nwidth+3] != 0){
 		if( (params[Nmax+lmax+Nf+Nsplit+Nwidth+3] < 0) || // Harvey profile height
 		    (params[Nmax+lmax+Nf+Nsplit+Nwidth+4] < 0) || // Harvey profile tc
@@ -419,39 +415,7 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 	f=f + apply_generic_priors(params, priors_params, priors_names_switch, tabulated_priors);
 	//std::cout << "[4] f =" << f << std::endl;
 
-	// ----- Add a positivity condition on inclination -------
-	// The prior could return values -90<i<90. We want it to give only 0<i<90
-	//f=f+logP_uniform(0., 90., params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise]);
-	/*switch(impose_normHnlm){ 
-		case 1: // Case specific to model_MS_Global_a1etaa3_HarveyLike_Classic_v2
-			//l=1: m=0, m=+/-1
-			f=f+logP_uniform(0, 1.+1e-10, params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise] + 2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+1]); // The sum must be positive
-			//l=2: m=0, m=+/-1, m=+/-2
- 			// The sum must be positive
-			f=f+logP_uniform(0, 1+1e-10, params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+2]+ 
-								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+3]+ 
-								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+4]
-							); // The sum must be positive
-			//l=3: m=0, m=+/-1, m=+/-2, m=+/-3
- 			// The sum must be positive
-			f=f+logP_uniform(0, 1+1e-10, params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+5]+ 
-								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+6]+ 
-								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+7]+
-								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+8]
-								   ); // The sum must be positive
-
-		break;
-		case 2:
-			std::cout << "priors_MS_Global: impose_normHnlm=2 YET TO BE IMPLEMENTED!" << std::endl;
-			exit(EXIT_SUCCESS);
-		break;
-	}
-	*/
 	// Determine the large separation
-	//frstder=Frstder_adaptive_reggrid(params.segment(Nmax+lmax, Nfl0)); // First derivative of fl0 gives Dnu
-	//Dnu=frstder.deriv.sum();
-
-	//tmp=linspace(0, params.segment(Nmax+lmax, Nfl0).size()-1, params.segment(Nmax+lmax, Nfl0).size());
 	tmp = Eigen::VectorXd::LinSpaced(params.segment(Nmax+lmax, Nfl0).size(), 0, params.segment(Nmax+lmax, Nfl0).size()-1);
 
 	fit=linfit(tmp, params.segment(Nmax+lmax, Nfl0)); // fit[0] is the slope ==> Dnu and fit[1] is the ordinate at origin ==> fit[1]/fit[0] = epsilon
@@ -478,8 +442,12 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 			}	
  		break;
  		case 3:
- 			//std::cout << "params[Nmax + lmax + Nfl0 + 6] = " << params[Nmax + lmax + Nfl0 + 6] << std::endl;
- 			if (params[Nmax + lmax + Nfl0 + 6] < 0){ // Imposes that Wfactor >= 0(which is likely gaussian prior)
+			//std::cout << "params[Nmax + lmax + Nfl0 + 6] = " << params[Nmax + lmax + Nfl0 + 6] << std::endl;
+ 			if (params[Nmax + lmax + Nfl0 + 6] < 0){ // Imposes that Wfactor >= 0(which could be a Gaussian prior)
+				f=-INFINITY;
+				goto end;
+			}
+ 			if (params[Nmax + lmax + Nfl0 + 7] < 0){ // Imposes that Hfactor >= 0
 				f=-INFINITY;
 				goto end;
 			}
@@ -537,17 +505,9 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 				}
 			  	break;
 	}
-	/*
-	std::cout << "a3 =" << a3 << std::endl;
-	std::cout << "rot_env ="	<< params[Nmax+lmax+Nf] << std::endl;
-	std::cout << "ratio =" << a3/rot_env<< std::endl;
-	std::cout << "a3ova1_limit = " << a3ova1_limit << std::endl; 
-	std::cout << "after a3ova1_limit " << f << std::endl;
-	std::cout << "extra_priors = " << extra_priors << std::endl;
-	std::cout << " MODIFICATION MADE ON 21 JAN 2021 (rot_env ~ a1 to get a3/a1... Need checks. Exiting" << std::endl;
-	exit(EXIT_SUCCESS);
-	*/
+	
 	end:
+	//std::cout << "f = " << f << std::endl;
 	//std::cout << "Debug stop in priors_calc.cpp" << std::endl;
 	//exit(EXIT_SUCCESS);
 	return f;

@@ -1,5 +1,8 @@
 # Version history #
 
+## v1.86.76 Bug Patch #
+  - Upon cleaning the priors_calc.cpp during v1.86.0, For the models model_RGB_asympt_aj_AppWidth_HarveyLike_v4, the hard-coded prior imposing magb > 0 was not removed. Because it's slot was replaced by a3, it was wrongly affecting the condition a3 > 0. This is now fixed. 
+
 ## v1.86.75 Adding bootstrap to getevidence ##
   - The bootstrap method with two variant (by block or standard) is introduced to compute uncertainties on the evidence. By default this is turned off as it may be timeconsuming. Check options to turn it on.
   - patch of the CMakefile to be more flexible while compiling statically and for gsl. Now GSL is looked for in two different places (one more likely in a AMD system while the other more likely in a INTEL system)
