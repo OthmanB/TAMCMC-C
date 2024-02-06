@@ -1,3 +1,10 @@
+/**
+ * @file configure_make_star.cpp
+ * @brief Configures the parameters for creating a synthetic star based on the input parameters.
+ *
+ * This file contains the implementation of the `configure_make_star` function, which takes a map of input parameters and configures the parameters for creating a synthetic star. The input parameters include Dnu_star, DPl_star, q_star, alpha_g_star, epsilon_star, delta0l_percent_star, rot_env, rot_core, rot_ratio, a3_l2, a3_l3, a5_l3, a2_l1, a2_l2, a2_l3, a4_l2, a4_l3, a6_l3, max_HNR, H0_spread, Gamma_max_l0, Hfactor, Wfactor, numax_star, numax_spread, fmin_in_Dnu, fmax_in_Dnu, output_file_rot, file_template, Vl, nmax_star, nmax_spread, beta_p, alpha_p, params_harvey_like, and inclination.
+ */
+
 #include <string>
 #include <vector>
 #include <iostream>
@@ -10,7 +17,14 @@
 #include "solver_mm.h"
 #include "bump_DP.h"
 
-
+/**
+ * @brief Main function of the "make_star" binary file. Configures the parameters for creating a synthetic star based on the input parameters.
+ *
+ * This function takes a map of input parameters and configures the parameters for creating a synthetic star. The input parameters include Dnu_star, DPl_star, q_star, alpha_g_star, epsilon_star, delta0l_percent_star, rot_env, rot_core, rot_ratio, a3_l2, a3_l3, a5_l3, a2_l1, a2_l2, a2_l3, a4_l2, a4_l3, a6_l3, max_HNR, H0_spread, Gamma_max_l0, Hfactor, Wfactor, numax_star, numax_spread, fmin_in_Dnu, fmax_in_Dnu, output_file_rot, file_template, Vl, nmax_star, nmax_spread, beta_p, alpha_p, params_harvey_like, and inclination.
+ *
+ * @param input_params A map of input parameters for configuring the synthetic star.
+ * @return A Cfg_synthetic_star structure containing the configured parameters for creating the synthetic star.
+ */
 Cfg_synthetic_star configure_make_star(std::unordered_map<std::string, std::string> input_params){
     double xmin, xmax, nmax_spread, inc_star;
 
@@ -154,15 +168,23 @@ Cfg_synthetic_star configure_make_star(std::unordered_map<std::string, std::stri
     if (input_params["beta_p"] == "None" && input_params["alpha_p"] != "None"){
         cfg_star.alpha_p_star=str_to_dbl(input_params["alpha_p"]);
         cfg_star.beta_p_star=cfg_star.alpha_p_star*cfg_star.nmax_star;
-        std::cout << " INSIDE " << std::endl;
     }
     // ------------------  Noise ------------------   
-	cfg_star.noise_params_harvey_like =  str_to_Xdarr(input_params["params_harvey_like"], " \t");    //[A_Pgran ,  B_Pgran , C_Pgran   ,  A_taugran ,  B_taugran  , C_taugran    , p      N0]
-    if(cfg_star.noise_params_harvey_like.size() != 8) {
+	cfg_star.legacynoise=str_to_bool(input_params["legacynoise"]);
+    cfg_star.noise_params_harvey_like =  str_to_Xdarr(input_params["params_harvey_like"], " \t");    //[A_Pgran ,  B_Pgran , C_Pgran   ,  A_taugran ,  B_taugran  , C_taugran    , p      N0]
+    if(cfg_star.noise_params_harvey_like.size() != 8 and cfg_star.legacynoise == true) {
         std::cerr << "Error while reading the harvey like parameters" << std::endl;
         std::cerr << "You must provide 8 parameters" << std::endl;
         exit(EXIT_FAILURE);
-    }    
+    }
+    if(!cfg_star.legacynoise){ // We only need to check that we have Nharvey + 1, with Nharvey a number modulo 3
+        double Nh=(cfg_star.legacynoise-1)/3;
+        if (Nh - static_cast<int>(Nh) !=0){
+            std::cerr << "Error while reading the harvey like parameters" << std::endl;
+            std::cerr << "When legacynoise=false, you must provide Nharvey + White noise parameters. e.g. 3 Harvey parameters + 1 White noise. or 6 Harvey parameters + 1 White noise. etc..." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+    }
 
     if (input_params["inclination"] == "Auto"){
         // Determination of an isotropic inclination

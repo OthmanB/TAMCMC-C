@@ -1,7 +1,10 @@
-/*
-   A small function that compute the results of the solver as it is implemented into models.cpp for
-   mixed modes models. Mostly for debug purpose
-*/
+/**
+ * @file do_solve.cpp
+ * @brief A small program that computes the results of the solver for mixed modes models.
+ * 
+ * This program computes the results of the solver as it is implemented into models.cpp for mixed modes models. 
+ * It is mostly used for debugging purposes.
+ */
 
 #include <Eigen/Dense>
 #include <vector>
@@ -18,11 +21,25 @@
 #include "bump_DP.h"
 #include "readparams_job.h"
 
+/**
+ * @brief Displays the version information of the program.
+ */
 void showversion();
+
+/**
+ * @brief Displays the usage information of the program.
+ */
 void usage();
 
 namespace po = boost::program_options;
 
+/**
+ * @brief The main function of the program.
+ * 
+ * @param argc The number of command line arguments.
+ * @param argv An array of C-style strings containing the command line arguments.
+ * @return int The exit status of the program.
+ */
 int main(int argc, char* argv[]){
 
 		bool verbose;
@@ -138,7 +155,9 @@ int main(int argc, char* argv[]){
 		}
 }
 
-
+/**
+ * @brief Displays the version information of the program.
+ */
 void showversion()
 {
     std::cout << APP_NAME " ARMM solver " APP_VERSION "\n built on " __DATE__ << std::endl;
@@ -165,18 +184,21 @@ void showversion()
 
 }
 
+/**
+ * @brief Displays the usage information of the program.
+ */
 void usage() {
     std::cout << " This program allows you to use the solver as stand-alone program (in command line) " << std::endl;
     std::cout << " You need to provide at least one arguments to the program" << std::endl; 
 	std::cout << " This is a configuration file with, " << std::endl;
-    std::cout << "    (0) Comments on as many lines as whished ('#'), this files contains one parameter per line. Followed in this exact order by one parameter set per line: " << std::endl;
-    std::cout << "    (1) l" << std::endl;
-    std::cout << "    (2) DP" <<  std::endl;
-    std::cout << "    (3) alpha_g" << std::endl;
-    std::cout << "    (4) delta0l" << std::endl;
-    std::cout << "    (5) q_star" << std::endl;
-    std::cout << "    (6) fl0, a list of l=0 p mode frequencies that will be shift by l*Dnu/2 + delta0l to produce l=1 p modes" << std::endl;
-    std::cout << "    (7) step / resolution of the spectrum to define the precision on the retrieve modes" <<  std::endl;
-    std::cout << "    (8) fmin: Remove solutions found below fmin. Note that fl0 defines the total number of calculated frequencies. Those may/may not be below fmin" <<  std::endl;
-    std::cout << "    (9) fmax: Remove solutions found above fmax. Note that fl0 defines the total number of calculated frequencies. Those may/may not be above fmax" <<  std::endl;
+    std::cout << "    (0) Comments on as many lines as whished ('#'), this files contains one parameter per line. Followed by this in any order: " << std::endl;
+    std::cout << "    (1) l= [value]" << std::endl;
+    std::cout << "    (2) DPl= [value]" <<  std::endl;
+    std::cout << "    (3) epsilon_g= [value]" << std::endl;
+    std::cout << "    (4) delta0l = [value]" << std::endl;
+    std::cout << "    (5) q_star = [value]" << std::endl;
+    std::cout << "    (6) fl0 = [array], a list of l=0 p mode frequencies that will be shift by l*Dnu/2 + delta0l to produce l=1 p modes" << std::endl;
+    std::cout << "    (7) step = [value] / resolution of the spectrum to define the precision on the retrieve modes" <<  std::endl;
+    std::cout << "    (8) fmin = [value]: Remove solutions found below fmin. Note that fl0 defines the total number of calculated frequencies. Those may/may not be below fmin" <<  std::endl;
+    std::cout << "    (9) fmax = [value]: Remove solutions found above fmax. Note that fl0 defines the total number of calculated frequencies. Those may/may not be above fmax" <<  std::endl;
 }

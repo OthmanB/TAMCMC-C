@@ -1,5 +1,0 @@
-/Users/obenomar/Work/dev/TAMCMC-C/external/ARMM/build/CMakeFiles/ARMMSolver.dir
-/Users/obenomar/Work/dev/TAMCMC-C/external/ARMM/build/CMakeFiles/scan_range_solver.dir
-/Users/obenomar/Work/dev/TAMCMC-C/external/ARMM/build/CMakeFiles/make_star.dir
-/Users/obenomar/Work/dev/TAMCMC-C/external/ARMM/build/CMakeFiles/edit_cache.dir
-/Users/obenomar/Work/dev/TAMCMC-C/external/ARMM/build/CMakeFiles/rebuild_cache.dir
