@@ -28,7 +28,7 @@ using Eigen::MatrixXd;
  *
  * @note The function modifies the vector y and returns it.
  */
-VectorXd harvey_like(const VectorXd& noise_params, VectorXd& x, VectorXd& y, const int Nharvey);
+VectorXd harvey_like(const VectorXd& noise_params, const VectorXd& x, const VectorXd& y, const int Nharvey);
 
 
 

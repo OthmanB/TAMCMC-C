@@ -26,7 +26,8 @@
 #include "data_solver.h"
 #include "string_handler.h"
 #include "interpol.h"
-#include "derivatives_handler.h"
+//#include "derivatives_handler.h"
+#include "../../tamcmc/headers/derivatives_handler.h"
 #ifdef _OPENMP
    #include <omp.h>
 #else

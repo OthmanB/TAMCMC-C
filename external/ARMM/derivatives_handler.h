@@ -7,7 +7,7 @@
 #pragma once
 #include <iostream>
 #include <Eigen/Dense>
-#include "../../data.h"
+#include "data.h"
 
 using Eigen::VectorXd;
 using Eigen::VectorXi;

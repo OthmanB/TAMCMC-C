@@ -77,7 +77,7 @@ VectorXd quad_interpol( const VectorXd& a, const int m ){
  * @param a The array to interpolate.
  * @return long double The interpolated value.
  */
-long double interp1( const long double x,  const VectorXd& a)
+const long double interp1( const long double x,  const VectorXd& a)
 {
     int n=a.size();
 
