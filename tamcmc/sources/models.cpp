@@ -1309,7 +1309,7 @@ VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& p
         if(do_amp){
             Hl1=std::abs(lin_interpol(fl0_all, Hl0_all, fl1)/(pi*Wl1)*Vl1); // Modified on 1 Mar 2022
         } else{
-            Hl1=std::abs(lin_interpol(fl0_all, Hl0_all, fl1)); // Modified on 1 Mar 2022
+            Hl1=std::abs(lin_interpol(fl0_all, Hl0_all, fl1)*Vl1); // Modified on 1 Mar 2022
         }
         a1=a1_terms[0] + a1_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz  
         a2=a2_terms[0] + a2_terms[1]*(fl1*1e-3); //two terms: one constant term + one linear in nu, after a11, set in mHz
