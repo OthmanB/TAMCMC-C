@@ -1,5 +1,8 @@
 # Version history #
 
+## v1.86.77 Bug Patch #
+  - Upon inspection of the code, I noticed that at some point in March 2022, I likely removed by mistake the Vl1 term when computing H(l=1) by interpolation and for aj and ajAlm models. This is now fixed.
+
 ## v1.86.76 Bug Patch #
   - Upon cleaning the priors_calc.cpp during v1.86.0, For the models model_RGB_asympt_aj_AppWidth_HarveyLike_v4, the hard-coded prior imposing magb > 0 was not removed. Because it's slot was replaced by a3, it was wrongly affecting the condition a3 > 0. This is now fixed. 
 
