@@ -274,8 +274,6 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 
 	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
 	f=f + apply_generic_priors(params, priors_params, priors_names_switch, tabulated_priors);
-	//std::cout << "[4] f=" << f << std::endl;
-
 	// Determine the large separation
 	//frstder=Frstder_adaptive_reggrid(params.segment(Nmax+lmax, Nfl0)); // First derivative of fl0 gives Dnu
 	//Dnu=frstder.deriv.sum();
@@ -851,8 +849,6 @@ long double apply_generic_priors(const VectorXd& params, const MatrixXd& priors_
 				}
 				break;
 			case 13: // Case Auto: No Prior Applied here --> The user must set his own prior... Useful if using a 2D tabulated prior
-			  std::cout << "CASE AUTO" << std::endl;
-			  std::cout << "---!!!!----" << std::endl;
 			  break;
 			default:
 			  std::cout << " Problem in priors_calc.cpp! " << std::endl;
