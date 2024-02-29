@@ -1,5 +1,8 @@
 # Version history #
 
+## v1.86.78 Bug Patch #
+  - Fixing report that aj coefficients are always positive while the pdf show negative results. The fix consist in removing a wrongly put absolute value for these parameters
+
 ## v1.86.77 Bug Patch #
   - Upon inspection of the code, I noticed that at some point in March 2022, I likely removed by mistake the Vl1 term when computing H(l=1) by interpolation and for aj and ajAlm models. This is now fixed.
 

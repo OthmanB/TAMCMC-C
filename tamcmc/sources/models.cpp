@@ -1194,7 +1194,7 @@ VectorXd model_MS_Global_a1nl_etaa3_HarveyLike(const VectorXd& params, const Vec
 
 VectorXd model_MS_Global_aj_HarveyLike(const VectorXd& params, const VectorXi& params_length, const VectorXd& x, bool outparams){
     /* Model of the power spectrum of a Main sequence solar-like star
-     * param is a vector of parameters
+     * param is a vec tor of parameters
      * param_length defines the structure of the parameters
      * x is the frequency assumed to be in microHz
      * Warning: Although we have Nfli terms, all these MUST have same size, provided that 0<i<lmax. 
@@ -4450,12 +4450,12 @@ VectorXd model_RGB_asympt_aj_CteWidth_HarveyLike_v4(const VectorXd& params, cons
     std::vector<double> fref_all(Nferr); // The total number fl1p modes is the total number of params Nfl1 - 8 // THESE MUST BE CONSTANT
     const double rot_env=std::abs(params[Nmax + lmax + Nf]);
     const double rot_core=std::abs(params[Nmax + lmax + Nf+1]);
-    const double a2_env=std::abs(params[Nmax + lmax + Nf+2]);
-    const double a2_core=std::abs(params[Nmax + lmax + Nf+3]);
-    const double a3_env=std::abs(params[Nmax + lmax + Nf+4]);
-    const double a4_env=std::abs(params[Nmax + lmax + Nf+5]);
-    const double a5_env=std::abs(params[Nmax + lmax + Nf+6]);
-    const double a6_env=std::abs(params[Nmax + lmax + Nf+7]);
+    const double a2_env=params[Nmax + lmax + Nf+2];
+    const double a2_core=params[Nmax + lmax + Nf+3];
+    const double a3_env=params[Nmax + lmax + Nf+4];
+    const double a4_env=params[Nmax + lmax + Nf+5];
+    const double a5_env=params[Nmax + lmax + Nf+6];
+    const double a6_env=params[Nmax + lmax + Nf+7];
     const double eta_switch=params[Nmax+lmax+Nf+8];
     const double asym=params[Nmax+lmax + Nf + 9];
 
@@ -4817,12 +4817,12 @@ VectorXd model_RGB_asympt_aj_AppWidth_HarveyLike_v4(const VectorXd& params, cons
     std::vector<double> fref_all(Nferr); // The total number fl1p modes is the total number of params Nfl1 - 8 // THESE MUST BE CONSTANT
     const double rot_env=std::abs(params[Nmax + lmax + Nf]);
     const double rot_core=std::abs(params[Nmax + lmax + Nf+1]);
-    const double a2_env=std::abs(params[Nmax + lmax + Nf+2]);
-    const double a2_core=std::abs(params[Nmax + lmax + Nf+3]);
-    const double a3_env=std::abs(params[Nmax + lmax + Nf+4]);
-    const double a4_env=std::abs(params[Nmax + lmax + Nf+5]);
-    const double a5_env=std::abs(params[Nmax + lmax + Nf+6]);
-    const double a6_env=std::abs(params[Nmax + lmax + Nf+7]);
+    const double a2_env=params[Nmax + lmax + Nf+2];
+    const double a2_core=params[Nmax + lmax + Nf+3];
+    const double a3_env=params[Nmax + lmax + Nf+4];
+    const double a4_env=params[Nmax + lmax + Nf+5];
+    const double a5_env=params[Nmax + lmax + Nf+6];
+    const double a6_env=params[Nmax + lmax + Nf+7];
     const double eta_switch=params[Nmax+lmax+Nf+8];
     const double asym=params[Nmax+lmax + Nf + 9];
     VectorXd ksi_pg, h1_h0_ratio,f_interp, h_interp;
@@ -4841,7 +4841,6 @@ VectorXd model_RGB_asympt_aj_AppWidth_HarveyLike_v4(const VectorXd& params, cons
             bias.set_points(fref_all,ferr_all,tk::spline::cspline_hermite);     // this calculates all spline coefficients
         }
     }
-
     const double fmin=fl0_all.minCoeff(); // This is to avoid a change in the number of modes
     const double fmax=fl0_all.maxCoeff();  // This is to avoid a change in the number of modes 
     VectorXd xfit, rfit;
