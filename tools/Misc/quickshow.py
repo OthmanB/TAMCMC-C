@@ -11,6 +11,7 @@ def quickshow(x,y,m, xm=None, c=['red', 'orange', 'blue', 'cyan', 'purple'], do_
 		nmodels=1
 		if xm is None:
 			mnew=np.zeros((nmodels, len(x)))
+			xm=x
 		else:
 			mnew=np.zeros((nmodels, len(xm)))
 		mnew[0,:]=m
