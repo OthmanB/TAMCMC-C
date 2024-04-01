@@ -26,6 +26,7 @@ if(NOT BUILD_ON_DALMA)
     endif()
 
     if(APPLE)
+		find_package(Eigen3 REQUIRED NO_MODULE)
         if(WITH_STATIC)
             message(FATAL_ERROR "Cannot compile statically on MacOS. Use it only for Linux systems. Turn it off by -DWITH_STATIC=OFF")
         endif()
