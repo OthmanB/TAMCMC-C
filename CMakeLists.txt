@@ -109,9 +109,9 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 else()
 	include_directories($ENV{LibArchive_INCLUDE_DIR})
     find_library(LibArchive_LIBRARY NAMES archive)
-    find_path(LibArchive_INCLUDE_DIR archive.h)
+    find_path(LibArchive_INCLUDE_DIR archive.h) 
 endif()
-get_filename_component(LibArchive_LIBRARY_DIR ${LibArchive_LIBRARY} DIRECTORY)
+get_filename_component(LibArchive_LIBRARY_DIR ${LibArchive_LIBRARY} DIRECTORY) 
 
 #Bring the core program sources into the project
 set(SOURCES_MAIN  #_COMMON
