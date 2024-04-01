@@ -44,12 +44,8 @@ jobs:
       - name: Install Dependencies (macOS)
         if: startsWith(matrix.os, 'macos')
         run: |
-          #brew update
           brew install gnuplot eigen boost gsl libarchive cmake
-          #brew link --overwrite python@3.11
-          ## Manually remove conflicting Python 3.11 files
-          #sudo rm -rf /usr/local/bin/2to3-3.11 /usr/local/bin/idle3.11 /usr/local/bin/pydoc3.11 /usr/local/bin/python3.11 /usr/local/bin/python3.11-config
-
+      
       - name: Configure CMake
         # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
@@ -58,8 +54,7 @@ jobs:
             cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DLibArchive_DIR=/usr/lib/x86_64-linux-gnu/cmake/libarchive
           elif [ "${{ matrix.os }}" = "macos-latest" ]; then
             cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DLibArchive_DIR=/usr/local/opt/libarchive/lib/cmake/libarchive \
-            -DOpenMP_C_FLAGS="-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include" \
-            -DOpenMP_C_LIB_NAMES="omp"
+            -DWITH_OPENMP=OFF
           fi
 
       - name: Build
