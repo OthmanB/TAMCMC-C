@@ -2,11 +2,30 @@ cmake_minimum_required(VERSION 3.5)
 set(CMAKE_BUILD_TYPE Release)
 project(cpptamcmc VERSION 1.86.7)
 
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(Boost_USE_MULTITHREADED TRUE)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../bin)
+
+# Check for macOS
+if(APPLE)
+    set(MACOS 1)
+else()
+    set(MACOS 0)
+endif()
+
+# Check for Linux
+if(CMAKE_COMPILER_IS_GNUCXX)
+    set(LINUX 1)
+else()
+    set(LINUX 0)
+endif()
+
+if(NOT CMAKE_COMPILER_IS_GNUCXX AND NOT MACOS)
+  message(FATAL_ERROR "This program works only on Mac or Linux")
+endif()
 
 option(WITH_STATIC "Link Libraries Statically. Useful to port from one system to another" OFF)
 option(WITH_GSL "GSL Library" ON)
@@ -26,7 +45,6 @@ if(NOT BUILD_ON_DALMA)
     endif()
 
     if(APPLE)
-		find_package(Eigen3 REQUIRED NO_MODULE)
         if(WITH_STATIC)
             message(FATAL_ERROR "Cannot compile statically on MacOS. Use it only for Linux systems. Turn it off by -DWITH_STATIC=OFF")
         endif()
@@ -255,9 +273,20 @@ if (WITH_STATIC)
 		#/usr/local/lib/libgsl.a
 		-lz)
 else()
-	target_link_libraries(${CMAKE_PROJECT_NAME} ${Boost_LIBRARIES} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY}) # ${ZLIB_LIBRARIES}
-	target_link_libraries(bin2txt ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY})  # ${ZLIB_LIBRARIES}
-	target_link_libraries(getstats ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY})
-	target_link_libraries(getevidence ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY})
-	target_link_libraries(getmodel  ${Boost_LIBRARIES} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY}) 
+	if(MACOS)
+		find_package(Eigen3 REQUIRED NO_MODULE)
+		target_compile_definitions(${CMAKE_PROJECT_NAME}  PRIVATE MACOS)
+		target_link_libraries(${CMAKE_PROJECT_NAME} ${Boost_LIBRARIES} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY} Eigen3::Eigen ) # ${ZLIB_LIBRARIES}
+		target_link_libraries(bin2txt ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY} Eigen3::Eigen )  # ${ZLIB_LIBRARIES}
+		target_link_libraries(getstats ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY} Eigen3::Eigen )
+		target_link_libraries(getevidence ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY} Eigen3::Eigen )
+		target_link_libraries(getmodel  ${Boost_LIBRARIES} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} Eigen3::Eigen ) 
+	elseif(LINUX)
+		target_compile_definitions(${CMAKE_PROJECT_NAME}  PRIVATE LINUX)
+		target_link_libraries(${CMAKE_PROJECT_NAME} ${Boost_LIBRARIES} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY}) # ${ZLIB_LIBRARIES}
+		target_link_libraries(bin2txt ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY})  # ${ZLIB_LIBRARIES}
+		target_link_libraries(getstats ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY})
+		target_link_libraries(getevidence ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY})
+		target_link_libraries(getmodel  ${Boost_LIBRARIES} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY}) 
+	endif()
 endif()
