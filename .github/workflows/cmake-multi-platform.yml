@@ -57,7 +57,9 @@ jobs:
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DLibArchive_DIR=/usr/lib/x86_64-linux-gnu/cmake/libarchive
           elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-            cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DLibArchive_DIR=/usr/local/opt/libarchive/lib/cmake/libarchive
+            cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DLibArchive_DIR=/usr/local/opt/libarchive/lib/cmake/libarchive \
+            -DOpenMP_C_FLAGS="-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include" \
+            -DOpenMP_C_LIB_NAMES="omp"
           fi
 
       - name: Build
