@@ -53,8 +53,7 @@ jobs:
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DLibArchive_DIR=/usr/lib/x86_64-linux-gnu/cmake/libarchive
           elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-            cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DLibArchive_DIR=/usr/local/opt/libarchive/lib/cmake/libarchive \
-            -DEigen3_DIR=/usr/local/Cellar/eigen/3.3.9/share/cmake/eigen3  -DWITH_OPENMP=OFF
+            cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_OPENMP=OFF
           fi
 
       - name: Build
