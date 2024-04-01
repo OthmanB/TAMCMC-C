@@ -17,13 +17,16 @@
 #include "stats_dictionary.h"
 #include "derivatives_handler.h"
 #include "linfit.h"
-#include "linspace.h"
+//#include "linspace.h"
+#include <stdexcept>
 
 using Eigen::VectorXd;
 using Eigen::VectorXi;
 using Eigen::MatrixXd;
 
-long double priors_MS_Global(const VectorXd& params, const VectorXi& params_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch, const VectorXd& extra_priors){
+long double priors_MS_Global(const VectorXd& params, const VectorXi& params_length, 
+				const MatrixXd& priors_params, const VectorXi& priors_names_switch, 
+				const VectorXd& extra_priors, const tabpriors& tabulated_priors){
 
 	long double f=0;
 
@@ -270,13 +273,13 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 	//std::cout << "[3]  f=" << f << std::endl;
 
 	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
-	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
-	//std::cout << "[4] f=" << f << std::endl;
-
+	f=f + apply_generic_priors(params, priors_params, priors_names_switch, tabulated_priors);
 	// Determine the large separation
 	//frstder=Frstder_adaptive_reggrid(params.segment(Nmax+lmax, Nfl0)); // First derivative of fl0 gives Dnu
 	//Dnu=frstder.deriv.sum();
-	tmp=linspace(0, params.segment(Nmax+lmax, Nfl[0]).size()-1, params.segment(Nmax+lmax, Nfl[0]).size());
+	//tmp=linspace(0, params.segment(Nmax+lmax, Nfl[0]).size()-1, params.segment(Nmax+lmax, Nfl[0]).size());
+	tmp = Eigen::VectorXd::LinSpaced(params.segment(Nmax+lmax, Nfl[0]).size(), 0, params.segment(Nmax+lmax, Nfl[0]).size()-1);
+
 	fit=linfit(tmp, params.segment(Nmax+lmax, Nfl[0])); // fit[0] is the slope ==> Dnu and fit[1] is the ordinate at origin ==> fit[1]/fit[0] = epsilon
 	Dnu=fit[0];
 
@@ -313,7 +316,9 @@ long double priors_MS_Global(const VectorXd& params, const VectorXi& params_leng
 return f;
 } 
 
-long double priors_asymptotic(const VectorXd& params, const VectorXi& params_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch, const VectorXd& extra_priors){
+long double priors_asymptotic(const VectorXd& params, const VectorXi& params_length, 
+					const MatrixXd& priors_params, const VectorXi& priors_names_switch, 
+					const VectorXd& extra_priors, const tabpriors& tabulated_priors){
 	// The priors_asymptotic() function is basically the same as the prior_ms_global() but:
 	//    (1) Need to exclude l=1 from the smoothing
 	//    (2) Replace a3/a1 ratio by a3/rot_env (A slight change for the a3 index because we have Snlm= [rot_env, rot_core, eta, a3, asym] here instead of [a1, eta, a3, asym]
@@ -350,7 +355,7 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 	VectorXd tmp, fit;
 	Deriv_out frstder, scdder;
 	
-	a3=params[Nmax+lmax+Nf+3];
+	a3=params[Nmax+lmax+Nf+4];
 	rot_env=std::abs(params[Nmax + lmax + Nf]);
 
 	//std::cout << "[1] f =" << f << std::endl;
@@ -368,11 +373,7 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 		f=-INFINITY;
 		goto end;
 	}
-	// Implement securities to avoid unphysical quantities that might lead to NaNs
-	if(params[Nmax+lmax+Nf+4] < 0){ // Impose that the power coeficient of magnetic effect is positive
-		f=-INFINITY;
-		goto end;
-	}
+	//std::cout << "priors_names_switch[Nmax+lmax+Nf+Nsplit+Nwidth+3] : " << priors_names_switch[Nmax+lmax+Nf+Nsplit+Nwidth+3] << std::endl;
 	if(priors_names_switch[Nmax+lmax+Nf+Nsplit+Nwidth+3] != 0){
 		if( (params[Nmax+lmax+Nf+Nsplit+Nwidth+3] < 0) || // Harvey profile height
 		    (params[Nmax+lmax+Nf+Nsplit+Nwidth+4] < 0) || // Harvey profile tc
@@ -409,42 +410,12 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 	//std::cout << "[3.2] f =" << f << std::endl;
 
 	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
-	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
+	f=f + apply_generic_priors(params, priors_params, priors_names_switch, tabulated_priors);
 	//std::cout << "[4] f =" << f << std::endl;
 
-	// ----- Add a positivity condition on inclination -------
-	// The prior could return values -90<i<90. We want it to give only 0<i<90
-	//f=f+logP_uniform(0., 90., params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise]);
-	/*switch(impose_normHnlm){ 
-		case 1: // Case specific to model_MS_Global_a1etaa3_HarveyLike_Classic_v2
-			//l=1: m=0, m=+/-1
-			f=f+logP_uniform(0, 1.+1e-10, params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise] + 2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+1]); // The sum must be positive
-			//l=2: m=0, m=+/-1, m=+/-2
- 			// The sum must be positive
-			f=f+logP_uniform(0, 1+1e-10, params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+2]+ 
-								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+3]+ 
-								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+4]
-							); // The sum must be positive
-			//l=3: m=0, m=+/-1, m=+/-2, m=+/-3
- 			// The sum must be positive
-			f=f+logP_uniform(0, 1+1e-10, params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+5]+ 
-								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+6]+ 
-								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+7]+
-								   2*params[Nmax+lmax+Nf+Nsplit+Nwidth+Nnoise+8]
-								   ); // The sum must be positive
-
-		break;
-		case 2:
-			std::cout << "priors_MS_Global: impose_normHnlm=2 YET TO BE IMPLEMENTED!" << std::endl;
-			exit(EXIT_SUCCESS);
-		break;
-	}
-	*/
 	// Determine the large separation
-	//frstder=Frstder_adaptive_reggrid(params.segment(Nmax+lmax, Nfl0)); // First derivative of fl0 gives Dnu
-	//Dnu=frstder.deriv.sum();
+	tmp = Eigen::VectorXd::LinSpaced(params.segment(Nmax+lmax, Nfl0).size(), 0, params.segment(Nmax+lmax, Nfl0).size()-1);
 
-	tmp=linspace(0, params.segment(Nmax+lmax, Nfl0).size()-1, params.segment(Nmax+lmax, Nfl0).size());
 	fit=linfit(tmp, params.segment(Nmax+lmax, Nfl0)); // fit[0] is the slope ==> Dnu and fit[1] is the ordinate at origin ==> fit[1]/fit[0] = epsilon
 	Dnu=fit[0];
 	//epsilon=fit[1]/fit[0];
@@ -453,7 +424,11 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 	switch(model_switch){ // SPECIFIC HANDLING FOR SOME MODELS
 		case 1: // Case of model model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v3 or model_RGB_asympt_a1etaa3_freeWidth_HarveyLike_v3
 			//std::cout << "fl1p:" << params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params+1, Nfl1-Nmixedmodes_g_params-1).transpose() << std::endl;
-			tmp=linspace(0, params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params+1, Nfl1-Nmixedmodes_g_params-1).size()-1, params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params-1, Nfl1-Nmixedmodes_g_params-1).size());
+			//tmp=linspace(0, params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params+1,	Nfl1-Nmixedmodes_g_params-1).size()-1, 
+			//	params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params-1, Nfl1-Nmixedmodes_g_params-1).size());
+			tmp = Eigen::VectorXd::LinSpaced(params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params-1, Nfl1-Nmixedmodes_g_params-1).size(),
+				0, params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params+1,	Nfl1-Nmixedmodes_g_params-1).size()-1);
+			
 			fit=linfit(tmp, params.segment(Nmax+lmax+Nfl0+Nmixedmodes_g_params+1, Nfl1-Nmixedmodes_g_params-1)); // fit[0] is the slope ==> Dnu and fit[1] is the ordinate at origin ==> fit[1]/fit[0] = epsilon
 			Dnu_l1=fit[0];
 			f=f+ logP_gaussian(Dnu, 0.003*Dnu,Dnu_l1);  // IMPOSES Dnu(l=0) = Dnu(l=1) + N(0, 0.01*Dnu(l=0))
@@ -465,8 +440,12 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 			}	
  		break;
  		case 3:
- 			//std::cout << "params[Nmax + lmax + Nfl0 + 6] = " << params[Nmax + lmax + Nfl0 + 6] << std::endl;
- 			if (params[Nmax + lmax + Nfl0 + 6] < 0){ // Imposes that Wfactor >= 0(which is likely gaussian prior)
+			//std::cout << "params[Nmax + lmax + Nfl0 + 6] = " << params[Nmax + lmax + Nfl0 + 6] << std::endl;
+ 			if (params[Nmax + lmax + Nfl0 + 6] < 0){ // Imposes that Wfactor >= 0(which could be a Gaussian prior)
+				f=-INFINITY;
+				goto end;
+			}
+ 			if (params[Nmax + lmax + Nfl0 + 7] < 0){ // Imposes that Hfactor >= 0
 				f=-INFINITY;
 				goto end;
 			}
@@ -524,23 +503,17 @@ long double priors_asymptotic(const VectorXd& params, const VectorXi& params_len
 				}
 			  	break;
 	}
-	/*
-	std::cout << "a3 =" << a3 << std::endl;
-	std::cout << "rot_env ="	<< params[Nmax+lmax+Nf] << std::endl;
-	std::cout << "ratio =" << a3/rot_env<< std::endl;
-	std::cout << "a3ova1_limit = " << a3ova1_limit << std::endl; 
-	std::cout << "after a3ova1_limit " << f << std::endl;
-	std::cout << "extra_priors = " << extra_priors << std::endl;
-	std::cout << " MODIFICATION MADE ON 21 JAN 2021 (rot_env ~ a1 to get a3/a1... Need checks. Exiting" << std::endl;
-	exit(EXIT_SUCCESS);
-	*/
+	
 	end:
+	//std::cout << "f = " << f << std::endl;
 	//std::cout << "Debug stop in priors_calc.cpp" << std::endl;
 	//exit(EXIT_SUCCESS);
 	return f;
 }
 
-long double priors_local(const VectorXd& params, const VectorXi& params_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch, const VectorXd& extra_priors){
+long double priors_local(const VectorXd& params, const VectorXi& params_length, 
+				const MatrixXd& priors_params, const VectorXi& priors_names_switch, 
+				const VectorXd& extra_priors, const tabpriors& tabulated_priors){
 
 	long double f=0;
 
@@ -593,7 +566,7 @@ long double priors_local(const VectorXd& params, const VectorXi& params_length, 
 	//double Dnu, d02, scoef, a1, alfa, b, fmax, Q11, max_b, el, em;
 	
  	// Apply the priors as defined in the configuration defined by the user and read by 'io_MS_global.cpp'
-	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
+	f=f + apply_generic_priors(params, priors_params, priors_names_switch, tabulated_priors);
 	// ----- Add a positivity condition on inclination -------
 	// The prior could return values -90<i<90. We want it to give only 0<i<90
 	//f=f+logP_uniform(0., 90., params[Nmax+Nvis+Nfl0+Nfl1+Nfl2+Nfl3+Nsplit+Nwidth+Nnoise]);
@@ -655,52 +628,83 @@ return f;
 
 
 
-
-
-
-//long double priors_Test_Gaussian(const VectorXd params, const VectorXi param_length, const MatrixXd priors_params, const std::vector<std::string> priors_names){
-long double priors_Test_Gaussian(const VectorXd& params, const VectorXi& params_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch){
-
-	long double f=0;
-
-	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
-
-	//// More rigid strategy... How much time is spent on the cases ??
-	//for(i=0; i<params.size(); i++){
-	//	f=f + logP_uniform(priors_params(0, i), priors_params(1, i), params[i]);
-	//}
-	//exit(EXIT_SUCCESS);
-return f;
-} 
-
-//long double priors_Test_Gaussian(const VectorXd params, const VectorXi param_length, const MatrixXd priors_params, const std::vector<std::string> priors_names){
-long double priors_Harvey_Gaussian(const VectorXd& params, const VectorXi& params_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch){
+long double priors_Harvey_Gaussian(const VectorXd& params, const VectorXi& params_length, 
+			const MatrixXd& priors_params, const VectorXi& priors_names_switch, const tabpriors& tabulated_priors){
 
 	long double f=0;
 	// Stello2009 scaling relation between Dnu and numax to remove spurious spiky fits
 	const long double beta0=0.263;
 	const long double beta1=0.77; 
 	const long double Dnu_expected=beta0*std::pow(params[8],beta1);  // param2[8] must be numax here
-	//std::cout << f << std::endl;
-	//std::cout << "Dnu_expected =" << Dnu_expected << std::endl;
-	//std::cout << "params[9] =" << params[9] << std::endl;
 	if (params[9] < Dnu_expected/2){
 		f=f -INFINITY;  // If the width of gaussian is smaller than 1.5 times the numax, reject the solution
-		//std::cout << "f = " << f << std::endl;
 		goto end;
 	}
-	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
+	f=f + apply_generic_priors(params, priors_params, priors_names_switch, tabulated_priors);
 	end:
 
 return f;
 } 
 
-long double priors_ajfit(const VectorXd& params, const VectorXi& params_length, const MatrixXd& priors_params, const VectorXi& priors_names_switch){
+long double priors_Kallinger2014_Gaussian(const VectorXd& params, const VectorXi& params_length, 
+			const MatrixXd& priors_params, const VectorXi& priors_names_switch, const tabpriors& tabulated_priors){
+
+	long double f=0;
+	// Stello2009 scaling relation between Dnu and numax to remove spurious spiky fits
+	const long double numax=params[15];
+	const long double sig_numax=params[16];
+	const long double beta0=0.263;
+	const long double beta1=0.77; 
+	const long double Dnu_expected=beta0*std::pow(numax,beta1);  // 
+	const long double mu_numax = params[17];
+	const long double omega_numax=params[18];
+	//const long double mu_a= params[16];
+	//const long double omega_a=params[17];
+	//const double Mass=std::abs(params[15]);
+	const double ka=3382.;
+    const double sa=-0.609;
+    const double err_ka=9.;
+    const double err_sa=0.002;
+	//const double a=std::abs(params[0])*std::pow(std::abs(numax + mu_numax),params[1]) * std::pow(Mass,params[2]);
+	//const double a=std::abs(ka)*std::pow(std::abs(numax),sa);
+	//const double deriv_ka=std::pow(numax,sa);
+	//const double deriv_sa=std::pow(numax,sa) * log(numax);
+	//const double err_a=std::sqrt(std::pow(deriv_ka * err_ka,2) + std::pow(deriv_sa * err_sa,2));
+	//const double a1=params[0];
+	//const double a2=params[1];
+	//std::cout << "f = " << f << std::endl;
+	if (sig_numax < Dnu_expected/2){
+		f=f -INFINITY;  // If the width of gaussian is smaller than 1.5 times the numax, reject the solution
+		goto end;
+	}
+	if (numax + mu_numax < 0){
+		f=f -INFINITY;  // If bias factor on numax should not lead to negative numax + mu_numax
+		goto end;
+	}
+	//if (a + mu_a < 0){
+	//	f=f -INFINITY;  // If bias factor on numax should not lead to negative numax + mu_numax
+	//	goto end;
+	//}
+	f=f + logP_gaussian(0, std::abs(omega_numax), mu_numax);
+	//f=f + logP_gaussian(a, err_a, (a1+a2)/2); // the mean of the two amplitude terms must be close to the trend a
+	//f=f + logP_gaussian_uniform_gaussian(-0.45, 0.45, 0.05, 0.05, (a1-a2)/a); // the difference between the two amplitudes is smaller than 50
+	f=f + apply_generic_priors(params, priors_params, priors_names_switch, tabulated_priors);
+	//std::cout << "f = " << f << std::endl;
+	//exit(EXIT_SUCCESS);
+	end:
+
+return f;
+} 
+
+long double priors_ajfit(const VectorXd& params, const VectorXi& params_length, 
+			const MatrixXd& priors_params, const VectorXi& priors_names_switch,
+			const tabpriors& tabulated_priors){
+
 	const double theta0=params[1];
 	const double delta=params[2];
 	const int filter=params[params_length.segment(0,4).sum()+4];
 	long double f=0;
-	f=f + apply_generic_priors(params, priors_params, priors_names_switch);
+	f=f + apply_generic_priors(params, priors_params, priors_names_switch, tabulated_priors);
 
 	// In the case of a 'gate' prior (filter =0), We have to exclude theta0 < delta/2 by design because theta_min = theta0 - delta/2  must be in [0,Pi/2]	
 	if (filter == 0){
@@ -711,11 +715,12 @@ long double priors_ajfit(const VectorXd& params, const VectorXi& params_length, 
 	return f;
 }
 
-long double apply_generic_priors(const VectorXd& params, const MatrixXd& priors_params, const VectorXi& priors_names_switch){
+long double apply_generic_priors(const VectorXd& params, const MatrixXd& priors_params, const VectorXi& priors_names_switch, const tabpriors& priors_tables){
 /*
  * This function apply the generic priors, that are defined in the configuration file and that have been translated into
  * The constant priors_params (the parameters that define the priors) and into priors_names_switch (translation of 
  * priors_names into integers in order to be handled by the switch / case statement.
+ * Added on 27 June: priors_params: A matrix that contain the table of priors that should be loaded in the io cpp of the model. The content should be {(x1,y1),(x2,y2), ..., (xn,yn)}
  *
 */
 	int i;
@@ -741,8 +746,9 @@ long double apply_generic_priors(const VectorXd& params, const MatrixXd& priors_
 			  //std::cout << "    pena=" << pena  << std::endl;
 			  break;
 			case 3: // Multivariate Gaussian Prior
-			  std::cout << "The Multivariate Gaussian Prior IS NOT HANDLED" << std::endl;
-		      std::cout << "The program will exit now" << std::endl;
+			  std::cerr << "The Multivariate Gaussian Prior IS NOT HANDLED" << std::endl;
+			  std::cerr << "Use instead the Tabulated_2d prior if you want a bi-variate gaussian " << std::endl;
+		      std::cerr << "The program will exit now" << std::endl;
 			  exit(EXIT_FAILURE);
 			  //pena=pena + logP_multivariate_gaussian( priors_params(0, i), Matrix, params[i]);
 			  break;
@@ -799,14 +805,55 @@ long double apply_generic_priors(const VectorXd& params, const MatrixXd& priors_
 			  //std::cout << "  " << "priors_params(1, " << i << ")=" << priors_params(1, i) << std::endl;
 			  //std::cout << "    pena=" << pena  << std::endl;	  
 			  break;
-			case 11: // Case Auto: No Prior Applied here --> The user must set his own prior
-			  //std::cout << "CASE 10" << std::endl;
-			  //std::cout << "[" << i << "] Auto, pena=" << pena << std::endl;
+			case 11: // tabulated prior
+				std::cout << " CASE 11" << std::endl;
+				// Expected structure inside the model file: 
+				//    [parameter]              Tabulated         [initial_guess]        [table_index]    [x-col]    [y-col]  
+				// Here :
+				//     [parameter] refers to the name of the parameter. e.g Inclination
+				//     [table_index] refers to the index number of the file. The user has the responsibility to designed x-col and y-col
+				//const std::vector<Data_Nd>& priors_params
+				//The content should be {(x0,y0),(x1,y1), ..., (xn,yn)}
+				// priors_params[0,i] : must contain the block. block 0 --> (x0,y0). block 2 --> (x2,y2) 
+				 // priors_params[1,i]: must contain 0 / 1 = normalise. If 0, do not normalise (faster... normalisation must be done before-hand).
+				if (priors_tables.empty == false){ // priors_tables is an optional argument of the function
+				    MatrixXd mat=*priors_tables.data_3d[int(priors_params(0,i))];
+					std::cout << "Table index = " << priors_params(0,i) << std::endl;
+					std::cout << "Table = " << mat << std::endl;
+					std::cout << "param val =" << params[i] << std::endl;
+				   //long double logP_tabulated(              const VectorXd& tab_x                             ,        const VectorXd& logtab_y              , const long double x, const bool normalise)
+					std::cout << "Pena = " << logP_tabulated(mat.col(priors_params(1,i)), mat.col(priors_params(2,i)), params[i], false) << std::endl;
+					pena= pena + logP_tabulated(mat.col(0), mat.col(1), params[i], false); // col-x and col-y are fixed
+				    std::cout << "Pena = " << logP_tabulated(mat.col(0), mat.col(1), params[i], false) << std::endl;
+					exit(EXIT_SUCCESS);
+				} else{
+					throw std::runtime_error("Error: Custom tabulated priors (priors_tables) cannot be empty when using 'tabulated' priors!");
+				}
+				break;
+			case 12: // 2D tabulated prior
+				// Expected structure inside the model file: 
+				//    [parameter1]              Tabulated_2d(parameter2)         [table_index]
+				//     [parameter2] refers to the name of the parameter. e.g Inclination
+				//     [table_index] refers to the index number of the file. It is up to the user to be careful by pointing to the correct file				
+				// The content should be the full matrix of the 2D PDF for parameters (i,j) 
+				// The code will automatically identify indexes of parameter1 and parameter2 and this will put in the prior parameter table
+				// the table_index is the number associated to .priors filename
+//				if (priors_tables.interpolator_2d.valid[priors_params(0,i)] == true){ // We check that the table that we point at was initialised as a 2D table with GSL a interpolator
+				if (priors_tables.interpolator_2d[priors_params(0,i)].valid == true){ // We check that the table that we point at was initialised as a 2D table with GSL a interpolator
+					int j=priors_params(1,i); // The index of the second parameter (parameter2)
+					//std::cout << "Pena       =" << logP << std::endl;
+					pena= pena + logP_tabulated_2d(priors_tables.interpolator_2d[priors_params(0,i)].interp_A10, priors_tables.interpolator_2d[priors_params(0,i)].flat_grid_A10, params[i], params[j]);
+					//exit(EXIT_SUCCESS);
+				} else{
+					throw std::runtime_error("Error: priors_tables is not a valid 2D table! Check that it follows the expected format, ie first row: x, first col y + a block matrix for z ");
+				}
+				break;
+			case 13: // Case Auto: No Prior Applied here --> The user must set his own prior... Useful if using a 2D tabulated prior
 			  break;
 			default:
 			  std::cout << " Problem in priors_calc.cpp! " << std::endl;
 			  std::cout << " priors_names_switch[" << i << "]=" << priors_names_switch[i] << std::endl;
-		          std::cout << " This value is not associated to any known case statement " << std::endl;
+		    std::cout << " This value is not associated to any known case statement " << std::endl;
 			  std::cout << " The program will exit now" << std::endl;
 			  exit(EXIT_FAILURE);
 		}

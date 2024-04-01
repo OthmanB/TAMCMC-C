@@ -10,8 +10,11 @@
  *       - Uniform-Gaussian
  *       - Gaussian-Uniform
  *       - Gaussian-Uniform-Gaussian
+ *       - Tabulated
  *
  *  Created on: 09 Apr 2016
+ *  Updated on: 24 Jun 2023 : Adding tabulated function interpolation
+ * 
  *      Author: obenomar
  */
 
@@ -19,11 +22,15 @@
 #include <iomanip>
 #include <math.h>
 #include <Eigen/Dense>
+#include <algorithm>
+#include "interpol.h"
+#include "../../external/Alm/Alm_cpp/data.h"
+#include "../../external/Alm/Alm_cpp/bilinear_interpol.h"
 
 # define PIl          3.141592653589793238462643383279502884L /* pi */
 
 //using Eigen::MatrixXd;
-//using Eigen::VectorXd;
+using Eigen::VectorXd;
 //using Eigen::VectorXi;
 
 // Note: These priors are handled using the 'case' statement. CASE 0 IS THE USER-DEFINED CASE (MEANS NO PRIOR USED)
@@ -239,6 +246,83 @@ if ( x > b_max) {
 C=log(std::abs(b_max-b_min)+0.5*sqrt(2*PIl)*(sigma1 + sigma2)); // The normalisation constant
 
 return logP-C;
+}
+
+
+long double logP_tabulated(const VectorXd& tab_x, const VectorXd& tab_y, const long double x, const bool normalise){
+/* 
+ * Calculates the log probability for a tabulated function of the probability
+ * Linear interpolation is performed in order to get logP
+ * Inputs are logtables
+ * If the norm of the logprobability is provided, it is used (optional argument).
+ *  Otherwise, it is calculated here using the trapezoidal approximation
+ * 
+ * CORRESPONDS TO CASE 11 IN THE MAIN PROGRAM
+ *
+*/
+	const int Nx=tab_x.size();
+	const double min =tab_x.minCoeff();
+	const double max =tab_x.maxCoeff();
+	long double P, logP, C=0;
+	int i0=0, i1=1;
+	if(x < min || x > max){
+		return std::numeric_limits<double>::lowest(); // This is basically a -Inf
+	}
+	P=lin_interpol(tab_x, tab_y, x);
+	if (P < 0){
+		std::cerr << "Warning : Interpolation of tabulated probability < 0 ==> P=0 imposed for x = " << x << std::endl;
+		P = 0;
+	}
+	if(normalise == false){
+		C=0;
+		for(int i=0; i<Nx-1; i++){
+			// rectangular approximation
+			//double dy=(std::exp(logtab_y[i0]) + std::exp(logtab_y[i1]))/2;  // Computation of the intergral by the area method
+			double dy=(tab_y[i0] + tab_y[i1])/2;  // Computation of the intergral by the area method
+			double dx=tab_x[i1] - tab_x[i0];
+			C=C + dx*dy;
+			i0=i1;
+			i1=i1+1;
+		}
+	}
+//std::cout << " logP = " << logP << std::endl;
+//std::cout << " C =" << C << std::endl;
+return log(P)-log(C);
+}
+
+long double logP_tabulated_2d(gsl_interp2d* interp, const GridData4gsl& data_flatten, const double x, const double y){
+/* 
+ * Calculates the log probability for a 2D tabulated function of the log-probability
+ * Bi-Linear interpolation is performed using the GSL library in order to get logP
+ * Inputs are an interpolator function (initialised in config::setup()) and a flat x,y,z grid.
+ * Here, P(x,y) MUST HAVE BEEN PROPERLY NORMALISED
+ * 
+ * CORRESPONDS TO CASE 12 IN THE MAIN PROGRAM
+ *
+*/
+	// Considering the x and y are sorted in increasing number... no reason that they are not.
+	const double min_x = data_flatten.x[0];
+	const double max_x = data_flatten.x[data_flatten.nx-1];
+	const double min_y = data_flatten.y[0];
+	const double max_y = data_flatten.y[data_flatten.ny-1];
+	
+	//std::cout << "x = " << x << " x(min) - x(max) = " << min_x << "  -  " << max_x << std::endl;
+	//std::cout << "y = " << y << " y(min) - y(max) = " << min_y << "  -  " << max_y << std::endl;
+
+	if(x < min_x || x > max_x || y < min_y || y > max_y){
+		//std::cout << "   ==>  log(P) = - Inf" << std::endl;
+		//std::cout << " -- " << std::endl;
+ 		return std::numeric_limits<double>::lowest(); // This is basically a -Inf
+	}
+	//std::cout << " Calculate..." << std::endl;	
+    double P=interpolate_core(interp, data_flatten, x, y);
+	if (P < 0){
+		std::cerr << "Warning : Interpolation of tabulated probability < 0 ==> P=0 imposed for (x,y) = (" << x << "," << y << ")" << std::endl;
+		P = 0;
+	}
+	//std::cout << "   ==>  P = " << P << "      log(P) = " << log(P) << std::endl;
+	//std::cout << " -- " << std::endl;
+	return log(P);
 }
 
 

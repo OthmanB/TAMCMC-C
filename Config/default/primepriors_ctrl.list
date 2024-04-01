@@ -12,4 +12,6 @@
 8 Uniform_abs	#Uniform prior on the absolute value of the input
 9 Uniform_cos	# Buggy. Do not use
 10 Jeffreys_abs
-11 Auto
+11 Tabulated    # Prior specified in a table. the priors is on a file '[model_ID]_[file_number].priors' in the same directory than [model_ID].data and [model_ID].model files
+12 Tabulated_2d  # prior specified in a 2d table. the priors is on a file '[model_ID]_[file_number].priors' in the same directory than [model_ID].data and [model_ID].model files
+13 Auto

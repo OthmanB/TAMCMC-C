@@ -18,7 +18,7 @@
 #include "model_def.h"
 #include "data.h"
 #include "string_handler.h"
-#include "linspace.h"
+//#include "linspace.h"
 #include "config.h"
 #include "version.h"
 
@@ -77,7 +77,6 @@ int main(int argc, char* argv[]){
 				pos_option_file=5;
 				pos_option_type=4;
 			}
-			//exit(EXIT_SUCCESS);
 			// Identifies if the user provided a directory (end by a '/') or a file (does not end by a '/')
 			tmp=strsplit(argv[pos_option_file], "/");
 			if(tmp[tmp.size()-1] == ""){ // In that case, we have a directory as input. Not a file. The default file for outputs will be provided
@@ -132,7 +131,8 @@ int main(int argc, char* argv[]){
 			data_model=Data_Nd2Data(data);
 		} else{
 			std::cout << "  1. Generating x-axis data according to the provided data_range values..." << std::endl;
-			data_model.x=linspace(data_range[0], data_range[1], std::ceil(1 + (data_range[1]-data_range[0])/data_range[2])); // convert the resolution into a number of data points
+			//data_model.x=linspace(data_range[0], data_range[1], std::ceil(1 + (data_range[1]-data_range[0])/data_range[2])); // convert the resolution into a number of data points
+			data_model.x= Eigen::VectorXd::LinSpaced(std::ceil(1 + (data_range[1]-data_range[0])/data_range[2]), data_range[0], data_range[1]);
 			data_model.xrange.resize(2); data_model.y.resize(1); data_model.sigma_y.resize(1);
 			data_model.xrange[0]=data_model.x.minCoeff(); // Contains the min and max of x... in practice, it is used to limit the data range if requested by the cfg file (e.g. freq_range option in the .MCMC)
 			data_model.xrange[1]=data_model.x.maxCoeff(); // Contains the min and max of x... in practice, it is used to limit the data range if requested by the cfg file (e.g. freq_range option in the .MCMC)
@@ -147,8 +147,23 @@ int main(int argc, char* argv[]){
 			data.data.col(0)=data_model.x;
 		}
 		// Getting the list of models that are currently implemented
-		std::string file_list=cpath + "/models_ctrl.list";
-		listoutputs=cfg.read_listfiles(file_list, 1);	 // The file must be in the same folder as the main getmodel compiled file
+		std::string file_list = "models_ctrl.list";
+		std::string file_path = cpath + "/" + file_list;
+		std::ifstream file(file_path);
+		if (!file.good()) {
+			file_path = cpath + "/../" + file_list;
+			file.open(file_path);
+		}
+		if (file.good()) {
+			listoutputs = cfg.read_listfiles(file_path, 1);
+		} else {
+			std::cerr << " Fatal error in Fonction name: Config::read_listfiles():\n";
+			std::cerr << " Accessing file:" << file_list << " failed\n";
+			std::cerr << " The file was searched in execution directory and the path below :\n";
+			std::cerr << " Execution directory: " << cpath << std::endl; 
+			exit(EXIT_FAILURE);
+		}
+		//listoutputs=cfg.read_listfiles(file_list, 1);	 // The file must be in the same folder as the execution directory
 		modelname_switch=cfg.convert_model_fct_name_to_switch(modelname, listoutputs); // look for the case number that is going to be used in call_model
 
 		std::cout << "  2. Reading the file with the parameters of the model and computing model(s)..." << std::endl;
@@ -345,7 +360,7 @@ int check_retrocompatibility(VectorXi plength, std::string modelname){
 
 	int Nplength_expected=-1; // By defaut, consider that plength is not compatible with the current program
 	int status=2; // DEFAULT IS EVERYTHING OK (EXPERIMENTAL... IF FAILS NEED TO BE TO -1)
-	if (modelname == "model_MS_Global_a1etaa3_HarveyLike" || modelname == "model_MS_Global_a1etaa3_Harvey1985" || modelname == "model_MS_Global_a1l_etaa3_HarveyLike" ||
+	if (modelname == "model_MS_Global_a1l_etaa3_HarveyLike" ||
 	   modelname == "model_MS_Global_a1n_etaa3_HarveyLike" || modelname == "model_MS_Global_a1nl_etaa3_HarveyLike"){
 		Nplength_expected = 11;
 		if(Nplength_expected != plength.size()){
@@ -367,16 +382,6 @@ int check_retrocompatibility(VectorXi plength, std::string modelname){
         //std::cout << "Status set to 2 (Classic model)" << std::endl;
         status=2;
     }
-    if (modelname == "model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v2" ){ // This new function appears in version 1.5 so it is ok
-        //std::cout << "Status set to 2 (Classic model)" << std::endl;
-        status=2;
-    }
-    /*if (modelname =="model_MS_local_basic"){
-    	std::cout << "   >> The model 'model_MS_local_basic' is not handled by getmodel yet" << std::endl;
-    	std::cout << "      Currently working on its support... please wait that it gets released" << std::endl;
-    	exit(EXIT_FAILURE);
-    }
-    */
 	if(status >1){
 		std::cout << "   >> Compatibility/Consistency test with earlier version passed..." << std::endl;
 	}
@@ -412,40 +417,9 @@ VectorXd adapt2new_MSGlobal(const VectorXi plength, const VectorXd params, const
 	return newparams;
 }
 
-/*
-   ONLY FOR C++17
-*/
-/*void mvfile(std::string file_in, std::string file_out) {
-  try {
-    std::filesystem::rename(file_in, file_out);
-  } catch (std::filesystem::filesystem_error& e) {
-    std::cout << e.what() << '\n';
-  }
-}
-*/
 // Another version that should work always
 void mvfile(std::string file_in, std::string file_out) {
   if(std::rename(file_in.c_str(), file_out.c_str()) < 0) {
     std::cout << strerror(errno) << '\n' << std::endl;
   }
 }
-
-/*
-void mvfile(std::string file_in, std::string file_out) {
-  std::ifstream in(file_in.c_str(), std::ios::in | std::ios::binary);
-  std::ofstream out(file_out.c_str(), std::ios::out | std::ios::binary);
-  out << in.rdbuf();
-  std::remove(file_in.c_str());
-}
-*/
-
-/*
-inline bool exists_test1 (const std::string& name) {
-    if (FILE *file = fopen(name.c_str(), "r")) {
-        fclose(file);
-        return true;
-    } else {
-        return false;
-    }   
-}
-*/

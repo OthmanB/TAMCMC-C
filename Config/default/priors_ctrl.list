@@ -1,6 +1,6 @@
 # DO NOT EDIT UNLESS YOU KNOW WHAT YOU ARE DOING
 # case index, priors function name, # comments
-0 priors_Test_Gaussian
+0 priors_Kallinger2014_Gaussian
 1 priors_Harvey_Gaussian
 2 io_MS_Global
 3 io_local

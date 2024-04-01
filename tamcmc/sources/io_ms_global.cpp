@@ -651,12 +651,21 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
 
 	// DEFAULT WIDTH
 	tmpXd.resize(4);
+	//auto maxEl = std::max_element(h_inputs.begin(), h_inputs.end());
 	tmpXd << resol, inputs_MS_global.Dnu/3., -9999., -9999.;
 	for(int i=0; i<w_inputs.size(); i++){
 		if(w_relax[i]){
-			io_calls.fill_param(&width_in, "Width_l0", "Jeffreys", h_inputs[i], tmpXd, i, 0);	
+			if (w_inputs[i] < inputs_MS_global.Dnu/3.){
+				io_calls.fill_param(&width_in, "Width_l0", "Jeffreys", w_inputs[i], tmpXd, i, 0);	
+			} else{
+				io_calls.fill_param(&width_in, "Width_l0", "Jeffreys", inputs_MS_global.Dnu/3.1, tmpXd, i, 0);
+			}
 		} else{
-			io_calls.fill_param(&width_in, "Width_l0", "Fix", h_inputs[i], tmpXd, i, 0);			
+			if (w_inputs[i] < inputs_MS_global.Dnu/3.){
+				io_calls.fill_param(&width_in, "Width_l0", "Fix", w_inputs[i], tmpXd, i, 0);			
+			} else{
+				io_calls.fill_param(&width_in, "Width_l0", "Fix", inputs_MS_global.Dnu/3.1, tmpXd, i, 0);
+			}
 		}
 	}
 
@@ -899,10 +908,18 @@ Input_Data build_init_MS_Global(const MCMC_files inputs_MS_global, const bool ve
                     tmpXd=inputs_MS_global.modes_common.row(i);
                 }
 			for(p0=0; p0<w_inputs.size(); p0++){
-				if(w_relax[p0]){
-					io_calls.fill_param(&width_in, "Width_l", tmpstr, w_inputs[p0],  tmpXd, p0, 0);
+				if (w_inputs[p0] < inputs_MS_global.Dnu/3.){
+					if(w_relax[p0]){
+						io_calls.fill_param(&width_in, "Width_l", tmpstr, w_inputs[p0],  tmpXd, p0, 0);
+					} else{
+						io_calls.fill_param(&width_in, "Width_l",  "Fix", w_inputs[p0],  inputs_MS_global.modes_common.row(i), p0, 1);		
+					}
 				} else{
-					io_calls.fill_param(&width_in, "Width_l",  "Fix", w_inputs[p0],  inputs_MS_global.modes_common.row(i), p0, 1);		
+					if(w_relax[p0]){
+						io_calls.fill_param(&width_in, "Width_l", tmpstr, inputs_MS_global.Dnu/3.1,  tmpXd, p0, 0);
+					} else{
+						io_calls.fill_param(&width_in, "Width_l",  "Fix", inputs_MS_global.Dnu/3.1,  inputs_MS_global.modes_common.row(i), p0, 1);		
+					}
 				}
 			}
 		} 	

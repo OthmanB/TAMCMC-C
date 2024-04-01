@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from function_rot import *
+from activity import Alm
 from acoefs import nunlm_from_acoefs
-from subprocess import Popen, PIPE
+from subprocess import Popen, run, PIPE
 from iteration_utilities import deepflatten
 
 def eta0_fct(Dnu=None, rho=None, verbose=False):
@@ -33,53 +34,62 @@ def Qlm(l,m):
     Qlm=Qlm*2./3
     return Qlm
 
-def lorentzian_cpp(func_name, params, xmin, xmax, raw=False):
+def lorentzian_cpp(func_name, params, xmin, xmax, raw=False, version="1.86.0"):
 	err=False
 	print('func_name  =', func_name)
 	print('xmin       =', xmin)
 	print('xmax       =', xmax)
 	print('params     =', params)
-	try:
+	if version != "1.86.0":
+		print(" WARNING: version argument not set to 1.86.0 ==> Will use the old syntax to call lorentzian_test")
 		cmd=["./lorentzian_test", func_name, str(xmin), str(xmax)]
-		#params_str=""
 		for p in params:
-			#params_str=params_str + "  " + str(p)
 			cmd.append(str(p))
-		print('cmd    =', cmd)
-		process = Popen(cmd, stdout=PIPE, stderr=PIPE)
-		(output, err) = process.communicate()
-		exit_code = process.wait()
-		output=output.decode("utf-8") 
-		if raw == False:
-			r=output.split('\n')
-			freq=[]
-			power=[]
-			for line in r:
-				line=line.strip()
-				#print('B:', line,   ' len(line) =', len(line))
-				try:
-					if len(line) != 0:
-						if line[0] != "!" and line[0] != "#":
-							s=line.split()
-							freq.append(float(s[0]))
-							power.append(float(s[1]))
-					else:
-						print('Warning: line with no value returned (Ignored)')
-				except:
-					print('Raised an exception in lorentzian_cpp()')
-					err=True
-			return freq, power, err
-		else:
-			return output, err
-	except: # Handling processes that does not exist, aka, when lorentzian_test file is not available
-		error=True
+	else:
+		cmd = ["./lorentzian_test", "-M", func_name, "--xmin", str(xmin), "--xmax", str(xmax), "-P"]
+		for p in params:
+			cmd.append(str(p))
+	print("Executing command: ")
+	cmd_str=""
+	for c in cmd:
+		cmd_str=cmd_str + " " + c
+	print("        ", cmd_str)
+	process = run(cmd, stdout=PIPE, stderr=PIPE, universal_newlines=True)
+	output = process.stdout
+	if process.returncode != 0:
 		print("Error: Could not execute the lorentzian_test C++ program. The most likely explanation is that it is not in the current directory")
-		return [], [], error
+		print("Error:", process.stderr)
+		err=True
+		return [],[], err
+	if raw == False:
+		r=output.split('\n')
+		freq=[]
+		power=[]
+		for line in r:
+			line=line.strip()
+			try:
+				if len(line) != 0:
+					if line[0] != "!" and line[0] != "#":
+						s=line.split()
+						freq.append(float(s[0]))
+						power.append(float(s[1]))
+				else:
+					print('Warning: line with no value returned (Ignored)')
+			except:
+				print('Raised an exception in lorentzian_cpp()')
+				err=True
+		return freq, power, err
+	else:
+		return output, err
 
-def get_func_infos():
+def get_func_infos(version="1.86.0"):
 	# Function that run a c++ program lorentzian_test in order to retrieve all function names that are hanlded by the program
 	# It also returns a 2D array that provides the name of the inputs for each of those functions
-	process = Popen(["./lorentzian_test", "get_all"], stdout=PIPE, stderr=PIPE)
+	if version != "1.86.0":
+		print(" WARNING: version argument not set to 1.86.0 ==> Will use the old syntax to call lorentzian_test")
+		process = Popen(["./lorentzian_test", "get_all"], stdout=PIPE, stderr=PIPE)
+	else:
+		process = Popen(["./lorentzian_test", "--get_all"], stdout=PIPE, stderr=PIPE)
 	(output, err) = process.communicate()
 	exit_code = process.wait()
 	output=output.decode("utf-8") 
@@ -123,16 +133,19 @@ def default_test_arguments(l):
 	a6=0#a1/100                					# a6 coeficient
 	f_s=a1                  					# rotational splitting (same as a1)
 	asym=0 #50			        				# Asymetry of the Lorentzian normalised by width
-	b=5. 				 						# Model with some activity in the form of a power law (Function that is not used anymore)
-	alpha=1. 									# Model with some activity in the form of a power law (Function that is not used anymore)
 	gamma_l=2               					# Width of the mode
 	inclination=45          					# Stellar inclination
 	V=amplitude_ratio(l, inclination)          	# Mode relative height. Varies with l and inclination
-	handled_names=['H_l', 'fc_l', 'a1', 'eta0', 'a2', 'a3', 'a4', 'a5', 'a6', 'f_s', 'asym', 'gamma_l', 'inclination', 'V', 'l']
-	return handled_names, [H_l, fc_l, a1, eta0, a2, a3,a4, a5, a6, f_s, asym, gamma_l, inclination, V, l]
+	epsilon_nl=5e-3
+	theta0=75*np.pi/180.
+	delta=15*np.pi/180.
+	filter_type=0 # gate = 0 ; triangle = 1
+	handled_names=['H_l', 'fc_l', 'a1', 'eta0', 'a2', 'a3', 'a4', 'a5', 'a6', 'f_s', 'asym', 'gamma_l', 'inclination', 'V', 'l', "epsilon_nl", "theta0", "delta", "filter_type"]
+	params=[H_l, fc_l, a1, eta0, a2, a3,a4, a5, a6, f_s, asym, gamma_l, inclination, V, l, epsilon_nl, theta0, delta, filter_type]
+	return handled_names, params
 
 def get_default_params(param_names, l):
-	# Function that retrieve the default list of parameters and use it to build a suitable set of parameters 
+	# Function that retrieves the default list of parameters and use it to build a suitable set of parameters 
 	# for the requested model function (func_name) and as per specified the parameter names which can be retrieved using ./lorentzian_test get_all
 	#
 	handled_names, default_params=default_test_arguments(l)
@@ -142,14 +155,11 @@ def get_default_params(param_names, l):
 		i=0
 		found=False
 		while found == False and i<len(handled_names):
-			#print(p, '    ', handled_names[i],  '   bool: ', p == handled_names[i])
 			if p == handled_names[i]:
 				found=True
 			i=i+1
 		if found == True:
 			params.append(default_params[i-1])
-			#print("params: ", params)
-			#print("      default_params[", i-1, "] =", default_params[i-1])
 		else:
 			print("Error in get_default_params while identifying the set of parameter to be used to test the function")
 			print("      Please check that the 'default_test_arguments() contains the expected arguments for the function func_name that is attempted to compute")
@@ -184,14 +194,14 @@ def get_params(param, param_names, param_class):
 	if param_class == 'splitting_a1a2a3':
 		req_param_names=['l', 'f_s',  'a2',   'a3']
 		req_params     =[-1 , -1   ,   -1 ,    -1]
-		error_class=False
+		error_class=True # THIS IS OBSELETE
 	if param_class == 'splitting_aj':
 		req_param_names=['l', 'a1', 'a2',   'a3', 'a4', 'a5', 'a6',  'eta0']
 		req_params     =[-1 , -1   ,   -1 ,  -1  ,  -1 ,  -1 ,  -1 ,  -1]
 		error_class=False
-	if param_class == 'splitting_Alm':
-		req_param_names=['l', 'a1', 'a3' 'a5',  'theta0', 'delta', 'filter_type']
-		req_params     =[-1 , -1   ,   -1 ,  -1  ,  -1 ,  -1, None ]
+	if param_class == 'splitting_ajAlm':
+		req_param_names=['l', 'a1', 'a3', 'a5',  'eta0', 'epsilon_nl', 'theta0', 'delta', 'filter_type']
+		req_params     =[-1 , -1   ,   -1 ,  -1  , -1, -1 ,  -1, -1 , -1]
 		error_class=False
 	if param_class == 'splitting_a1l':
 		req_param_names=['l', 'a1',  'a2',   'a3', 'eta0']
@@ -215,6 +225,9 @@ def splittings_checks(split_params):
 		if s == -1:
 			error=True
 			print('Warning: Error in split_params')
+	if error == True:
+		print("split_params : " , split_params)
+	
 	return error
 
 def Hlm_checks(l, H_l=-1, H_lm=[-1], inclination=-1):
@@ -248,7 +261,7 @@ def do_fc_l(params, param_names):
 		exit()
 	return fc_l
 
-def nu_nlm(nu_nl, l, a1=0, a2=0, a3=0,a4=0,a5=0,a6=0, eta0=0, theta0=None, delta=None, filter_type=None):
+def nu_nlm(nu_nl, l, a1=0, a2=0, a3=0,a4=0,a5=0,a6=0, eta0=0, epsilon_nl=None, theta0=None, delta=None, filter_type=None):
 	# Compute the nu(n,l,m) frequencies in all of the scenarii that are implemented in build_lorentzian routine.cpp
 	# There is some fail checks in order to avoid to provide incompatible quantities
 	# Allowed values:
@@ -256,10 +269,9 @@ def nu_nlm(nu_nl, l, a1=0, a2=0, a3=0,a4=0,a5=0,a6=0, eta0=0, theta0=None, delta
 	# 	OR
 	#   	odds aj coefficients + theta0 AND delta AND filter_type 
 	AR_term=False # The default is the Active Region effect is not implemented by lack of arguments
-	#Dnl=2./3
-	#
-	if (a2 != 0 or a4 !=0 or a6 !=0) or eta0 !=0: # detect if any of the even coefficent is non-zero or if the Centrifugal force parameter is implemented
-		forbid_Alm=True  # if it is the case, we flag as forbiden any model that includes theta0 and delta
+	forbid_Alm=False
+	#if (a2 != 0 or a4 !=0 or a6 !=0) or eta0 !=0: # detect if any of the even coefficent is non-zero or if the Centrifugal force parameter is implemented
+	#	forbid_Alm=True  # if it is the case, we flag as forbiden any model that includes theta0 and delta
 	#
 	error=False
 	if forbid_Alm == False:
@@ -273,7 +285,7 @@ def nu_nlm(nu_nl, l, a1=0, a2=0, a3=0,a4=0,a5=0,a6=0, eta0=0, theta0=None, delta
 	else:
 		if theta0 != None or delta !=None or filter_type !=None:
 			error=True
-			print('Warning: Configuration of aj coefficients and/or eta, eta0 incompatible with Alm models detected')
+			print('Warning: Configuration of aj coefficients and/or eta0 incompatible with Alm models detected')
 			print('         The Alm coefficients will be ignored and set to 0')
 			print("   nu_nl      :", nu_nl)
 			print("   a1         : ", a1)
@@ -282,21 +294,22 @@ def nu_nlm(nu_nl, l, a1=0, a2=0, a3=0,a4=0,a5=0,a6=0, eta0=0, theta0=None, delta
 			print("   a4         : ", a4)
 			print("   a5         : ", a5)
 			print("   a6         : ", a6)
+			print("   epsilon_nl : ", epsilon_nl)
 			print("   theta0     : ", theta0)
 			print("   delta      : ", delta)
 			print("   filter_type: ", filter_type)
-			#AR_term=False
 	nu_aj=nunlm_from_acoefs(nu_nl[0], l, a1=a1, a2=a2, a3=a3, a4=a4,a5=a5,a6=a6) # Use the acoefs.py core freq routine to get frequencies with the aj decomposition
 	for m in range(-l, l+1):
 		CF_term=eta0*Qlm(l,m)*(a1*1e-6)**2 
 		if AR_term == True:
-			AR_term=epsilon_nl*Alm(l, m, thetas[0], thetas[1], filter_type)	
+			AR_term_val=epsilon_nl*Alm(l, m, theta0, delta, filter_type)	
+			#print(" Alm(l, m, theta0, delta, filter_type) = ", Alm(l, m, theta0, delta, filter_type))
 		else:
-			AR_term=0
-		print("AR_term :", AR_term)
+			AR_term_val=0
+		print("AR_term :", AR_term_val)
 		print("CF_term :", CF_term,   '   eta0 =', eta0,  '    a1 =', a1)
 		print("         Corresponding DR/R = ", eta0*(a1*1e-6)**2 * 2*np.pi**2 * 1e5)  # See my notes on Ipad for the derivation
-		nu_aj[m+l]=nu_aj[m+l]+(CF_term + AR_term)*nu_nl[0]
+		nu_aj[m+l]=nu_aj[m+l]+(CF_term + AR_term_val)*nu_nl[0]
 	print("nu_aj :", nu_aj)
 	print(" --------- ")
 	#exit()
@@ -320,7 +333,7 @@ def do_splittings(params, param_names, func_name):
 		split_lm=np.zeros(2*l+1)
 	#
 	if param_class == 'splitting_a1etaa3': # Deal with cases a1,eta,a3 and also with the obselete function a1acta3
-		split_lm, err=nu_nlm(fc_l, l, a1=split_params[1], a2=0, a3=split_params[3],a4=0,a5=0,a6=0, eta0=0, theta0=None, delta=None, filter_type=None)
+		split_lm, err=nu_nlm(fc_l, l, a1=split_params[1], a2=0, a3=split_params[3],a4=0,a5=0,a6=0, eta0=0, epsilon_nl=None, theta0=None, delta=None, filter_type=None)
 		if (split_params[1] != -1) and (split_params[2] == -1) and (split_params[3] != -1) and (split_params[4] == -1) and (split_params[5] == -1): # models with a1, eta, a3 only
 			error=False
 		if (split_params[1] != -1) and (split_params[2] == -1) and (split_params[3] != -1) and (split_params[4] != -1) and (split_params[5] != -1): # models with a1, eta, a3 + b and alpha (obselete model)
@@ -333,16 +346,22 @@ def do_splittings(params, param_names, func_name):
 		exit()
 	#
 	if param_class == 'splitting_ajAlm':
-		split_lm, err=nu_nlm(fc_l, l, a1=split_params[1], a2=0, a3=split_params[2],a4=0,a5=split_params[3],a6=0, eta0=0, theta0=split_params[4], delta=split_params[5], filter_type=split_params[6])
-		print("param_class == ", param_class, " IS NOT TESTED. YOU NEED TO WRITE/CHECK CODE FOR IT" )
-		exit()
-	#
-	if param_class == 'splitting_a1a2a3':
 		error=splittings_checks(split_params)
 		if error == False: # We can proceed only if all of the parameters were provided
-			split_lm, err=nu_nlm(fc_l, l, a1=split_params[1], a2=split_params[2], a3=split_params[3],a4=0,a5=0,a6=0, eta0=0, theta0=None, delta=None, filter_type=None)
-		print("param_class == ", param_class, " IS NOT TESTED. YOU NEED TO WRITE/CHECK CODE FOR IT" )
-		exit()
+			if split_params[7] == 0:
+				filter_type = "gate"
+			else:
+				filter_type = "triangle"
+			split_lm, err=nu_nlm(fc_l, l, a1=split_params[1], a2=0, a3=split_params[2],a4=0,a5=split_params[3],a6=0, eta0=split_params[4], epsilon_nl=split_params[5], theta0=split_params[6], delta=split_params[7], filter_type=filter_type)
+		#print("param_class == ", param_class, " IS NOT TESTED. YOU NEED TO WRITE/CHECK CODE FOR IT" )
+		#exit()
+	#
+#	if param_class == 'splitting_a1a2a3':
+#		error=splittings_checks(split_params)
+#		if error == False: # We can proceed only if all of the parameters were provided
+#			split_lm, err=nu_nlm(fc_l, l, a1=split_params[1], a2=split_params[2], a3=split_params[3],a4=0,a5=0,a6=0, eta0=0, theta0=None, delta=None, filter_type=None)
+#		print("param_class == ", param_class, " IS NOT TESTED. YOU NEED TO WRITE/CHECK CODE FOR IT" )
+#		exit()
 	#
 	if param_class == 'splitting_aj':
 		error=splittings_checks(split_params)
@@ -467,11 +486,11 @@ def main():
 	#print('Available function names:')
 	#for func in func_names:
 	#	print('  ', func)
-	#
 	do_funcs=np.repeat(False, len(func_names)) # Variable that allows to control which models to test: Default is NO tests
 	#do_funcs=np.repeat(True, len(func_names)) # Variable that allows to control which models to test: Default is ALL tests
 	#
-	do_funcs[func_names.index('optimum_lorentzian_calc_aj')]=1 # Single model testing
+	#do_funcs[func_names.index('optimum_lorentzian_calc_aj')]=1 # Single model testing
+	do_funcs[func_names.index('optimum_lorentzian_calc_ajAlm')]=1 # Single model testing
 	#
 	# We will loop on all of the models that are listed in func_names
 	for i in range(len(func_names)):

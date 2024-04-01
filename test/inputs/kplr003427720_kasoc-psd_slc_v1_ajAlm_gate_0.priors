@@ -1,0 +1,11 @@
+# Test table only for 1D PDF of a1
+!            	a1               PDF
+*            (microHz)     (no_unit)
+0.0     0.001
+0.1   0.1
+0.2   0.2
+0.3   0.4
+0.4   0.2
+0.5   0.1
+0.6   0.05
+0.7   0

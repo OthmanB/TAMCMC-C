@@ -15,8 +15,6 @@
 #include "gnuplot-iostream.h"
 #include "../../external/Alm/Alm_cpp/data.h" // To load interpolation grids
 
-//using namespace std;
-
 using Eigen::MatrixXd;
 using Eigen::VectorXi;
 using Eigen::VectorXd;
@@ -35,6 +33,21 @@ struct Data{
 		std::vector<std::string> header; // Any kind of information that is useful. e.g. if it is a test, model info + model inputs. Any header (In ASCII, marked by #), will be put there.
 };
 
+
+// Used to keep in memory all of the information from that tabulated priors provided by the user (if any)
+struct tabpriors{
+	bool empty = true; // defined if it was used or not
+    int depth; // number prior tables
+    VectorXd Nrows; 
+    VectorXd Ncols;
+    MatrixXd** data_3d; // Contain submatrices. Each of them was read from a file and give the prior table (either 1D or Nd)
+	std::vector<gsl_funcs> interpolator_2d; //An interpolator for 2D priors. This container is empty when data_3d[i] is a 1D func
+	//gsl_funcs interpolator_2d; //An interpolator for 2D priors. This container is empty when data_3d[i] is a 1D func
+	std::vector<std::vector<std::string>> headers;
+	std::vector<std::vector<std::string>> labels;
+};
+
+
 struct Input_Data{
 	std::string model_fullname; // The fullname of the model that is going to be processed
 	std::vector<std::string> inputs_names;
@@ -45,6 +58,7 @@ struct Input_Data{
 	MatrixXd priors;
 	VectorXi plength;
 	VectorXd extra_priors; // Contains extra parameters that could be used for priors
+	tabpriors tabulated_priors; // Contains all table of priors given by the users in the *.priors files
 };
 
 // A Generic structure that helps to encapsulate a Matrix of information along with some metadata
@@ -156,85 +170,8 @@ struct external_data{ // A structure designed as a container for any kind of add
 	gsl_funcs Alm_interp_triangle; // Table for Alm interpolations for triangular activity zone
 };
 
-
-// ----------------------------------------
-// ----- For mixed modes calculation ------
-// ----------------------------------------
-/*struct Data_2vectXd{
-	VectorXd vecXd1;
-	VectorXd vecXd2;		
+struct external_data{ // A structure designed as a container for any kind of additional static data that can be called by models
+	gsl_funcs Alm_interp_gate; // Table for Alm interpolations for band of activity
+	gsl_funcs Alm_interp_gauss; // Table for Alm interpolations for gauss activity zone
+	gsl_funcs Alm_interp_triangle; // Table for Alm interpolations for triangular activity zone
 };
-
-// For simulations only, we use a template to derive height and widths of modes
-struct template_file{
-	std::string ID_ref;
-	double numax_ref;
-	double Dnu_ref; 
-	double epsilon_ref;
-	MatrixXd data_ref;
-};
-
-struct Data_coresolver{
-	VectorXd nu_m, ysol, nu,pnu, gnu; //
-};
-
-struct Data_eigensols{
-	VectorXd nu_p, nu_g, nu_m, dnup, dPg; // The two last ones are derivatives of nu_p ~ Dnu and 1/nu_g ~ DPl
-};
-
-struct Data_eigensols_all{
-	VectorXd nu_l0;
-};
-
-struct Data_rot2zone{
-	long double rot_core, rot_env;
-};
-
-struct Cfg_synthetic_star{
-	long double Teff_star; 
-	long double numax_star;
-	long double Dnu_star;
-	long double epsilon_star;
-	long double delta0l_percent_star;
-	long double beta_p_star;
-	long double alpha_p_star;
-	long double nmax_star;
-	long double DPl_star;
-	long double alpha_g_star;
-	long double q_star;
-	long double fmin; 
-	long double fmax;
-	long double maxHNR_l0;
-	VectorXd noise_params_harvey_like;
-	long double Gamma_max_l0;
-	long double rot_env_input;
-	long double rot_ratio_input; 
-	long double rot_core_input;
-	std::string output_file_rot;
-	VectorXd Vl;
-	long double H0_spread;
-	std::string filetemplate;
-	long double sigma_p;
-	long double sigma_m;
-};
-
-struct Params_synthetic_star{
-	VectorXd nu_l0;
-	VectorXd nu_p_l1;
-	VectorXd nu_g_l1; 
-	VectorXd nu_m_l1;
-	VectorXd nu_l2;
-	VectorXd nu_l3;
-	VectorXd width_l0;
-	VectorXd width_l1;
-	VectorXd width_l2; 
-	VectorXd width_l3;
-	VectorXd height_l0;
-	VectorXd height_l1;
-	VectorXd height_l2;
-	VectorXd height_l3;
-	VectorXd a1_l1;
-	VectorXd a1_l2; 
-	VectorXd a1_l3;
-};
-*/

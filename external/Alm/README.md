@@ -9,13 +9,21 @@ First, the directory Alm_cpp contains the source codes in C++ that compute the A
 Secondly, the python_rendering directory contains some python implementation of the the same integral computation using the scipy integrate, double quadratic function. An additional set of functions are to make grids of Alm, to translate into a-coefficients and to see their dependence with the active zone size and extension. Finally, there is also functions overlaps the solar butterfly diagram with the filter function of your choice (e.g triangle).
 
 Here are more details on each files:
+
        - show_filter.py: A small function that calls the C++ program Filter_Alm in order to visualise the filter function that is implemented in C++. Mostly for debug purpose.
+       
        - test_convergence.py: A function execute both the python and C++ version of the Alm computation and compares them in term of precision. Mostly for debug purpose.
+       
        - make_Alm_grid.py: Tools to make grids of Alm for l=1,2,3. This calls the C++ function to get faster
+       
        - acoefs.py: small routines to perform the conversion between frequencies and a-coefficients and to compute the symmetric/asymmetric splittings
+       
        - activity.py: Implements the python version of the C++ code. Note that this is ~10 - 100 times slower than the C++ code, so it is to be used for tests purpose only
+       
        - eval_aj_range.py: functions that can generate the min/max range of some a-coefficients, provided a grid of Alm terms and for a given set of stellar parameters
+       
        - show_aj_fct_theta_delta.py: Use a grid of Alm in order to show what is the dependence of aj in function of theta0 and delta
+       
        - show_butterflydiagram.py: Used to show the butterfly diagram of the Sun with the filter function of your choice superimposed.
 
 

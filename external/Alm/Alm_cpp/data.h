@@ -54,6 +54,7 @@ struct GridData4gsl {
 // structure containing the gsl initialised grid functions
 // This is similar to GridData_Alm_fast but with the gsl function instead of the matrix
 struct gsl_funcs{
+    bool valid;
     gsl_interp2d* interp_A10;
     gsl_interp2d* interp_A11;
     gsl_interp2d* interp_A20;
@@ -71,5 +72,5 @@ struct gsl_funcs{
     GridData4gsl flat_grid_A30;
     GridData4gsl flat_grid_A31;
     GridData4gsl flat_grid_A32;
-    GridData4gsl flat_grid_A33;   
+    GridData4gsl flat_grid_A33;
 };

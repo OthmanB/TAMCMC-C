@@ -21,8 +21,6 @@ using Eigen::MatrixXd;
 using Eigen::VectorXd;
 using Eigen::VectorXi;
 
-//using namespace std;
-
 int main_standalone();
 
 class MALA{

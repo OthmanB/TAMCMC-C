@@ -14,6 +14,15 @@ using Eigen::VectorXd;
 
 ////////////// 3D Matrix ////////////////
 
+// Added on 7th July 2023
+MatrixXd** initialize_3dVarMatrix(const int depth, const VectorXd Nrows, const VectorXd Ncols) {
+    MatrixXd** matrix = new MatrixXd*[depth];
+    for (int d1 = 0; d1 < depth; d1++) {
+        matrix[d1] = new MatrixXd(MatrixXd::Zero(Nrows[d1], Ncols[d1]));
+    }
+    return matrix;
+}
+
 
 MatrixXd** initialize_3dMatrix(const int depth, const int Nrows, const int Ncols){
 /* 

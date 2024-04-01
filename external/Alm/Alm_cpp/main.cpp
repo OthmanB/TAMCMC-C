@@ -7,7 +7,7 @@
 #include "GaussLegendre2D.hpp"
 #include <Eigen/Dense>
 #include "activity.h"
-#include "linspace.h"
+//#include "linspace.h"
 #include "version.h"
 #include "bilinear_interpol.h"
 #include "Alm_interpol.h"

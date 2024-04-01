@@ -1,0 +1,12 @@
+# This is the header file of the BINARY output file for the model parameters 
+# This file contains values for vars[0:Nchains-1][ 0:Nvars-1]. Each matrix is in a different file, indexed by the chain number
+! Nsamples= 100000
+! Nchains= 4
+! Nsamples_done=99999
+! Nvars= 9
+! Ncons= 1
+! relax= 1 1 0 1 1 1 1 1 1 1
+! plength= 1 1 1 1 1 1 1 1 1 1
+! constant_names= p1   
+! constant_values= 4
+! variable_names=H1   tc1   H2   tc2   p2   B0   Amax   numax   Gauss_sigma   

@@ -15,6 +15,8 @@
 #include <stdexcept>
 #include <stdio.h>
 #include "diagnostics.h"
+#include <archive.h>
+#include <archive_entry.h>
 
 Diagnostics::Diagnostics(Config *cfg){
 /*
@@ -217,19 +219,12 @@ void Diagnostics::gnuplt_chains_diags(int i, const VectorXd& Tcoefs){
 	std::cout << "         - Likelihoods are read from the file: " << filename_likelihood << std::endl;
 	std::cout << "         - Acceptance rates are read from the file: " << filename_acceptance << std::endl;
 
-        // Compute the evidence if requested
+    // Compute the evidence if requested
 	if(evidence_diags == 1){
-		evidence=evidence_calc(Tcoefs, Mat.topLeftCorner(Mat.rows(), Nchains));
-                write_evidence(evidence, i); // Write on a file the evidence as it is calculated:
-    	}
-	
-        firstpass=0;
-    /*if(file_out_format == "binary" || file_out_format == "debug") {  // This part of the code does not work... temporary files are not erased
-		//std::cout << "In file: " << filetmp << std::endl;
-		shell_exec("rm " + filetmp); // erase the temporary file
-	}
-	*/
-
+		evidence=evidence_calc(Tcoefs, Mat.topLeftCorner(Mat.rows(), Nchains), evidence_interpolation_factor);
+        write_evidence(file_evidence_diags + ".txt", evidence, i, firstpass); // Write on a file the evidence as it is calculated:
+    }
+    firstpass=0;
 	} // endif
 	
 }
@@ -674,6 +669,68 @@ void Diagnostics::gnuplt_pdfs_diags_main(const int i){
 // -----------------------------------------------------------------------------------
 // ------------------------ READING FUNCTIONS FOR THE OUTPUTS ------------------------
 // -----------------------------------------------------------------------------------
+
+Eigen::MatrixXd Diagnostics::read_tar_gz_bin_matrix_dbl(const std::string tarGzFile, const long Ncols, const long Nrows, const std::string type) {
+    long Nread_rows;
+    double val_dbl = 0;
+    long double val_ldbl = 0;
+    size_t size_ldbl = sizeof(val_ldbl);
+    size_t size_dbl = sizeof(val_dbl);
+
+    Eigen::MatrixXd vals(Nrows, Ncols);
+    std::vector<char> buffer;
+
+    struct archive* ar = archive_read_new();
+    archive_read_support_filter_gzip(ar);
+    archive_read_support_format_tar(ar);
+
+    int r = archive_read_open_filename(ar, tarGzFile.c_str(), 10240);
+    if (r != ARCHIVE_OK) {
+        // Handle error
+        archive_read_free(ar);
+        file_error(tarGzFile, "openfile", "Diagnostics::read_tar_gz_bin_matrix_dbl");
+    }
+
+    struct archive_entry* entry;
+    r = archive_read_next_header(ar, &entry);
+    if (r != ARCHIVE_OK) {
+        // Handle error
+        archive_read_close(ar);
+        archive_read_free(ar);
+        file_error(tarGzFile, "readheader", "Diagnostics::read_tar_gz_bin_matrix_dbl");
+    }
+
+    Nread_rows = 0;
+    if (type == "ldbl") {
+        buffer.resize(size_ldbl * Ncols);
+        while (Nread_rows < Nrows && archive_read_data(ar, &buffer[0], size_ldbl * Ncols) > 0) {
+            std::istringstream iss(std::string(buffer.begin(), buffer.end()));
+            for (int i = 0; i < Ncols; i++) {
+                iss.read(reinterpret_cast<char*>(&val_ldbl), size_ldbl);
+                vals(Nread_rows, i) = val_ldbl;
+            }
+            Nread_rows++;
+        }
+    } else if (type == "dbl") {
+        buffer.resize(size_dbl * Ncols);
+        while (Nread_rows < Nrows && archive_read_data(ar, &buffer[0], size_dbl * Ncols) > 0) {
+            std::istringstream iss(std::string(buffer.begin(), buffer.end()));
+            for (int i = 0; i < Ncols; i++) {
+                iss.read(reinterpret_cast<char*>(&val_dbl), size_dbl);
+                vals(Nread_rows, i) = val_dbl;
+            }
+            Nread_rows++;
+        }
+    }
+
+    archive_read_close(ar);
+    archive_read_free(ar);
+
+    vals.conservativeResize(Nread_rows, Ncols);
+    return vals;
+}
+
+
 Eigen::MatrixXd Diagnostics::read_bin_matrix_dbl(const std::string binfile, const long Ncols, const long Nrows, const std::string type){
 /*
  * Function that read the outputs file that contains inputs in double and in Matricial format (Columns - Rows).
@@ -715,7 +772,6 @@ Eigen::MatrixXd Diagnostics::read_bin_matrix_dbl(const std::string binfile, cons
 	} else {
         file_error(binfile, "openfile", "Diagnostics::read_bin_matrix_dbl");
 	}
-
 	vals.conservativeResize(Nread_rows-1, Ncols);
 	return vals;
 }
@@ -921,7 +977,7 @@ return hdr;
 }
 
 
-Evidence_out Diagnostics::evidence_calc(const VectorXd& Tcoefs, const MatrixXd& Likelihoods){
+Evidence_out Diagnostics::evidence_calc(const VectorXd& Tcoefs, const MatrixXd& Likelihoods, const int interpol_factor){
 /*
  * Function that use the temperatures and the likelihoods in order to compute de evidence of the model.
  * Returns all values in a structure of type Evidence_out
@@ -929,9 +985,9 @@ Evidence_out Diagnostics::evidence_calc(const VectorXd& Tcoefs, const MatrixXd& 
 	int Npts;
 	Evidence_out results;
 	
-	Npts=evidence_interpolation_factor*Tcoefs.size();
+	Npts=interpol_factor*Tcoefs.size();
 
-	results.interpolation_factor=evidence_interpolation_factor;
+	results.interpolation_factor=interpol_factor;
 
 	results.beta.resize(Tcoefs.size());
 	results.L_beta.resize(Tcoefs.size());
@@ -942,7 +998,7 @@ Evidence_out Diagnostics::evidence_calc(const VectorXd& Tcoefs, const MatrixXd& 
 	// Compute beta and L_beta == P<P(D|M,I)>_beta
 	for(int i=0; i<Tcoefs.size(); i++){
 		results.beta[i]=1./Tcoefs[i];
-		results.L_beta[i]=Likelihoods.col(i).sum()/Likelihoods.rows();
+		results.L_beta[i]=Likelihoods.col(i).mean();
 	}
 
 	// Interpolate beta and P<P(D|M,I)>_beta
@@ -951,30 +1007,36 @@ Evidence_out Diagnostics::evidence_calc(const VectorXd& Tcoefs, const MatrixXd& 
 
 	// Compute the Integral, which is the average of all the interpolated values
     results.evidence=results.L_beta_interp.sum()/Npts;
-
+	/*
+	std::cout << " Test value from the other evidence calc..." << std::endl;
+	std::cout << "          evidence_calc :: Npts = " << Npts << std::endl;
+	std::cout << "          evidence_calc :: interpol_factor = " << interpol_factor << std::endl;
+	std::cout << "			evidence_calc :: beta    = " <<std::setprecision(10) << results.beta.transpose() << std::endl;
+	std::cout << "			evidence_calc :: L_beta  = " <<std::setprecision(10) << results.L_beta.transpose() << std::endl;
+	std::cout << "			evidence_calc :: evidence= " <<std::setprecision(10) << results.evidence << std::endl;
+	*/
    return results;
 }
 
-void Diagnostics::write_evidence(const Evidence_out& evidence, const int i){
+void Diagnostics::write_evidence(const std::string file, const Evidence_out& evidence, const int i, const int firsttime){
 
      std::ostringstream strg;
      std::ofstream outfile_evidence;
-     std::string file;
+    //std::string file;
 
      const int Nchars=20;
      const int precision=10;
 
-    file= file_evidence_diags + ".txt";
+    //file= file_evidence_diags + ".txt";
 	/////// Write the evidence ////////
-
-	 if (firstpass == 1) {
+	 if (firsttime == 1) {
 		outfile_evidence.open(file.c_str()); // Overwrite any existing file in PLAIN ASCII
 	 } else {
 		outfile_evidence.open(file.c_str(), std::ofstream::app); // std::app is for append
 	 }
 	 if (outfile_evidence.is_open()){
-		if (firstpass == 1){ // Write the header only if it is the first time that we write OR if an append of an existing file was requested and that the file exists
-    			outfile_evidence << "# This is an output file for the evidence. Evidence is calculated after a quadratic interpolation of L_beta. \n";
+		if (firsttime == 1){ // Write the header only if it is the first time that we write OR if an append of an existing file was requested and that the file exists
+    		outfile_evidence << "# This is an output file for the evidence. Evidence is calculated after a quadratic interpolation of L_beta. \n";
 			outfile_evidence << "# This file contains values for the L_beta[0:Nchains-1], the evidence calculated at each time the buffer was written \n" ;
 			outfile_evidence << "# col(1): Number of samples used to compute the evidence \n";
 			outfile_evidence << "# col(2:2+Nchains): averaged probability <P(D|M,I)> over the samples of each chain \n";
@@ -998,7 +1060,6 @@ void Diagnostics::write_evidence(const Evidence_out& evidence, const int i){
   	else {
         file_error(file, "openfile", "Diagnostics::write_evidence");
 	}
-
 }
 
 std::string Diagnostics::shell_exec(const std::string cmd){ // For some reason, this seems to not work...

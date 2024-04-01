@@ -644,7 +644,8 @@ void MALA::execute(Model_def *model_current, Model_def *model_propose, Data *dat
 
 		gamma=c0/(1. + i);
 
-#pragma omp parallel for num_threads(Nchains) default(shared) private(chain)
+//#pragma omp parallel for num_threads(Nchains) default(shared) private(chain)
+#pragma omp parallel for default(shared) private(chain)
 		for (chain=0; chain<Nchains; chain++){
 			VectorXd vec_tmp;
 

@@ -1,5 +1,77 @@
 # Version history #
 
+## v1.86.78 Bug Patch #
+  - Fixing report that aj coefficients are always positive while the pdf show negative results. The fix consist in removing a wrongly put absolute value for these parameters
+
+## v1.86.77 Bug Patch #
+  - Upon inspection of the code, I noticed that at some point in March 2022, I likely removed by mistake the Vl1 term when computing H(l=1) by interpolation and for aj and ajAlm models. This is now fixed.
+
+## v1.86.76 Bug Patch #
+  - Upon cleaning the priors_calc.cpp during v1.86.0, For the models model_RGB_asympt_aj_AppWidth_HarveyLike_v4, the hard-coded prior imposing magb > 0 was not removed. Because it's slot was replaced by a3, it was wrongly affecting the condition a3 > 0. This is now fixed. 
+
+## v1.86.75 Adding bootstrap to getevidence ##
+  - The bootstrap method with two variant (by block or standard) is introduced to compute uncertainties on the evidence. By default this is turned off as it may be timeconsuming. Check options to turn it on.
+  - patch of the CMakefile to be more flexible while compiling statically and for gsl. Now GSL is looked for in two different places (one more likely in a AMD system while the other more likely in a INTEL system)
+
+## v1.86.7 Introduction of the getevidence tools + minor refactoring ##
+  - This version introduces the getevidence binary tool that allows to recompute the Bayesian evidence from the parallel chains with more controls on the parameters. 
+  - This version does not include yet the bootstrap method to compute uncertainty of the evidence, but this is planned for rapid implementation.
+
+## v1.86.6 New functionality ##
+  - Adding new function in diagnostics.cpp to read a tar.gz file containing a bin file within it. This in preparation of the implementation of the capability to read and write on binary compressed tar files (to save space)
+  - Handling tar.gz in bin2txt and getstats
+  - Implementation of an automatic detection of the extension (either bin or tar.gz) in order to convert saved TAMCMC data into ASCII. 
+  - Updating getstats to use the boost library for options
+
+## v1.86.5 Bug Fix ##
+  - Major changes in the way Kalinger+2014 is implemented after realising that it uses 3 harvey-like profile, not 2.
+  - Added Data from Kallinger+2014 in the external_data directory to always keep in hands the reference of his analysis on RGB
+
+## v1.86.4 New tool ##
+  - Converting envelope_measure.pro to python (envelope_measure.py) and move it to tools/Gaussfit_tools/
+  - Adding Kalinger+2014 noise model with hyper parameters (need comprehensive testing)
+  - Adding the handling of the fitting range with the *symbol in the model file for Gaussian fits
+  - outputs_targz.cpp is created. This will serve as a receptacle for functions that will write binary files within a compressed tar.gz to save space
+
+### v1.86.0 Improvments ###
+  - Refactoring of the CMake file to reduce redundancies and better management of options. You need to use the RELEASE option to compile it with all features
+  - Refactoring of how the options work when starting the main program. I know use Boost::program_options which is a much better framework for options
+  - Replaced ARMM v0.7 by ARMM v1.1, including well-tested paralelisation. This improves computation time ARMM models. I Recommend to set Nchains*2 < Nthreads < Nchains*4  . This gives a gain of ~x2 - x5 in computing l=1 mixed modes frequencies
+  - Replaced my custom-made linspace() function with the native Eigen::VectorXd::LinSpaced()
+  - Use of a more optimised linfit() function
+  - Some function cleaning: RGB_v1,v2,v3 are now obselete. MS Harvey1985 also. Many debug comments removed from functions
+  - Bug fix in io_asymptotic.cpp: 
+  	 - providing user-centric priors for the spline nodes was not working. This fixes it.
+	 - fixing logic to allow usage of bias_type = 0 as a way to not use bias function (Fixed bias function)
+  - Update of the testing function "lorentzian_test.cpp to include the ajAlm model
+  - Parallelisation of the aj, ajAlm, model_RGB_asympt_aj_CteWidth_HarveyLike_v4, and model_RGB_asympt_aj_AppWidth_HarveyLike_v4 models functions . Gives a max additional ~x2 gain in computing models (especially for l=1 mixed modes, that can be very numerous)
+	Note that model_RGB_asympt_aj_CteWidth_HarveyLike_v4 is a renaming of the function model_RGB_asympt_a1etaa3_CteWidth_HarveyLike_v4
+	Same for model_RGB_asympt_a1etaa3_AppWidth_HarveyLike_v4 that was renamed model_RGB_asympt_aj_AppWidth_HarveyLike_v4
+  - Cleaning of build_lorentzian.cpp to reduce the number of core functions + remove outdated functions 
+  - Added unit tests to verify that new codes capabilities (the four mentionned above) with randomized inputs provide same outputs as before in similar conditions. 
+  - Update io_asymptotic.cpp: 
+		- model_RGB_asympt_aj_AppWidth_HarveyLike_v4, and model_RGB_asympt_aj_CteWidth_HarveyLike_v4 full support of aj parameters for envelope rotation.
+		- adding colors for warnings and fatal errors
+  
+### v1.85.2 Improvments ###
+  Added new logic using the boost library for handling cpptamcmc options.
+
+### v1.85.1 Improvement ###
+  Modified the CMakeLists.txt file to add an option for a static compilation. With the static compilation, you can export a binary compiled in a system to 
+  another that has the same CPU architecture (eg. AMD, Intel, ARM). Usefull to avoid the cumbersome cross-compilation...
+
+### v1.85 Improvments ### 
+  - Added the possibility of using Tabulated priors. 
+    In the [model_name].model, setting:    
+       '[parameter]              Tabulated         [initial_guess]        [table_index]'
+    Will use the 1-Dimensional prior table contained into the [model_name]_[table_index].priors file. The table must contain in col(0): the [parameter] values. in col(1): the PDF values
+    If setting:
+       '[parameter1]              Tabulated_2d([parameter2])         [initial_guess]        [table_index]' 
+    Will use the 2-Dimensional prior table contained into the [model_name]_[table_index].priors file. The element (0,0) must contain a dummy value (eg. NA). 
+    The line(0) must have the [parameter1] values. The col(0) must have the [parameter2] values. The rest is a block matrix with 2D-PDF values.
+    It is up to the user to provided a normalised prior table (very important when performing model comparison).
+    Examples of tables for KIC=003427720 are given in test/inputs/kplr003427720_kasoc-psd_slc_v1_ajAlm_gate_0.priors (1D table) and test/inputs/kplr003427720_kasoc-psd_slc_v1_ajAlm_gate_1.priors (2D table)  		 
+
 ### v1.84.1 Patch ###
   - Update Alm external module to v1.2.1: Solving the edge case of delta ~ pi/4
 
