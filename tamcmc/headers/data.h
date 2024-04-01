@@ -169,9 +169,3 @@ struct external_data{ // A structure designed as a container for any kind of add
 	gsl_funcs Alm_interp_gauss; // Table for Alm interpolations for gauss activity zone
 	gsl_funcs Alm_interp_triangle; // Table for Alm interpolations for triangular activity zone
 };
-
-struct external_data{ // A structure designed as a container for any kind of additional static data that can be called by models
-	gsl_funcs Alm_interp_gate; // Table for Alm interpolations for band of activity
-	gsl_funcs Alm_interp_gauss; // Table for Alm interpolations for gauss activity zone
-	gsl_funcs Alm_interp_triangle; // Table for Alm interpolations for triangular activity zone
-};

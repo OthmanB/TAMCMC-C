@@ -28,7 +28,6 @@ void usage(int argc, char* argv[], int Nmaxlines);
 int check_retrocompatibility(VectorXi plength, std::string modelname);
 VectorXd adapt2new_MSGlobal(const VectorXi plength, const VectorXd params, const double c0);
 void mvfile(std::string file_in, std::string file_out);
-//inline bool exists_test (const std::string& name);
 
 Data Data_Nd2Data(Data_Nd dat);
 
