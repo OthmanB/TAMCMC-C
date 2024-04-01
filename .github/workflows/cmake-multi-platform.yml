@@ -53,10 +53,15 @@ jobs:
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DLibArchive_DIR=/usr/lib/x86_64-linux-gnu/cmake/libarchive
           elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-            #export LDFLAGS="-L/usr/local/opt/libarchive/lib"
-            #export CPPFLAGS="-I/usr/local/opt/libarchive/include"
+            export LDFLAGS="-L/usr/local/opt/libarchive/lib"
+            export CPPFLAGS="-I/usr/local/opt/libarchive/include"
+            echo 'export PATH="/usr/local/opt/libarchive/bin:$PATH"' >> /Users/runner/.bash_profile
             export LibArchive_INCLUDE_DIR=$(find /opt/homebrew/Cellar/libarchive -name include)
             export LibArchive_LIBRARY=$(find /opt/homebrew/Cellar/libarchive -name libarchive.dylib)
+            echo " LibArchive_LIBRARY :"
+            echo $LibArchive_LIBRARY
+            echo "LibArchive_INCLUDE_DIR :"
+            echo $LibArchive_INCLUDE_DIR
             cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_OPENMP=OFF
           fi
 
