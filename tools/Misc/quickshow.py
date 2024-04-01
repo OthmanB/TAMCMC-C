@@ -3,6 +3,24 @@ import numpy as np
 from read_outputs_tamcmc import bin2txt, getmodel_bin, read_datafile
 import matplotlib.pyplot as plt
 
+def write_modelfinal(fileout, plength, medparams):
+	string=""
+	for p in plength:
+		string=string + " " + str(p)
+	string=string +"\n"
+	for m in medparams:
+		string=string + " " + str(m)
+	r=open(fileout, "w")
+	r.write(string)
+	r.close()
+
+def write_datafinal(fileout_data, x, m):
+	string="# Best fit results written with write_datafinal in the quickshow library\n"
+	for i in range(len(data[0,:])):
+		string="{18.8f}{18.8f}{18.8f}\n".format(data[0,i], data[1,i], m[i])
+	r=open(file_data,"w")
+	r.write(string)
+	r.close()
 
 def quickshow(x,y,m, xm=None, c=['red', 'orange', 'blue', 'cyan', 'purple'], do_loglog=False, fileout=None):
 	try:
@@ -42,7 +60,7 @@ def quickshow(x,y,m, xm=None, c=['red', 'orange', 'blue', 'cyan', 'purple'], do_
 	else:
 		fig.savefig(fileout, dpi=300)
 
-def do_show(dir_mcmc, process_name, model_name, fileout, cpp_path="../../bin/",
+def do_show(dir_mcmc, process_name, model_name, dirout, cpp_path="../../bin/",
 				phase="A", chain=0, first_index=10000, last_index=-1, period=1, 
 				single_param_index=-1,erase_tmp=True,
 				do_loglog=False):
@@ -60,10 +78,15 @@ def do_show(dir_mcmc, process_name, model_name, fileout, cpp_path="../../bin/",
 		single_param_index: If set to -1, all parameters will be read. Otherwise, only the parameter with the given index will be read
 		erase_tmp: If set to True, will erase the temporary files created by the program
 	'''
+	fileout_jpg=os.path.join(dirout, process_name+"_bestfit.jpg")
+	fileout_mfinal=os.path.join(dirout, process_name+"_bestfit.model")
+	#fileout_data=os.path.join(dirout, process_name+"_bestfit.data")
+	
+	
 	current_dir=os.getcwd()
 	cpp_version="1.85.0"
-	outdir=current_dir + "/tmp/"
-	file_data=dir_mcmc + process_name + "/inputs_backup/data_backup.zip"
+	outdir=os.path.join(current_dir, "tmp")
+	file_data=os.path.join(dir_mcmc , process_name , "inputs_backup","data_backup.zip")
 	print(" ... Reading data file...")
 	data, hdr=read_datafile(file_data)
 	try:
@@ -73,7 +96,7 @@ def do_show(dir_mcmc, process_name, model_name, fileout, cpp_path="../../bin/",
 	print('... Gather posterior samples and extract plength...')
 	samples, labels, isfixed, plength=bin2txt(dir_mcmc, process_name, phase=phase, chain=chain, 
 					first_index=first_index, last_index=last_index, period=period, single_param_index=single_param_index,
-	    			erase_tmp=erase_tmp, cpp_path=cpp_path, cpp_version=cpp_version, outdir=outdir, get_plength=True)
+	    			erase_tmp=erase_tmp, cpp_path=cpp_path, cpp_version=cpp_version, outdir=outdir +"/", get_plength=True)
 	print('... Computing the median for each parameter...')
 	median=np.median(samples, axis=0)
 	print("median: ", median)
@@ -84,7 +107,10 @@ def do_show(dir_mcmc, process_name, model_name, fileout, cpp_path="../../bin/",
 	xr=[data[0,0], data[-1,0], resol]
 	xm, m=getmodel_bin(model_name, median, plength, xr, cpp_path=cpp_path, outdir='tmp/', read_output_params=False, data_type='range')
 	print("...Showing the plot...")
-	quickshow(data[:,0],data[:,1],m, xm=xm, c=['red', 'orange', 'blue', 'cyan', 'purple'], do_loglog=do_loglog, fileout=fileout)
+	quickshow(data[:,0],data[:,1],m, xm=xm, c=['red', 'orange', 'blue', 'cyan', 'purple'], do_loglog=do_loglog, fileout=fileout_jpg)
+	write_modelfinal(fileout_mfinal, plength, median)
+	#write_datafinal(fileout_data, x, m)
+
 
 def do_all_show(dir_mcmc, phase, model_name, do_loglog=False):
 	#dir_mcmc="/Users/obenomar/Work/dev/test_Kallinger2014/TAMCMC-C-v1.86.4/test/outputs/Kallinger2014_Gaussian/LC_CORR_FILT_INP_ASCII/"
@@ -98,8 +124,8 @@ def do_all_show(dir_mcmc, phase, model_name, do_loglog=False):
 	# Loop over the list of subdir
 	for process_name in list_subdir:
 		print("    -----  Processing : ", process_name)
-		fileout=dir_mcmc + "/" + process_name + "/" + process_name+"_bestfit.jpg"
-		do_show(dir_mcmc, process_name, model_name, fileout, phase=phase, do_loglog=do_loglog)
+		fileout=dir_mcmc + "/" + process_name + "/" 
+		do_show(dir_mcmc, process_name, model_name, fileout, phase=phase, do_loglog=do_loglog, erase_tmp=True)
 		print("    -> File saved at : ", fileout)
 
 print("  ----- Program to visualise outputs ----")
