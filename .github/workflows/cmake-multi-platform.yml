@@ -56,8 +56,8 @@ jobs:
             export LDFLAGS="-L/usr/local/opt/libarchive/lib"
             export CPPFLAGS="-I/usr/local/opt/libarchive/include"
             echo 'export PATH="/usr/local/opt/libarchive/bin:$PATH"' >> /Users/runner/.bash_profile
-            export LibArchive_INCLUDE_DIR=$(find /opt/homebrew/Cellar/libarchive -name include)
-            export LibArchive_LIBRARY=$(find /opt/homebrew/Cellar/libarchive -name libarchive.dylib)
+            export LibArchive_INCLUDE_DIR=$(find /usr/local/opt/homebrew/libarchive -name include)
+            export LibArchive_LIBRARY=$(find /usr/local/opt/homebrew/libarchive -name libarchive.dylib)
             echo " LibArchive_LIBRARY :"
             echo $LibArchive_LIBRARY
             echo "LibArchive_INCLUDE_DIR :"
