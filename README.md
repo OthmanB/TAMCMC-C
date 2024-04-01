@@ -1,5 +1,7 @@
 # README #
 
+[![CMake](https://github.com/OthmanB/TAMCMC-C/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/OthmanB/TAMCMC-C/actions/workflows/cmake-multi-platform.yml)
+
 
 ### TAMCMC C++ repository ###
 
