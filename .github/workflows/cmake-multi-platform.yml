@@ -53,10 +53,9 @@ jobs:
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DLibArchive_DIR=/usr/lib/x86_64-linux-gnu/cmake/libarchive
           elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-            cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
-              -DWITH_OPENMP=OFF \
-              -DLIBARCHIVE_INCLUDE_DIR="/usr/local/Cellar/libarchive/3.7.2/include" \
-              -DLibArchive_LIBRARY="/usr/local/Cellar/libarchive/3.7.2/lib/libarchive.dylib"
+            export LIBARCHIVE_INCLUDE_DIR="/usr/local/Cellar/libarchive/3.7.2/include"
+            export LibArchive_LIBRARY="/usr/local/Cellar/libarchive/3.7.2/lib/libarchive.dylib"
+            cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_OPENMP=OFF
           fi
 
       - name: Build
