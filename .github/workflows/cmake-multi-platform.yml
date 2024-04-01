@@ -55,8 +55,8 @@ jobs:
           elif [ "${{ matrix.os }}" = "macos-latest" ]; then
             cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
               -DWITH_OPENMP=OFF \
-              -DLIBARCHIVE_INCLUDE_DIR="/opt/homebrew/Cellar/libarchive/3.7.2/include" \
-              -DLibArchive_LIBRARY="/opt/homebrew/Cellar/libarchive/3.7.2/lib/libarchive.dylib"
+              -DLIBARCHIVE_INCLUDE_DIR="/usr/local/Cellar/libarchive/3.7.2/include" \
+              -DLibArchive_LIBRARY="/usr/local/Cellar/libarchive/3.7.2/lib/libarchive.dylib"
           fi
 
       - name: Build
