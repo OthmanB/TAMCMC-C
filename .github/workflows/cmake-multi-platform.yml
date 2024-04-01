@@ -53,6 +53,8 @@ jobs:
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DLibArchive_DIR=/usr/lib/x86_64-linux-gnu/cmake/libarchive
           elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+            export LDFLAGS="-L/usr/local/opt/libarchive/lib"
+            export CPPFLAGS="-I/usr/local/opt/libarchive/include"
             cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_OPENMP=OFF
           fi
 
