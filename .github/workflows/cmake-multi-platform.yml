@@ -19,7 +19,16 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v3
-
+      
+      - name: Cache Homebrew packages
+        if: startsWith(matrix.os, 'macos')
+        uses: actions/cache@v2
+        with:
+          path: /usr/local/Homebrew
+          key: ${{ runner.os }}-brew-${{ hashFiles('**/Brewfile.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-brew-
+            
       - name: Install Dependencies (Ubuntu)
         if: startsWith(matrix.os, 'ubuntu')
         run: |
@@ -38,6 +47,9 @@ jobs:
           brew update
           brew install gnuplot eigen boost gsl libarchive cmake
           brew link --overwrite python@3.11
+          # Manually remove conflicting Python 3.11 files
+          sudo rm -rf /usr/local/bin/2to3-3.11 /usr/local/bin/idle3.11 /usr/local/bin/pydoc3.11 /usr/local/bin/python3.11 /usr/local/bin/python3.11-config
+
       - name: Configure CMake
         # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
