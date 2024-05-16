@@ -670,8 +670,15 @@ long double priors_Kallinger2014_Gaussian(const VectorXd& params, const VectorXi
 	//const double deriv_ka=std::pow(numax,sa);
 	//const double deriv_sa=std::pow(numax,sa) * log(numax);
 	//const double err_a=std::sqrt(std::pow(deriv_ka * err_ka,2) + std::pow(deriv_sa * err_sa,2));
-	//const double a1=params[0];
-	//const double a2=params[1];
+	const double a1=params[5];
+	const double a2=params[6];
+	if(a1 < 0 || a2 < 0){
+		f=f -INFINITY; 
+		goto end;
+	}
+	//std::cout << "a1=" << a1 << std::endl;
+	//std::cout << "a2=" << a2 << std::endl;
+	//exit(EXIT_SUCCESS);
 	//std::cout << "f = " << f << std::endl;
 	if (sig_numax < Dnu_expected/2){
 		f=f -INFINITY;  // If the width of gaussian is smaller than 1.5 times the numax, reject the solution
