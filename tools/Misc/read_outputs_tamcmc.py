@@ -223,7 +223,7 @@ def test_getmodel_bin():
 
 def getstats_bin(dir_tamcmc_outputs, process_name, phase='A', chain=0, first_index=0, 
 					period=1, erase_tmp=True, cpp_path='cpp_prg/', outdir='tmp/',
-					version="1.86.6"):
+					version="1.86.6", verbose=False):
 	'''
 		Convert a binary output file from the tamcmc process into a simple text format
 		The function makes use of the get_stats program created upon compilation of the tamcmc program
@@ -237,7 +237,7 @@ def getstats_bin(dir_tamcmc_outputs, process_name, phase='A', chain=0, first_ind
 		18 Dec 2023 Addition: version 1.86.6 new statemen (see condition). 
 	'''
 	outfile=outdir + '/posteriors.txt'
-	core_filename=dir_tamcmc_outputs + '/' + process_name + '/outputs/' + process_name + '_' + phase + '_stat_criteria' 
+	core_filename=os.path.join(dir_tamcmc_outputs,process_name, "outputs", process_name + '_' + phase + '_stat_criteria')
 	if verbose == True:
 		if version != "1.86.6":
 			call([cpp_path + "./getstats", core_filename, str(chain), outfile, str(first_index), str(-1), str(period)])
@@ -257,13 +257,14 @@ def getstats_bin(dir_tamcmc_outputs, process_name, phase='A', chain=0, first_ind
 def bin2txt(dir_tamcmc_outputs, process_name, phase='A', chain=0, 
 	    	first_index=0, last_index=-1, period=1, single_param_index=-1,
 	    	erase_tmp=True, cpp_path='cpp_prg/', cpp_version="1.85.0", outdir='tmp/', 
-			get_plength=False, verbose=False):
+			get_plength=False, verbose=False, exit_on_error=True):
 	'''
 		A function that calls bin2txt and read the outputs in order to return the samples for each parameters in a matrix form
 		update on 18 Nov 2022: adding isfixed output: Specifies if a parameters is fixed or is a variable
 		update on 1 Dec 2022: adding get_plength: If True, we return also plength
 		update on 25 Jul 2023: adding cpp_version: Set to allow cross-compatibility with older version of TAMCMC 
 	'''
+	error_code=0
 	#core_filename=dir_tamcmc_outputs + '/' + process_name + '/outputs/' + process_name + '_' + phase + '_params'
 	core_filename=os.path.join(dir_tamcmc_outputs,process_name, "outputs", process_name + '_' + phase + '_params')
 	ok=False
@@ -292,6 +293,7 @@ def bin2txt(dir_tamcmc_outputs, process_name, phase='A', chain=0,
 	if len(files) != 0:
 		print(' bin2txt executed successfully')
 	else:
+		error_code=1
 		print('Error: No ASCII files in the tmp directory.')
 		print('       It is likely that bin2txt failed to read the TAMCMC data')
 		print('       Check manually the settings of bin2txt:')
@@ -313,56 +315,60 @@ def bin2txt(dir_tamcmc_outputs, process_name, phase='A', chain=0,
 				" --periodicity ", str(period), " --single-param-index ", str(single_param_index))			
 
 		print(' --- ')	
-		exit()
+		if exit_on_error == True:
+			exit()
 
-	# Get the number of samples from the first file
-	if single_param_index == -1:
-		samples, varname=read_bin2txt_out(outdir + '000.ASCII')
-		Nsamples=len(samples)
-		if Nsamples == 1: # If the first parameter was fixed, try with the second one
-			samples, varname=read_bin2txt_out(outdir + '001.ASCII')
-			Nsamples=len(samples)
-	else:
-		if cpp_version == "1.84.0":
-			print("Warning: single_param_index option is provided (!= -1) while this argument is for cpp_version>1.85.0 (specified user version 1.84.0)")
-			print("         Ignoring the option...")
+	if error_code == 0:
+		# Get the number of samples from the first file
+		if single_param_index == -1:
 			samples, varname=read_bin2txt_out(outdir + '000.ASCII')
 			Nsamples=len(samples)
 			if Nsamples == 1: # If the first parameter was fixed, try with the second one
 				samples, varname=read_bin2txt_out(outdir + '001.ASCII')
 				Nsamples=len(samples)
 		else:
-			samples, varname=read_bin2txt_out(outdir + files[0])
-			Nsamples=len(samples)
-	
-	print('Nsamples=', Nsamples)
-	# Read plength.txt ...
-	if get_plength == True:		
-		plength=read_plength(outdir + "plength.txt")
-	smcmc=np.zeros((Nsamples, len(files)))
-	labels=[]
-	isfixed=[]
-	for f in files:
-		if cpp_version == "1.85.0" and  single_param_index != -1:
-			index=0
-		else:	
-			index=int(f.split('.')[0]) # index of the parameter
-		samples, varname=read_bin2txt_out(outdir + f)
-		labels.append(varname.strip())
-		smcmc[:,index]=samples
-		if len(samples) == 1:
-			isfixed.append(True)
-		else:
-			isfixed.append(False)
-	# erase files in the temporary directory
-	if erase_tmp == True:
+			if cpp_version == "1.84.0":
+				print("Warning: single_param_index option is provided (!= -1) while this argument is for cpp_version>1.85.0 (specified user version 1.84.0)")
+				print("         Ignoring the option...")
+				samples, varname=read_bin2txt_out(outdir + '000.ASCII')
+				Nsamples=len(samples)
+				if Nsamples == 1: # If the first parameter was fixed, try with the second one
+					samples, varname=read_bin2txt_out(outdir + '001.ASCII')
+					Nsamples=len(samples)
+			else:
+				samples, varname=read_bin2txt_out(outdir + files[0])
+				Nsamples=len(samples)
+		
+		print('Nsamples=', Nsamples)
+		# Read plength.txt ...
+		if get_plength == True:		
+			plength=read_plength(outdir + "plength.txt")
+		smcmc=np.zeros((Nsamples, len(files)))
+		labels=[]
+		isfixed=[]
 		for f in files:
-			process = os.remove(outdir+f)
-		process = os.remove(outdir+'plength.txt')
-	if get_plength == False:
+			if cpp_version == "1.85.0" and  single_param_index != -1:
+				index=0
+			else:	
+				index=int(f.split('.')[0]) # index of the parameter
+			samples, varname=read_bin2txt_out(outdir + f)
+			labels.append(varname.strip())
+			smcmc[:,index]=samples
+			if len(samples) == 1:
+				isfixed.append(True)
+			else:
+				isfixed.append(False)
+		# erase files in the temporary directory
+		if erase_tmp == True:
+			for f in files:
+				process = os.remove(outdir+f)
+			process = os.remove(outdir+'plength.txt')
+	if get_plength == False and error_code == 0:
 		return smcmc, labels, isfixed
-	else:
+	elif get_plength == True and error_code == 0:
 		return smcmc, labels, isfixed, plength
+	else:
+		return None, None, None, None
 
 def getevidence(dir_tamcmc_outputs, process_name, phase='A', interpolation_factor=1000, 
 	    	first_index=0, last_index=-1, period=7, bootstrap_method="block",
@@ -816,13 +822,16 @@ def read_global_likelihood(filein, evidence_only=True, bootstrap_on=False):
 		Nmid=int(np.fix(len(table[:,0])/2)) -1
 		err_evidence=np.abs(evidence - table[Nmid, -1])
 	else: # Case where we expect that the table contains all of the sample of the bootstrap result
-		#evidence=table[-1,-1]
+		#evidence=np.median(table[:,1]) # Likelihood median
+		#err_evidence=np.std(table[:,1])
 		evidence=np.median(table[:,-1])
 		err_evidence=np.std(table[:,-1])
 	return evidence, err_evidence
 
 def version():
-	print('read_output_tacmcmc version 2.231')
+	print('read_output_tacmcmc version 2.232')
+	print('  Changes since 2.232: ')
+	print('     - Adding exit_on_error in bin2txt() to allow the user to exit/not exit the program in case of error')
 	print("  Changes since 2.231: ")
 	print("     - Update of getstats to handle the new option format")
 	print('  Changes since 2.23: ')

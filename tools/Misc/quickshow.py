@@ -2,6 +2,7 @@ import os
 import numpy as np
 from read_outputs_tamcmc import bin2txt, getmodel_bin, read_datafile
 import matplotlib.pyplot as plt
+from termcolor import colored
 
 def write_modelfinal(fileout, plength, medparams):
 	string=""
@@ -96,23 +97,29 @@ def do_show(dir_mcmc, process_name, model_name, dirout, cpp_path="../../bin/",
 	print('... Gather posterior samples and extract plength...')
 	samples, labels, isfixed, plength=bin2txt(dir_mcmc, process_name, phase=phase, chain=chain, 
 					first_index=first_index, last_index=last_index, period=period, single_param_index=single_param_index,
-	    			erase_tmp=erase_tmp, cpp_path=cpp_path, cpp_version=cpp_version, outdir=outdir +"/", get_plength=True)
-	print('... Computing the median for each parameter...')
-	median=np.median(samples, axis=0)
-	print("median: ", median)
-	print("... Make the model...")
-	resol=data[10,0]-data[9,0]
-	ok=np.isnan(data[:,0])
-	data=data[~ok,:]
-	xr=[data[0,0], data[-1,0], resol]
-	xm, m=getmodel_bin(model_name, median, plength, xr, cpp_path=cpp_path, outdir='tmp/', read_output_params=False, data_type='range')
-	print("...Showing the plot...")
-	quickshow(data[:,0],data[:,1],m, xm=xm, c=['red', 'orange', 'blue', 'cyan', 'purple'], do_loglog=do_loglog, fileout=fileout_jpg)
-	write_modelfinal(fileout_mfinal, plength, median)
-	#write_datafinal(fileout_data, x, m)
+	    			erase_tmp=erase_tmp, cpp_path=cpp_path, cpp_version=cpp_version, outdir=outdir +"/", get_plength=True,
+					exit_on_error=False)
+	if samples is not None:
+		print('... Computing the median for each parameter...')
+		median=np.median(samples, axis=0)
+		print("median: ", median)
+		print("... Make the model...")
+		resol=data[10,0]-data[9,0]
+		ok=np.isnan(data[:,0])
+		data=data[~ok,:]
+		xr=[data[0,0], data[-1,0], resol]
+		xm, m=getmodel_bin(model_name, median, plength, xr, cpp_path=cpp_path, outdir='tmp/', read_output_params=False, data_type='range')
+		print("...Showing the plot...")
+		quickshow(data[:,0],data[:,1],m, xm=xm, c=['red', 'orange', 'blue', 'cyan', 'purple'], do_loglog=do_loglog, fileout=fileout_jpg)
+		write_modelfinal(fileout_mfinal, plength, median)
+		#write_datafinal(fileout_data, x, m)
+		error_code=0
+	else:
+		error_code=1
+	return error_code
 
 
-def do_all_show(dir_mcmc, phase, model_name, do_loglog=False):
+def do_all_show(dir_mcmc, phase, model_name, do_loglog=False, fail_on_error=True):
 	#dir_mcmc="/Users/obenomar/Work/dev/test_Kallinger2014/TAMCMC-C-v1.86.4/test/outputs/Kallinger2014_Gaussian/LC_CORR_FILT_INP_ASCII/"
 	#phase="L"
 	#model_name="model_Kallinger2014_Gaussian"
@@ -122,11 +129,31 @@ def do_all_show(dir_mcmc, phase, model_name, do_loglog=False):
 	# sort the list of subdir
 	list_subdir.sort()
 	# Loop over the list of subdir
+	error_on_file=[]
 	for process_name in list_subdir:
 		print("    -----  Processing : ", process_name)
 		fileout=dir_mcmc + "/" + process_name + "/" 
-		do_show(dir_mcmc, process_name, model_name, fileout, phase=phase, do_loglog=do_loglog, erase_tmp=True)
-		print("    -> File saved at : ", fileout)
+		error_code=do_show(dir_mcmc, process_name, model_name, fileout, phase=phase, do_loglog=do_loglog, erase_tmp=True)
+		if error_code == 0:
+			print("    -> File saved at : ", fileout)
+		else:
+			if fail_on_error == False:
+				print(colored("Warning: Could not found the file for this process!", "yellow"))
+				print(colored("         Cannot save file {}".format(fileout), "red"))
+			else:
+				print(colored("         Cannot save file {}".format(fileout), "red"))
+				raise Exception(colored("Error: Could not found the file for this process!"), "red")
+			error_on_file.append(fileout)
+
+	if fail_on_error == False:
+		if len(error_on_file) !=0:
+			print(colored("List of Failed processes:", "yellow"))
+			for error in error_on_file:
+				print(colored("    -> {}".format(error), "red"))
+		else:
+			print(colored("All processes have been successfully processed", "green"))
+	else:
+		print(colored("All processes have been successfully processed", "green"))		
 
 print("  ----- Program to visualise outputs ----")
 dir_mcmc = input("Enter the output directory for the tamcmc data: ")
@@ -137,4 +164,5 @@ model_name = input("Enter the model name for the analysis: ")
 #phase="L"
 #model_name="model_Kallinger2014_Gaussian"
 do_loglog=True
-do_all_show(dir_mcmc, phase, model_name, do_loglog=do_loglog)
+faiil_on_error=False
+do_all_show(dir_mcmc, phase, model_name, do_loglog=do_loglog, fail_on_error=faiil_on_error)
