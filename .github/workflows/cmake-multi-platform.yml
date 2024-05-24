@@ -20,21 +20,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Ensure Homebrew directory exists
-        if: startsWith(matrix.os, 'macos')
-        run: mkdir -p /usr/local/Homebrew      
-      
       - name: Cache Homebrew packages
         if: startsWith(matrix.os, 'macos')
         uses: actions/cache@v4
         with:
-          path: /usr/local/Homebrew
+          path: $HOME/Homebrew
           key: ${{ runner.os }}-brew-${{ hashFiles('**/Brewfile.lock.json') }}
           restore-keys: |
             ${{ runner.os }}-brew-
             
       - name: Install Dependencies (Ubuntu)
         if: startsWith(matrix.os, 'ubuntu')
+        env:
+          PATH: $HOME/Homebrew/bin:$PATH  
         run: |
           sudo apt-get update
           sudo apt-get install -y gnuplot
@@ -60,6 +58,8 @@ jobs:
             export LibArchive_LIBRARY="${LIBARCHIVE_DIR}/lib/libarchive.dylib"            
             cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_OPENMP=OFF
           fi
-
+        env:
+          PATH: $HOME/Homebrew/bin:$PATH
+          
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
