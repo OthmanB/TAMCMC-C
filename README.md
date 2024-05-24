@@ -1,6 +1,6 @@
 # README #
 
-Ubuntu + MacOs compilation : [![CMake](https://github.com/OthmanB/TAMCMC-C/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/OthmanB/TAMCMC-C/actions/workflows/cmake-multi-platform.yml)
+Ubuntu + MacOs compilation : [![CMake](https://github.com/OthmanB/TAMCMC-C/actions/workflows/cmake-multi-platform.yml/badge.svg?branch=master)](https://github.com/OthmanB/TAMCMC-C/actions/workflows/cmake-multi-platform.yml)
 
 
 ### TAMCMC C++ repository ###
