@@ -18,11 +18,11 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Cache Homebrew packages
         if: startsWith(matrix.os, 'macos')
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: /usr/local/Homebrew
           key: ${{ runner.os }}-brew-${{ hashFiles('**/Brewfile.lock.json') }}
