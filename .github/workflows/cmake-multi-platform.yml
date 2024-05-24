@@ -20,6 +20,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Ensure Homebrew directory exists
+        if: startsWith(matrix.os, 'macos')
+        run: mkdir -p /usr/local/Homebrew      
+      
       - name: Cache Homebrew packages
         if: startsWith(matrix.os, 'macos')
         uses: actions/cache@v4
