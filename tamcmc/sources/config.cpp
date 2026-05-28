@@ -392,6 +392,34 @@ void Config::setup(const int slice_ind){
 	} else {
 		restored_vals.iteration=0;
 	}
+    // --- Gnuplot preflight: fail fast before burnin if plotting diags enabled ---
+    if (diags.chains_diags == 1 || diags.evidence_diags == 1 || diags.pdfs_diags == 1 ||
+        diags.model_initial_diags == 1 || diags.model_buffer_diags == 1 || diags.model_final_diags == 1) {
+        if (system("which gnuplot > /dev/null 2>&1") != 0) {
+            std::cerr << std::endl;
+            std::cerr << "ERROR: Plotting diagnostics enabled but 'gnuplot' not found in PATH." << std::endl;
+            std::cerr << std::endl;
+            std::cerr << "The following flags require gnuplot:" << std::endl;
+            std::cerr << "  - chains_diags" << std::endl;
+            std::cerr << "  - evidence_diags" << std::endl;
+            std::cerr << "  - pdfs_diags" << std::endl;
+            std::cerr << "  - model_initial_diags" << std::endl;
+            std::cerr << "  - model_buffer_diags" << std::endl;
+            std::cerr << "  - model_final_diags" << std::endl;
+            std::cerr << std::endl;
+            std::cerr << "REMEDIATION:" << std::endl;
+            std::cerr << "  1. Install gnuplot (e.g., 'sudo apt install gnuplot' or 'brew install gnuplot')" << std::endl;
+            std::cerr << "  2. Ensure gnuplot is in your PATH" << std::endl;
+            std::cerr << "  3. OR disable all diagnostics in your .cfg file by setting them to 0:" << std::endl;
+            std::cerr << "       chains_diags=0" << std::endl;
+            std::cerr << "       evidence_diags=0" << std::endl;
+            std::cerr << "       pdfs_diags=0" << std::endl;
+            std::cerr << "       model_initial_diags=0" << std::endl;
+            std::cerr << "       model_buffer_diags=0" << std::endl;
+            std::cerr << "       model_final_diags=0" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+    }
 	std::cout << "Initial configuration done" << std::endl;
 }
 
@@ -683,7 +711,22 @@ void Config::read_inputs_priors_MS_Global(){
 	//in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
 	//in_vals.tabulated_priors=modeling.priors_data;  // Added on 10 Jul 2023 to handle custom tabulated priors
 	modeling.inputs=in_vals;
-	modeling.model_fct_name=in_vals.model_fullname;
+	// Policy: .model file takes precedence over config model_fct_name
+	// Normalize whitespace in both model names before comparison
+	std::string model_file_name = strtrim(in_vals.model_fullname);    // From .model file (WINS)
+	std::string config_file_name = strtrim(modeling.model_fct_name);  // From config file (LOSES)
+	
+	if (!model_file_name.empty() && !config_file_name.empty() && model_file_name != config_file_name) {
+		std::cerr << "WARNING: model_fct_name in config file is legacy and should be commented out. Using model_fullname from .model file instead." << std::endl;
+		std::cerr << "         Config model_fct_name: " << config_file_name << std::endl;
+		std::cerr << "         .model model_fullname: " << model_file_name << std::endl;
+		modeling.model_fct_name = model_file_name;  // Keep .model value
+	} else if (model_file_name.empty() && !config_file_name.empty()) {
+		modeling.model_fct_name = config_file_name;  // Use config as fallback
+	} else if (!model_file_name.empty() && config_file_name.empty()) {
+		// Keep .model value if config is blank/whitespace
+		modeling.model_fct_name = model_file_name;
+	}
 	std::cout << "Setup according to the MCMC configuration file finished" << std::endl;
 }
 
@@ -697,11 +740,26 @@ void Config::read_inputs_priors_asymptotic(){
 	i_asymptotic=read_MCMC_file_asymptotic(modeling.cfg_model_file, 0); // Read the MCMC file, with verbose=0 here.. 
 	data.data.xrange=i_asymptotic.freq_range; // Load the wished frequency range into the data structure (contains the spectra)
 	std::cout << "   - Preparing input and priors parameters..." << std::endl;
-    in_vals=build_init_asymptotic(i_asymptotic, verbose, data.data_all.data(2, data.x_col)-data.data_all.data(1, data.x_col)); // Interpret the MCMC file and format it as an input structure
+     in_vals=build_init_asymptotic(i_asymptotic, verbose, data.data_all.data(2, data.x_col)-data.data_all.data(1, data.x_col)); // Interpret the MCMC file and format it as an input structure
 	//in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
 	//in_vals.tabulated_priors=modeling.priors_data;  // Added on 10 Jul 2023 to handle custom tabulated priors
 	modeling.inputs=in_vals;
-	modeling.model_fct_name=in_vals.model_fullname;
+	// Policy: .model file takes precedence over config model_fct_name
+	// Normalize whitespace in both model names before comparison
+	std::string model_file_name = strtrim(in_vals.model_fullname);    // From .model file (WINS)
+	std::string config_file_name = strtrim(modeling.model_fct_name);  // From config file (LOSES)
+	
+	if (!model_file_name.empty() && !config_file_name.empty() && model_file_name != config_file_name) {
+		std::cerr << "WARNING: model_fct_name in config file is legacy and should be commented out. Using model_fullname from .model file instead." << std::endl;
+		std::cerr << "         Config model_fct_name: " << config_file_name << std::endl;
+		std::cerr << "         .model model_fullname: " << model_file_name << std::endl;
+		modeling.model_fct_name = model_file_name;  // Keep .model value
+	} else if (model_file_name.empty() && !config_file_name.empty()) {
+		modeling.model_fct_name = config_file_name;  // Use config as fallback
+	} else if (!model_file_name.empty() && config_file_name.empty()) {
+		// Keep .model value if config is blank/whitespace
+		modeling.model_fct_name = model_file_name;
+	}
 	std::cout << "Setup according to the MCMC configuration file finished" << std::endl;
 }
 
@@ -718,11 +776,26 @@ void Config::read_inputs_priors_local(){
 	data.data.xrange=i_local.freq_range; // Load the wished frequency range into the data structure (contains the spectra)
 	
 	std::cout << "   - Preparing input and priors parameters..." << std::endl;
-    in_vals=build_init_local(i_local, verbose, data.data_all.data(2, data.x_col)-data.data_all.data(1, data.x_col)); // Interpret the MCMC file and format it as an input structure
+     in_vals=build_init_local(i_local, verbose, data.data_all.data(2, data.x_col)-data.data_all.data(1, data.x_col)); // Interpret the MCMC file and format it as an input structure
 	//in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
 	//in_vals.tabulated_priors=modeling.priors_data;  // Added on 10 Jul 2023 to handle custom tabulated priors
 	modeling.inputs=in_vals;
-	modeling.model_fct_name=in_vals.model_fullname;
+	// Policy: .model file takes precedence over config model_fct_name
+	// Normalize whitespace in both model names before comparison
+	std::string model_file_name = strtrim(in_vals.model_fullname);    // From .model file (WINS)
+	std::string config_file_name = strtrim(modeling.model_fct_name);  // From config file (LOSES)
+	
+	if (!model_file_name.empty() && !config_file_name.empty() && model_file_name != config_file_name) {
+		std::cerr << "WARNING: model_fct_name in config file is legacy and should be commented out. Using model_fullname from .model file instead." << std::endl;
+		std::cerr << "         Config model_fct_name: " << config_file_name << std::endl;
+		std::cerr << "         .model model_fullname: " << model_file_name << std::endl;
+		modeling.model_fct_name = model_file_name;  // Keep .model value
+	} else if (model_file_name.empty() && !config_file_name.empty()) {
+		modeling.model_fct_name = config_file_name;  // Use config as fallback
+	} else if (!model_file_name.empty() && config_file_name.empty()) {
+		// Keep .model value if config is blank/whitespace
+		modeling.model_fct_name = model_file_name;
+	}
 	std::cout << "Setup according to the MCMC configuration file finished" << std::endl;
 }
 
@@ -743,7 +816,17 @@ void Config::read_inputs_ajfit(){
 	//in_vals.priors_names_switch=convert_priors_names_to_switch(in_vals.priors_names); // Determine the switch cases from the prior names
 	//in_vals.tabulated_priors=modeling.priors_data; // Added on 10 Jul 2023 to handle custom tabulated priors
 	modeling.inputs=in_vals;
-	modeling.model_fct_name=in_vals.model_fullname;
+	// Policy: .model file takes precedence (ajfit exempted from warning due to hardcoded model name)
+	// Normalize whitespace in both model names before comparison
+	std::string model_file_name = strtrim(in_vals.model_fullname);    // From .model file (WINS)
+	std::string config_file_name = strtrim(modeling.model_fct_name);  // From config file (LOSES)
+	
+	if (model_file_name.empty() && !config_file_name.empty()) {
+		modeling.model_fct_name = config_file_name;  // Use config as fallback
+	} else if (!model_file_name.empty() && config_file_name.empty()) {
+		// Keep .model value if config is blank/whitespace
+		modeling.model_fct_name = model_file_name;
+	}
 	diags.data_scoef1=0; // a2, a4, a6 are independent parameters... WE MUST NOT smooth over x={a2,a4,a6}
 	diags.data_scoef2=0;
 	std::cout << "Setup according to the model and data configuration file finished" << std::endl;
