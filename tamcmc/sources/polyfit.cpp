@@ -1,6 +1,7 @@
 #include <Eigen/Dense>
 #include <iostream>
 #include <cmath>
+#include <cassert>
 #include <vector>
 #include <Eigen/QR>
 
