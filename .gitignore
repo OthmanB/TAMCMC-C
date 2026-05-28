@@ -1,0 +1,19 @@
+# Build outputs
+bin/cpptamcmc
+bin/bin2txt
+bin/getevidence
+build/
+
+# Backup files generated during testing
+*.bak
+*.bak2
+*.bak.orig
+*.orig
+*.OLD
+*.smoke_backup
+*.pre-gauss-check.bak
+
+# Editor/OS
+.DS_Store
+*.swp
+*.swo
