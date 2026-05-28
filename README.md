@@ -58,6 +58,38 @@ Some options exists to deactivate functions (eg. GSL and/or OpenMP):
    4. Once the whole analysis is finished, you will get a lot of files in ```[your_output_directory]/[the_name_of_the_analysed_object]```. The subdirectory ```diags``` contains plots and some diagnostics files. ```inputs_backup``` contains some zip of the configurations that was used. ```restore``` contains a snapshot of the MCMC chain state that can be used to restart an analysis. More importantly ```outputs``` contains the results of the analysis. 
       By default (also highly recommended), it is in a binary format. You can extract outputs from those files using the tools that were compiled at the same time than cpptamcmc. 
       The most important of those tool is certainly 'bin2txt' because it converts the binary list of MCMC samples for each parameters into plain ASCII files. Run ```./bin2txt``` to have a set of instruction on how to use it.
+
+### CLI config overrides (recommended for wrappers)
+
+`cpptamcmc` now supports explicit config path overrides, which is useful for pipeline orchestration and reproducible subprocess calls:
+
+- `--config-default <path>`
+- `--config-presets <path>`
+- `--errors-default <path>`
+
+Example (config validation only, no MCMC execution):
+
+```bash
+./bin/cpptamcmc -E 0 \
+  --config-presets ./Config/config_presets.cfg \
+  --config-default ./Config/default/config_default.cfg \
+  --errors-default ./Config/default/errors_default.cfg
+```
+
+### Per-run metadata JSON artifact
+
+For each executed run (object × phase × slice), TAMCMC writes a machine-readable metadata artifact:
+
+```text
+[output_dir]/[object]/outputs/[output_root_name]run_metadata.json
+```
+
+This JSON includes, among other fields:
+
+- effective config file paths (`config_default`, `errors_default`, `config_presets`)
+- `object_id`, `phase_name`, `phase_index`, `slice_index`, `total_slices`
+- resolved `model_fct_name`, `prior_fct_name`, `likelihood_fct_name`
+- `model_file`, `data_file`, `output_dir`, `output_root_name`, `restore_dir`
    
 That's it, with that, you should have some fun playing around!
   

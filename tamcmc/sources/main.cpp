@@ -8,6 +8,7 @@
 #include <vector>
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 #include <sys/stat.h>
 #include "unistd.h"
 #include "MALA.h"
@@ -23,6 +24,17 @@ std::string shell_exec(const std::string cmd);
 bool isdir(const std::string pathname);
 bool generate_dir_tree(const std::string rootdir, const std::vector<std::string> subdirs);
 void showversion();
+std::string json_escape(const std::string& value);
+void write_run_metadata_json(const std::string& metadata_file,
+                             const std::string& cpath,
+                             const std::string& cfg_file_default,
+                             const std::string& error_file_default,
+                             const std::string& cfg_file_presets,
+                             const Config& config,
+                             const Config_presets& config_master,
+                             const int object_index,
+                             const int phase_index,
+                             const int slice_index);
 int  options(int argc, char* argv[]);
 void usage(int argc, char* argv[]);
 MatrixXd get_slices_range(const std::string modelfile, const bool verbose);
@@ -46,7 +58,10 @@ int main(int argc, char* argv[]){
         ("start_index,S", po::value<int>(), "Starting index of the list of objects to be processed")
         ("last_index,L", po::value<int>(), "Last index of the list of objects to be processed")
 		("startslice", po::value<int>()->implicit_value(1)->default_value(1), "For fit with multiple slices, indicate the first slice to fit (default means from first)")
-        ("lastslice", po::value<int>()->implicit_value(1)->default_value(-1), "For fit with multiple slices, indicate the last slice to fit (default means until last one)");	
+		("lastslice", po::value<int>()->implicit_value(1)->default_value(-1), "For fit with multiple slices, indicate the last slice to fit (default means until last one)")
+		("config-default", po::value<std::string>(), "Override path to config_default.cfg")
+		("config-presets", po::value<std::string>(), "Override path to config_presets.cfg")
+		("errors-default", po::value<std::string>(), "Override path to errors_default.cfg");	
     po::variables_map vm;
 
     try {
@@ -135,13 +150,25 @@ int main(int argc, char* argv[]){
 	std::string cfg_file_primepriorslist=cpath + "/Config/default/primepriors_ctrl.list";
 	
 	std::string cfg_file_presets=cpath + "/Config/config_presets.cfg"; // This is a simpler configuration that allow scripting of the TAMCMC... This is the main configuration file
+
+	if (vm.count("errors-default") > 0) {
+		error_file_default = vm["errors-default"].as<std::string>();
+	}
+	if (vm.count("config-default") > 0) {
+		cfg_file_default = vm["config-default"].as<std::string>();
+	}
+	if (vm.count("config-presets") > 0) {
+		cfg_file_presets = vm["config-presets"].as<std::string>();
+	}
     
 	// Load the default configuration
 	std::cout << "- Loading the default configurations..." << std::endl;
+	std::cout << "    config_default: " << cfg_file_default << std::endl;
+	std::cout << "    errors_default: " << error_file_default << std::endl;
         Config config(cpath, cfg_file_default, error_file_default, cfg_file_modelslist, cfg_file_priorslist, cfg_file_likelihoodslist, cfg_file_primepriorslist);
 
 	// Load the Preset configuration (Master configurator)
-	std::cout << "- Loading the Preset configuration: config_presets.cfg..." << std::endl;
+	std::cout << "- Loading the Preset configuration: " << cfg_file_presets << "..." << std::endl;
 	Config_presets config_master(cfg_file_presets, &config); // read the master config file + initialize counters to 0
 
 	if(vm["execute"].as<bool>() == false){
@@ -215,6 +242,9 @@ int main(int argc, char* argv[]){
 					// Setup the configuration according to user-requested options (either presets configuration or manual configuration)
 					std::cout << " Loading the observational constraints (data) and restore setup..." << std::endl;
 					config.setup(s);
+					const std::string metadata_file = config.outputs.dir_out + config.outputs.output_root_name + "run_metadata.json";
+					write_run_metadata_json(metadata_file, cpath, cfg_file_default, error_file_default, cfg_file_presets,
+									  config, config_master, i, jj, s);
 
 					if( config.outputs.do_backup_cfg_files == 1){
 						std::cout << "    do_backup_cfg_files = 1 ===> Backup of the files *.cfg and *.model in progress..." << std::endl;
@@ -322,6 +352,63 @@ std::string shell_exec(const std::string cmd){
     }
     pclose(pipe);
     return result;
+}
+
+std::string json_escape(const std::string& value){
+// Escapes a string so that it can be safely injected into JSON string fields.
+    std::string out;
+    out.reserve(value.size() + 8);
+    for (const char c : value) {
+        switch (c) {
+            case '\\': out += "\\\\"; break;
+            case '"':  out += "\\\""; break;
+            case '\n': out += "\\n"; break;
+            case '\r': out += "\\r"; break;
+            case '\t': out += "\\t"; break;
+            default:   out += c; break;
+        }
+    }
+    return out;
+}
+
+void write_run_metadata_json(const std::string& metadata_file,
+                             const std::string& cpath,
+                             const std::string& cfg_file_default,
+                             const std::string& error_file_default,
+                             const std::string& cfg_file_presets,
+                             const Config& config,
+                             const Config_presets& config_master,
+                             const int object_index,
+                             const int phase_index,
+                             const int slice_index){
+// Writes a machine-readable per-run metadata artifact for external orchestrators.
+    std::ofstream meta(metadata_file.c_str());
+    if (!meta.is_open()) {
+        std::cerr << "WARNING: could not write run metadata file: " << metadata_file << std::endl;
+        return;
+    }
+
+    meta << "{\n";
+    meta << "  \"schema_version\": 1,\n";
+    meta << "  \"current_directory\": \"" << json_escape(cpath) << "\",\n";
+    meta << "  \"config_default\": \"" << json_escape(cfg_file_default) << "\",\n";
+    meta << "  \"errors_default\": \"" << json_escape(error_file_default) << "\",\n";
+    meta << "  \"config_presets\": \"" << json_escape(cfg_file_presets) << "\",\n";
+    meta << "  \"metadata_file\": \"" << json_escape(metadata_file) << "\",\n";
+    meta << "  \"object_id\": \"" << json_escape(config_master.table_ids[object_index].at(0)) << "\",\n";
+    meta << "  \"phase_name\": \"" << json_escape(config_master.processing[phase_index]) << "\",\n";
+    meta << "  \"phase_index\": " << (phase_index + 1) << ",\n";
+    meta << "  \"slice_index\": " << (slice_index + 1) << ",\n";
+    meta << "  \"total_slices\": " << config_master.Nslices << ",\n";
+    meta << "  \"model_file\": \"" << json_escape(config.modeling.cfg_model_file) << "\",\n";
+    meta << "  \"data_file\": \"" << json_escape(config.data.data_file) << "\",\n";
+    meta << "  \"model_fct_name\": \"" << json_escape(config.modeling.model_fct_name) << "\",\n";
+    meta << "  \"prior_fct_name\": \"" << json_escape(config.modeling.prior_fct_name) << "\",\n";
+    meta << "  \"likelihood_fct_name\": \"" << json_escape(config.modeling.likelihood_fct_name) << "\",\n";
+    meta << "  \"output_dir\": \"" << json_escape(config.outputs.dir_out) << "\",\n";
+    meta << "  \"output_root_name\": \"" << json_escape(config.outputs.output_root_name) << "\",\n";
+    meta << "  \"restore_dir\": \"" << json_escape(config.outputs.restore_dir) << "\"\n";
+    meta << "}\n";
 }
 
 bool isdir(const std::string pathname){
