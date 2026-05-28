@@ -2179,7 +2179,8 @@ void Config::read_inputs_files(){
 			}
 		if (!_mm_fullname.empty()) {
 			const std::string _mm_would = _resolve_prior(_mm_fullname);
-			if (!_mm_would.empty() && _mm_would != modeling.prior_fct_name) {
+			if (!_mm_would.empty() && _mm_would != modeling.prior_fct_name
+		    && modeling.prior_fct_name != "io_ajfit") {
 				std::cerr << "WARNING: prior_fct_name=" << modeling.prior_fct_name
 				          << " is explicitly set, but model_fullname=" << _mm_fullname
 				          << " typically uses prior_fct_name=" << _mm_would << "." << std::endl;
