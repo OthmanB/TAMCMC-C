@@ -1,0 +1,69 @@
+#=SMOKE_RGB_AUTO Source: derived from astero-pipeline/tests/fixtures/rgb_appwidth.model | Date: 2026-05-28 | numax~900uHz Dnu~65uHz DP~250s | model_fullname: model_RGB_asympt_aj_AppWidth_HarveyLike_v4
+!n 900.000000    45.000000
+! 65.00
+!! 1.50
+* 650.00 1150.00
+# type / l / value / relax_f / relax_H / relax_W 
+p  0  802.500000  1      1       1
+p  0  867.500000  1      1       1
+p  0  932.500000  1      1       1
+p  0  997.500000  1      1       1
+p  1  900.000000  1      1       1
+# hyper priors 
+# Extra parameters (used by model_RGB_asympt_aj_AppWidth_HarveyLike_v4 ONLY) - Tuned for low-compute auto-mode smoke testing (numax~900uHz DP~250s Dnu~65uHz)
+760.0000000    Gaussian    0    0     0.1
+810.0000000    Gaussian    0    0     0.1
+860.0000000    Gaussian    0    0     0.1
+910.0000000    Gaussian    0    0     0.1
+960.0000000    Gaussian    0    0     0.1
+1010.0000000   Gaussian    0    0     0.1
+# Eigen solution input parameters: l / nu / window_min / Window_max / Gamma / H
+    0    802.50000    801.50000    803.50000     2.00000  15.000000
+    0    867.50000    866.50000    868.50000     2.00000  30.000000
+    0    932.50000    931.50000    933.50000     2.00000  35.000000
+    0    997.50000    996.50000    998.50000     2.00000  20.000000
+    1    900.00000   -1.000000    -1.000000     -1.0000  -1.0000000
+# Noise parameters: A0/B0/p0, A1/B1/p1, A2/B2/p2, N0
+       0.0000000       0.0000000       1.0000000
+       0.0000000       0.0000000       4.0000000
+       0.1000000       2.0000000       4.0000000
+       1.0000000
+# Noise Info from output_s2 (use as priors): params / err_m / err_p
+       0.0000000       0.0000000       0.0000000
+       0.0000000       0.0000000       0.0000000
+       1.0000000       0.0000000       0.0000000
+       0.0000000       0.0000000       0.0000000
+       0.0000000       0.0000000       0.0000000
+       4.0000000       0.0000000       0.0000000
+       0.1000000       0.0500000       0.0500000
+       2.0000000       1.0000000       1.0000000
+       4.0000000       0.0000000       0.0000000
+       1.0000000       0.5000000       0.5000000
+# Controls and priors for common parameters
+          model_fullname              model_RGB_asympt_aj_AppWidth_HarveyLike_v4
+          model_type                      Fix          0.
+          bias_type                       Fix          1.
+          freq_smoothness                bool          0.500000          1.000000
+              eta0_switch                 Fix          0.000000
+                 Asymetry                 Fix          0.000000
+              Inclination             Uniform         45.000000          0.000000         90.000000
+            Visibility_l1             Uniform          1.500000          0.000000          5.000000
+            Visibility_l2             Uniform          0.530000          0.050000          0.800000
+            Visibility_l3             Uniform          0.050000          0.000010          0.150000
+                   Height            Jeffreys          1.000000      400000.00000
+                    Width            Fix_Auto          1.000000
+                  delta01            Fix_Auto          1.000000
+                      DP1            Uniform           250.00000          200.000000          400.0000 
+                  alpha_g            Uniform            0.10000          0.000000          1.000000
+                        q            Uniform            0.15000          0.000100          1.000000
+                  rot_env            Uniform            0.20000          0.000000          0.300000
+                 rot_core            Uniform            1.00000          0.000000          2.000000    
+                   a2_env                Fix           0.000000                      
+                  a2_core                Fix           0.000000
+                   a3_env                Fix           0.000000
+                   a4_env                Fix           0.000000
+                   a5_env                Fix           0.000000
+                   a6_env                Fix           0.000000                
+		  Hfactor             Uniform            0.00001          0.000000          1.00000   
+                  Wfactor                GU             0.9999          0.800000            1.00000    0.100000     
+                  trunc_c                Fix            25.
