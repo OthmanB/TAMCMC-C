@@ -664,10 +664,12 @@ void Config::read_inputs_prior_Simple_Matrix(){
 			std::getline(cfg_session, line0);
 			line0=strtrim(line0);
 			if(line0.size() != 0){
+				if(i >= 4) break; // Stop after reading 4 prior rows; ignore trailing lines (e.g. model_fullname)
 				modeling.inputs.priors.row(i)=arrstr_to_Xdarrdbl(strsplit(line0, " \t"));	
 				i=i+1;	
 			}		
 		}
+		break; // Only one range section per file
 
 	}
 	cfg_session.close();
@@ -2119,14 +2121,8 @@ void Config::read_inputs_files(){
 	const auto _resolve_prior = &resolve_prior_from_model;
 	// Wave 2: auto-mode resolution of prior_fct_name from .model model_fullname
 	if (is_auto_sentinel(modeling.prior_fct_name)) {
-		// ajfit guard: auto not supported for ajfit workflows
 		const std::string _auto_model_path = modeling.cfg_model_file;
 		const std::string _auto_fullname = peek_model_fullname(_auto_model_path);
-		if (_auto_fullname == "model_ajfit") {
-			std::cerr << "FATAL: prior_fct_name=auto is not supported for ajfit workflows." << std::endl;
-			std::cerr << "       Set prior_fct_name=io_ajfit explicitly." << std::endl;
-			exit(EXIT_FAILURE);
-		}
 		// Fatal if .model not found or has no model_fullname line
 		if (_auto_fullname.empty()) {
 			std::cerr << "FATAL: prior_fct_name=auto requires a valid model_fullname in the .model file." << std::endl;

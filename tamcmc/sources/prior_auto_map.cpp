@@ -1,12 +1,11 @@
 #include "prior_auto_map.h"
 #include <map>
-#include <algorithm>
 
 // Sentinel value for auto-detection
 const std::string PRIOR_AUTO_SENTINEL = "auto";
 
 // Curated mapping table: model_fullname -> prior_fct_name
-// 15 entries covering non-obsolete models (cases 6,7,8,12,13,18,19,21,23)
+// 16 entries covering Wave 2 models + ajfit auto support.
 static const std::map<std::string, std::string> prior_auto_map = {
     {"model_Harvey_Gaussian", "priors_Harvey_Gaussian"},
     {"model_Kallinger2014_Gaussian", "priors_Kallinger2014_Gaussian"},
@@ -22,7 +21,8 @@ static const std::map<std::string, std::string> prior_auto_map = {
     {"model_RGB_asympt_aj_AppWidth_HarveyLike_v4", "io_asymptotic"},
     {"model_RGB_asympt_aj_CteWidth_HarveyLike_v4", "io_asymptotic"},
     {"model_MS_local_basic", "io_local"},
-    {"model_MS_local_Hnlm", "io_local"}
+    {"model_MS_local_Hnlm", "io_local"},
+    {"model_ajfit", "io_ajfit"}
 };
 
 std::string resolve_prior_from_model(const std::string& model_fullname) {

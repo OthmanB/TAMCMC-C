@@ -1,6 +1,6 @@
 // Standalone unit tests for prior_auto_map.{h,cpp}
 // No external test framework — compile and run directly.
-// Exit 0 if all 25 tests pass, exit 1 otherwise.
+// Exit 0 if all 26 tests pass, exit 1 otherwise.
 
 #include <iostream>
 #include <string>
@@ -131,18 +131,22 @@ int main() {
               resolve_prior_from_model("model_MS_local_Hnlm"),
               "io_local");
 
-    check_str(23, "resolve_prior_from_model(\"model_UNKNOWN\") == \"\"",
+    check_str(23, "resolve_prior_from_model(\"model_ajfit\") == \"io_ajfit\"",
+              resolve_prior_from_model("model_ajfit"),
+              "io_ajfit");
+
+    check_str(24, "resolve_prior_from_model(\"model_UNKNOWN\") == \"\"",
               resolve_prior_from_model("model_UNKNOWN"),
               "");
 
-    check_str(24, "resolve_prior_from_model(\"\") == \"\"",
+    check_str(25, "resolve_prior_from_model(\"\") == \"\"",
               resolve_prior_from_model(""),
               "");
 
     // ---- supported_model_fullnames ----
-    check_size(25, "supported_model_fullnames().size() == 15",
+    check_size(26, "supported_model_fullnames().size() == 16",
                supported_model_fullnames().size(),
-               15u);
+               16u);
 
     // ---- Summary ----
     if (failed_tests == 0) {
