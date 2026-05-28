@@ -20,6 +20,7 @@
 #include "string_handler.h"
 #include "../../external/Alm/Alm_cpp/data.h"
 #include "../../external/Alm/Alm_cpp/Alm_interpol.h"
+#include "prior_auto_map.h"
 
 Config::Config(std::string current_path, std::string cfg_file_in, std::string cfg_file_errors, 
 			   std::string cfg_models_ctrl_file_in, std::string cfg_priors_ctrl_file_in, std::string cfg_likelihoods_ctrl_file_in,
@@ -2107,6 +2108,67 @@ static std::string peek_model_fullname(const std::string& model_file_path) {
 void Config::read_inputs_files(){
 
     bool passed=0; 
+	const auto _resolve_prior = &resolve_prior_from_model;
+	// Wave 2: auto-mode resolution of prior_fct_name from .model model_fullname
+	if (is_auto_sentinel(modeling.prior_fct_name)) {
+		// ajfit guard: auto not supported for ajfit workflows
+		const std::string _auto_model_path = modeling.cfg_model_file;
+		const std::string _auto_fullname = peek_model_fullname(_auto_model_path);
+		if (_auto_fullname == "model_ajfit") {
+			std::cerr << "FATAL: prior_fct_name=auto is not supported for ajfit workflows." << std::endl;
+			std::cerr << "       Set prior_fct_name=io_ajfit explicitly." << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		// Fatal if .model not found or has no model_fullname line
+		if (_auto_fullname.empty()) {
+			std::cerr << "FATAL: prior_fct_name=auto requires a valid model_fullname in the .model file." << std::endl;
+			std::cerr << "       Checked: " << _auto_model_path << std::endl;
+			std::cerr << "       Either set prior_fct_name explicitly, or add model_fullname to your .model file." << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		// Fatal if model_fullname not in curated mapping table
+		const std::string _auto_resolved = resolve_prior_from_model(_auto_fullname);
+		if (_auto_resolved.empty()) {
+			std::cerr << "FATAL: prior_fct_name=auto could not resolve model_fullname='" << _auto_fullname << "'." << std::endl;
+			std::cerr << "       Supported models:" << std::endl;
+			for (const auto& _m : supported_model_fullnames()) {
+				std::cerr << "         - " << _m << std::endl;
+			}
+			std::cerr << "       Set prior_fct_name explicitly for this model." << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		// Success: overwrite sentinel with resolved prior name
+		std::cout << "INFO: prior_fct_name auto-resolved from model_fullname=" << _auto_fullname
+		          << " to " << _auto_resolved << std::endl;
+		modeling.prior_fct_name = _auto_resolved;
+	} else if (!modeling.prior_fct_name.empty()) {
+		// Wave 2: mismatch warning when explicit prior differs from model mapping
+		std::ifstream _mm_file(modeling.cfg_model_file.c_str());
+		std::string _mm_line0, _mm_fullname;
+		std::vector<std::string> _mm_word;
+		while (std::getline(_mm_file, _mm_line0)) {
+			_mm_line0 = strtrim(_mm_line0);
+			if (_mm_line0.empty()) { continue; }
+			std::string _mm_char0 = strtrim(_mm_line0.substr(0, 1));
+			if (_mm_char0 == "#") { continue; }
+			_mm_word = strsplit(_mm_line0, " \t");
+			if (_mm_word.size() >= 2 && strtrim(_mm_word[0]) == "model_fullname") {
+				std::string _mm_val = strtrim(_mm_word[1]);
+				if (!_mm_val.empty()) {
+					_mm_fullname = _mm_val;
+				}
+			}
+		}
+		if (!_mm_fullname.empty()) {
+			const std::string _mm_would = _resolve_prior(_mm_fullname);
+			if (!_mm_would.empty() && _mm_would != modeling.prior_fct_name) {
+				std::cerr << "WARNING: prior_fct_name=" << modeling.prior_fct_name
+				          << " is explicitly set, but model_fullname=" << _mm_fullname
+				          << " typically uses prior_fct_name=" << _mm_would << "." << std::endl;
+				std::cerr << "         Using explicit value as user requested." << std::endl;
+			}
+		}
+	}
  	if(modeling.prior_fct_name == "priors_Kallinger2014_Gaussian"){ // The structure of such a file is quite simple: Comments (#), Params names (!), Params Inputs, Priors names (!), Priors Inputs
 		read_inputs_prior_Simple_Matrix();
 		passed=1;
@@ -2441,4 +2503,3 @@ int Config::msg_handler(const std::string file, const std::string error_type, co
 	}
 	
 }
-
