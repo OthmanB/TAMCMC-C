@@ -40,12 +40,12 @@ jobs:
       - name: Configure CMake
         run: |
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DLibArchive_DIR=/usr/lib/x86_64-linux-gnu/cmake/libarchive
+            cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DLibArchive_DIR=/usr/lib/x86_64-linux-gnu/cmake/libarchive -DBoost_NO_BOOST_CMAKE=ON
           elif [ "${{ matrix.os }}" = "macos-latest" ]; then
             LIBARCHIVE_DIR=$(brew --prefix libarchive)
             export LibArchive_INCLUDE_DIR="${LIBARCHIVE_DIR}/include"
             export LibArchive_LIBRARY="${LIBARCHIVE_DIR}/lib/libarchive.dylib"            
-            cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_OPENMP=OFF
+            cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DWITH_OPENMP=OFF -DBoost_NO_BOOST_CMAKE=ON
           fi
           
       - name: Build
