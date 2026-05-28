@@ -224,6 +224,12 @@ add_executable(getstats  ${SOURCES_TOOLS_GETSTATS})
 add_executable(getevidence  ${SOURCES_TOOLS_GETEVIDENCE})
 add_executable(getmodel ${SOURCES_TOOLS_GETMODEL})
 
+set(SOURCES_TEST_PRIOR_AUTO_MAP
+    tamcmc/tests/test_prior_auto_map.cpp
+    tamcmc/sources/prior_auto_map.cpp
+)
+add_executable(test_prior_auto_map ${SOURCES_TEST_PRIOR_AUTO_MAP})
+
 #target_link_libraries(bin2txt ${Boost_SYSTEM_LIBRARY_RELEASE} ${Boost_FILESYSTEM_LIBRARY_RELEASE} ${Boost_IOSTREAMS_LIBRARY_RELEASE} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY})
 if (WITH_STATIC)
 	target_link_libraries(${CMAKE_PROJECT_NAME}  -static
@@ -283,6 +289,7 @@ else()
 		target_link_libraries(getstats ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY} Eigen3::Eigen )
 		target_link_libraries(getevidence ${Boost_LIBRARIES}  ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY} Eigen3::Eigen )
 		target_link_libraries(getmodel  ${Boost_LIBRARIES} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} Eigen3::Eigen ) 
+		target_link_libraries(test_prior_auto_map Eigen3::Eigen)
 	elseif(LINUX)
 		target_compile_definitions(${CMAKE_PROJECT_NAME}  PRIVATE LINUX)
 		target_link_libraries(${CMAKE_PROJECT_NAME} ${Boost_LIBRARIES} ${GSL_LIBRARY} ${GSL_CBLAS_LIBRARY} ${LibArchive_LIBRARY}) # ${ZLIB_LIBRARIES}
