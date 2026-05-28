@@ -214,7 +214,7 @@ include_directories(tamcmc/headers)
 include_directories(tools/bootstrap)
 
 #Dependencies that are not portable (BOOST)
-find_package(Boost COMPONENTS system filesystem iostreams program_options REQUIRED)
+find_package(Boost COMPONENTS filesystem iostreams program_options REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 
