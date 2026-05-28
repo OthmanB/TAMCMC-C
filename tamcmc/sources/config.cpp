@@ -2084,6 +2084,11 @@ void Config::read_restore_files(){
 //   - precedence : last-wins (no break; matches the for-loop in build_init_*())
 // Returns "" if: file not found, file empty, no model_fullname line, or empty value.
 static std::string peek_model_fullname(const std::string& model_file_path) {
+    const std::filesystem::path model_path(model_file_path);
+    std::error_code ec;
+    if (model_file_path.empty() || !std::filesystem::is_regular_file(model_path, ec)) { return ""; }
+    if (ec || std::filesystem::file_size(model_path, ec) > 1024 * 1024) { return ""; }
+    if (ec) { return ""; }
     std::ifstream f(model_file_path.c_str());
     if (!f.is_open()) { return ""; }
     std::string line0, result;
@@ -2096,6 +2101,9 @@ static std::string peek_model_fullname(const std::string& model_file_path) {
         word = strsplit(line0, " \t");          // same tokeniser as read_MCMC_file_MS_Global
         if (word.size() >= 2 && strtrim(word[0]) == "model_fullname") {
             std::string val = strtrim(word[1]);
+            if (val == "=") {
+                val = word.size() >= 3 ? strtrim(word[2]) : "";
+            }
             if (!val.empty()) {
                 result = val;                   // last-wins: keep overwriting (no break)
             }
@@ -2143,9 +2151,16 @@ void Config::read_inputs_files(){
 		modeling.prior_fct_name = _auto_resolved;
 	} else if (!modeling.prior_fct_name.empty()) {
 		// Wave 2: mismatch warning when explicit prior differs from model mapping
-		std::ifstream _mm_file(modeling.cfg_model_file.c_str());
+		const std::filesystem::path _mm_path(modeling.cfg_model_file);
+		std::error_code _mm_ec;
+		std::ifstream _mm_file;
 		std::string _mm_line0, _mm_fullname;
 		std::vector<std::string> _mm_word;
+		if (!_mm_path.empty() && std::filesystem::is_regular_file(_mm_path, _mm_ec) && !_mm_ec) {
+			if (std::filesystem::file_size(_mm_path, _mm_ec) <= 1024 * 1024 && !_mm_ec) {
+				_mm_file.open(modeling.cfg_model_file.c_str());
+			}
+		}
 		while (std::getline(_mm_file, _mm_line0)) {
 			_mm_line0 = strtrim(_mm_line0);
 			if (_mm_line0.empty()) { continue; }
@@ -2154,11 +2169,14 @@ void Config::read_inputs_files(){
 			_mm_word = strsplit(_mm_line0, " \t");
 			if (_mm_word.size() >= 2 && strtrim(_mm_word[0]) == "model_fullname") {
 				std::string _mm_val = strtrim(_mm_word[1]);
+				if (_mm_val == "=") {
+					_mm_val = _mm_word.size() >= 3 ? strtrim(_mm_word[2]) : "";
+				}
 				if (!_mm_val.empty()) {
 					_mm_fullname = _mm_val;
 				}
+				}
 			}
-		}
 		if (!_mm_fullname.empty()) {
 			const std::string _mm_would = _resolve_prior(_mm_fullname);
 			if (!_mm_would.empty() && _mm_would != modeling.prior_fct_name) {
