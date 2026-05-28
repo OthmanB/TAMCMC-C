@@ -139,7 +139,7 @@ DATA
     for SCEN in AUTO_HARVEY AUTO_KALLINGER AUTO_MS_GLOBAL_aj AUTO_MS_GLOBAL_ajAlm \
                 AUTO_RGB_APP AUTO_RGB_CTE AUTO_LOCAL_BASIC AUTO_LOCAL_HNLM \
                 AUTO_UNKNOWN AUTO_MALFORMED AUTO_WRONG_CASE \
-                MISMATCH_WARN AJFIT_AUTO_FATAL AJFIT_EXEMPT; do
+                MISMATCH_WARN AJFIT_AUTO AJFIT_EXEMPT; do
         cp "${AUTO_MODELS_DIR}/AUTO_BASE.data" "${AUTO_MODELS_DIR}/${SCEN}.data"
     done
 
@@ -156,7 +156,7 @@ DATA
     printf '* 500.0 1000.0\n# no model_fullname line here - just a comment\n'               > "${AUTO_MODELS_DIR}/AUTO_MALFORMED.model"
     printf '* 500.0 1000.0\nmodel_fullname model_Harvey_Gaussian\n'                          > "${AUTO_MODELS_DIR}/AUTO_WRONG_CASE.model"
     printf '* 500.0 1000.0\nmodel_fullname model_Harvey_Gaussian\n'                          > "${AUTO_MODELS_DIR}/MISMATCH_WARN.model"
-    printf '* 500.0 1000.0\nmodel_fullname model_ajfit\n'                                    > "${AUTO_MODELS_DIR}/AJFIT_AUTO_FATAL.model"
+    printf '* 500.0 1000.0\nmodel_fullname model_ajfit\n'                                    > "${AUTO_MODELS_DIR}/AJFIT_AUTO.model"
     printf '* 500.0 1000.0\nmodel_fullname model_Harvey_Gaussian\n'                          > "${AUTO_MODELS_DIR}/AJFIT_EXEMPT.model"
 
     # WAVE1_REG: copy SCENARIO_A files from conflict-test dir
@@ -549,18 +549,20 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-echo "Test AJFIT_AUTO_FATAL: prior_fct_name=auto + model_ajfit → FATAL"
+echo "Test AJFIT_AUTO: prior_fct_name=auto + model_ajfit → io_ajfit"
 # ---------------------------------------------------------------------------
-write_auto_presets "AJFIT_AUTO_FATAL"
+write_auto_presets "AJFIT_AUTO"
 set_prior_fct_name "auto"
 set_model_fct_name "model_Harvey_Gaussian"
 output=$(${TIMEOUT} ${BINARY} -S 1 -L 1 2>&1) && exit_code=0 || exit_code=$?
 restore_config
 
-if [ $exit_code -ne 0 ] && [ $exit_code -ne 124 ] && echo "$output" | grep -q "ajfit"; then
-    run_test "AJFIT_AUTO_FATAL: FATAL exit when auto + model_ajfit" "PASS"
+if [ $exit_code -eq 0 ] && \
+   echo "$output" | grep -q "INFO: prior_fct_name auto-resolved" && \
+   echo "$output" | grep -q "io_ajfit"; then
+    run_test "AJFIT_AUTO: auto resolves model_ajfit to io_ajfit" "PASS"
 else
-    run_test "AJFIT_AUTO_FATAL: FATAL exit when auto + model_ajfit (got ${exit_code})" "FAIL"
+    run_test "AJFIT_AUTO: auto resolves model_ajfit to io_ajfit (got ${exit_code})" "FAIL"
 fi
 
 # ---------------------------------------------------------------------------
@@ -572,7 +574,7 @@ output=$(${TIMEOUT} ${BINARY} -S 1 -L 1 2>&1) || true
 restore_config
 
 if ! echo "$output" | grep -q "WARNING" && \
-   ! echo "$output" | grep -q "not supported for ajfit"; then
+   ! echo "$output" | grep -q "FATAL"; then
     run_test "AJFIT_EXEMPT: no WARNING when io_ajfit explicit with mappable model" "PASS"
 else
     run_test "AJFIT_EXEMPT: no WARNING when io_ajfit explicit with mappable model" "FAIL"

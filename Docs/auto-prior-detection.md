@@ -23,7 +23,7 @@ prior_fct_name=auto;
 
 ## Section 2: Complete mapping table
 
-The following table lists all 15 supported models and their corresponding prior functions:
+The following table lists all 16 supported models and their corresponding prior functions:
 
 | model_fullname | prior_fct_name | Notes |
 |---|---|---|
@@ -42,14 +42,14 @@ The following table lists all 15 supported models and their corresponding prior 
 | model_RGB_asympt_aj_CteWidth_HarveyLike_v4 | io_asymptotic | RGB asymptotic (CteWidth) |
 | model_MS_local_basic | io_local | MS Local basic |
 | model_MS_local_Hnlm | io_local | MS Local Hnlm |
+| model_ajfit | io_ajfit | aj fit workflow |
 
 ## Section 3: Error scenarios
 
 The system is designed to fail fast with actionable messages in the following cases:
 
 - **`.model` file missing or `model_fullname` undefined**: The system will emit a FATAL error indicating that auto-resolution is impossible without a model definition.
-- **`model_fullname` not in the table**: If the model is not among the 15 listed above, the system will emit a FATAL error listing all currently supported models.
-- **`prior_fct_name=auto;` in ajfit workflow**: This is not supported. The system will fail with: `not supported for ajfit; use io_ajfit explicitly`.
+- **`model_fullname` not in the table**: If the model is not among the 16 listed above, the system will emit a FATAL error listing all currently supported models.
 - **Wrong case for `auto`**: Using `AUTO` or `Auto` will trigger the standard unknown prior name error (typically at `config.cpp:2106`).
 
 ## Section 4: Mismatch behavior
@@ -112,8 +112,8 @@ INFO: prior_fct_name auto-resolved from model_fullname=model_RGB_asympt_aj_AppWi
 
 ## Section 6: Template files
 
-Three template files demonstrate the use of the `auto` mode. They are located in the templates directory:
+Three template files demonstrate the use of the `auto` mode. They are located in `TAMCMC-C/Config/default/`:
 
-- `.cfg.MS_Global_fit_auto`
-- `.cfg.MS_local_fit_auto`
-- `.cfg.RGB_asympt_fit_auto`
+- `config_default.cfg.Gaussian_fit_auto` — Harvey Gaussian fit with `prior_fct_name=auto;`
+- `config_default.cfg.Kallinger_Gaussian_fit_auto` — Kallinger Gaussian fit with `prior_fct_name=auto;`
+- `config_default.cfg.RGB_auto` — RGB asymptotic fit with `prior_fct_name=auto;`
