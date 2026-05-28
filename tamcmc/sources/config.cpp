@@ -2075,6 +2075,35 @@ void Config::read_restore_files(){
 }
 
 
+// Wave 2: helper to extract model_fullname from a .model file without modifying
+// any existing reader. Replicates the same parse logic used in the readers called
+// by read_inputs_files() (io_ms_global, io_asymptotic, io_local):
+//   - tokeniser : strsplit(line0, " \t")  (space or tab)
+//   - comment skip : '#' only (section delimiter in .model files)
+//   - precedence : last-wins (no break; matches the for-loop in build_init_*())
+// Returns "" if: file not found, file empty, no model_fullname line, or empty value.
+static std::string peek_model_fullname(const std::string& model_file_path) {
+    std::ifstream f(model_file_path.c_str());
+    if (!f.is_open()) { return ""; }
+    std::string line0, result;
+    std::vector<std::string> word;
+    while (std::getline(f, line0)) {
+        line0 = strtrim(line0);
+        if (line0.empty()) { continue; }
+        std::string char0 = strtrim(line0.substr(0, 1));
+        if (char0 == "#") { continue; }        // section delimiter: skip (matches existing parser)
+        word = strsplit(line0, " \t");          // same tokeniser as read_MCMC_file_MS_Global
+        if (word.size() >= 2 && strtrim(word[0]) == "model_fullname") {
+            std::string val = strtrim(word[1]);
+            if (!val.empty()) {
+                result = val;                   // last-wins: keep overwriting (no break)
+            }
+        }
+    }
+    return result;
+}
+
+
 void Config::read_inputs_files(){
 
     bool passed=0; 
