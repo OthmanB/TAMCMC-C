@@ -130,6 +130,7 @@ set(SOURCES_MAIN  #_COMMON
     tamcmc/sources/io_local.cpp
     tamcmc/sources/io_asymptotic.cpp
     tamcmc/sources/io_ajfit.cpp
+    tamcmc/sources/prior_auto_map.cpp
     tamcmc/sources/models.cpp
     tamcmc/sources/stats_dictionary.cpp
     tamcmc/sources/config_presets.cpp
@@ -191,6 +192,7 @@ set(SOURCES_TOOLS_GETMODEL
 	tamcmc/sources/io_local.cpp
 	tamcmc/sources/io_asymptotic.cpp
 	tamcmc/sources/io_ajfit.cpp
+	tamcmc/sources/prior_auto_map.cpp
 	tamcmc/sources/noise_models.cpp
 	tamcmc/sources/priors_calc.cpp
 	tamcmc/sources/stats_dictionary.cpp
